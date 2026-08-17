@@ -1,0 +1,62 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      url: ${SPRING_DATA_REDIS_URL:redis://localhost:6379}
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+            allowedHeaders: ["*"]
+            allowCredentials: true
+      routes:
+        - id: auth
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: users
+          uri: ${USER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/users/**
+        - id: questions
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/questions/**
+        - id: companies
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/companies/**
+        - id: topics
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/topics/**
+        - id: tags
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/tags/**
+        - id: admin
+          uri: ${ADMIN_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/admin/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-long-random-secret-at-least-32-chars}
+  issuer: ${JWT_ISSUER:interview-platform}

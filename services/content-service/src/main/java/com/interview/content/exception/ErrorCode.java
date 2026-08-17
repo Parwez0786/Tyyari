@@ -1,0 +1,12 @@
+package com.interview.content.exception;
+
+public enum ErrorCode {
+    AUTH_UNAUTHORIZED,
+    QUESTION_NOT_FOUND,
+    QUESTION_ALREADY_EXISTS,
+    COMPANY_NOT_FOUND,
+    TOPIC_NOT_FOUND,
+    TAG_NOT_FOUND,
+    VALIDATION_ERROR,
+    INTERNAL_SERVER_ERROR
+}

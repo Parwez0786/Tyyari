@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ink: #0f172a;
+  --mute: #64748b;
+  --line: #e2e8f0;
+  --surface: #ffffff;
+  --field: #f1f5f9;
+  --canvas: #f8fafc;
+}
+
+html.dark {
+  color-scheme: dark;
+  --ink: #f8fafc;
+  --mute: #94a3b8;
+  --line: #1e293b;
+  --surface: #0b1220;
+  --field: #111827;
+  --canvas: #020617;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 520px at 0% -8%, rgba(249, 115, 22, 0.14) 0%, transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+    var(--canvas);
+}
+
+html.dark body {
+  background:
+    radial-gradient(1100px 520px at 0% -8%, rgba(249, 115, 22, 0.16) 0%, transparent 50%),
+    radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.10) 0%, transparent 45%),
+    var(--canvas);
+}
+
+input, select, button, textarea {
+  font-family: inherit;
+}
+
+.label-caps {
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em];
+  color: #f97316;
+}
+
+.btn-black {
+  @apply inline-flex items-center justify-center rounded-xl bg-neutral-950 px-5 py-2.5 text-sm font-medium text-white hover:bg-black dark:bg-white dark:text-neutral-950 dark:hover:bg-zinc-200;
+}
+
+.btn-purple {
+  @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-medium text-white;
+  background-color: #f97316;
+}
+.btn-purple:hover {
+  background-color: #ea580c;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-medium text-ink hover:bg-orange-50 dark:hover:bg-orange-950/30;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+.panel {
+  @apply rounded-[28px] border p-8;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+.field {
+  @apply mt-1.5 w-full rounded-2xl border-0 px-4 py-3.5 text-sm outline-none;
+  background-color: var(--field);
+  color: var(--ink);
+}
+.field:focus {
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+}

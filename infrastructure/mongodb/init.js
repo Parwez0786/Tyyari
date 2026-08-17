@@ -1,0 +1,35 @@
+db = db.getSiblingDB("auth_db");
+db.createCollection("users");
+db.users.createIndex({ email: 1 }, { unique: true });
+db.createCollection("refresh_tokens");
+db.refresh_tokens.createIndex({ tokenHash: 1 }, { unique: true });
+db.refresh_tokens.createIndex({ userId: 1 });
+db.createCollection("email_verification_tokens");
+db.createCollection("password_reset_tokens");
+
+db = db.getSiblingDB("user_db");
+db.createCollection("profiles");
+db.profiles.createIndex({ userId: 1 }, { unique: true });
+db.createCollection("preferences");
+db.preferences.createIndex({ userId: 1 }, { unique: true });
+db.createCollection("goals");
+db.goals.createIndex({ userId: 1 }, { unique: true });
+
+db = db.getSiblingDB("content_db");
+db.createCollection("questions");
+db.questions.createIndex({ slug: 1 }, { unique: true });
+db.questions.createIndex({ type: 1, difficulty: 1 });
+db.questions.createIndex({ type: 1, companies: 1 });
+db.questions.createIndex({ type: 1, topics: 1 });
+db.questions.createIndex({ tags: 1 });
+db.questions.createIndex({ isPublished: 1 });
+db.createCollection("companies");
+db.companies.createIndex({ slug: 1 }, { unique: true });
+db.createCollection("topics");
+db.topics.createIndex({ slug: 1 }, { unique: true });
+db.createCollection("tags");
+db.tags.createIndex({ slug: 1 }, { unique: true });
+db.createCollection("categories");
+
+db = db.getSiblingDB("admin_db");
+db.createCollection("audit_logs");

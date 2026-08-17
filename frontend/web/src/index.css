@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ink: #0f172a;
+  --mute: #64748b;
+  --line: #e2e8f0;
+  --surface: #ffffff;
+  --field: #f1f5f9;
+  --canvas: #f8fafc;
+  --card: #ffffff;
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: #000000;
+  --ink: #ffffff;
+  --mute: #9ca3af;
+  --line: #262626;
+  --surface: #000000;
+  --field: #181818;
+  --canvas: #000000;
+  --card: #181818;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 520px at 0% -8%, rgba(249, 115, 22, 0.14) 0%, transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+    var(--canvas);
+}
+
+html.dark body {
+  background: #000000;
+}
+
+input, select, button, textarea {
+  font-family: inherit;
+}
+
+.label-caps {
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em];
+  color: #f97316;
+}
+
+.btn-black {
+  @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white;
+  background-color: #0a0a0a;
+}
+.btn-black:hover {
+  background-color: #000000;
+}
+html.dark .btn-black {
+  background-color: #ffffff;
+  color: #0a0a0a;
+}
+html.dark .btn-black:hover {
+  background-color: #e4e4e7;
+}
+
+.btn-purple,
+.btn-brand {
+  @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white;
+  background-color: #f97316;
+}
+.btn-purple:hover,
+.btn-brand:hover {
+  background-color: #ea580c;
+}
+
+.btn-premium {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500;
+  background-color: #2563eb;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-medium;
+  border-color: var(--line);
+  background-color: var(--surface);
+  color: var(--ink);
+}
+.btn-ghost:hover {
+  background-color: #fff7ed;
+}
+html.dark .btn-ghost:hover {
+  background-color: rgba(67, 20, 7, 0.3);
+}
+
+.panel {
+  @apply rounded-[24px] border p-8;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+.panel-auth {
+  @apply rounded-[24px] border px-5 py-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:px-10 sm:py-10 dark:shadow-[0_24px_70px_rgba(0,0,0,0.45)];
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+.field {
+  @apply mt-1.5 w-full rounded-2xl border-0 px-4 py-3.5 text-sm outline-none;
+  background-color: var(--field);
+  color: var(--ink);
+}
+.search-field {
+  padding-left: 2.75rem !important;
+}
+.field:focus {
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+}
+
+.btn-social {
+  @apply relative flex w-full items-center justify-center gap-3 rounded-2xl border px-5 py-3 text-sm font-medium;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+.btn-social:hover {
+  background-color: var(--field);
+}
+
+.tyyari-flow {
+  height: 100%;
+}
+.tyyari-flow .react-flow,
+.tyyari-board .excalidraw {
+  height: 100%;
+  width: 100%;
+}
+
+.tyyari-flow .react-flow__controls {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: none;
+}
+.tyyari-flow .react-flow__controls-button {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  fill: var(--ink);
+}
+.tyyari-flow .react-flow__minimap {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tyyari-board {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.tyyari-board .excalidraw {
+  position: absolute !important;
+  inset: 0;
+  height: 100% !important;
+  background: var(--canvas) !important;
+}
+
+.tyyari-flow .react-flow__attribution {
+  display: none;
+}
+
+.tyyari-resize {
+  width: 8px;
+  margin: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: transparent;
+  cursor: col-resize;
+}
+.tyyari-resize::after {
+  content: "";
+  display: block;
+  width: 3px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+}
+.tyyari-resize:hover::after,
+.tyyari-resize[data-resize-handle-active]::after {
+  background: #f97316;
+}
