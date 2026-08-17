@@ -1,6 +1,6 @@
 # Tyyari
 
-ScaleMock-style interview preparation platform. Phase 1: authentication, profiles, question content, admin, API gateway, MongoDB, Redis, and Kafka.
+
 
 **Stack:** Java 21 · Spring Boot 3 · Spring Security · Spring Cloud Gateway · MongoDB · Redis · Kafka · Maven · Docker · React (JavaScript) · Vite · Tailwind
 
