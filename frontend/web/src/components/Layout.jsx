@@ -40,7 +40,7 @@ export default function Layout({ children, publicPage = false, wide = false, fil
     <div className="min-h-screen">
       {!hideNav && (
         <header className="sticky top-0 z-20 bg-surface">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Logo to={authed ? "/dashboard" : "/"} />
             <div className="flex items-center gap-1.5 sm:gap-2">
               <ThemeToggle compact />
