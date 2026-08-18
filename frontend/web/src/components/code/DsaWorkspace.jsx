@@ -8,8 +8,15 @@ import { formatOutput } from "./formatOutput";
 import { dsaStarterFor, languageById, newFileId } from "./languages";
 import { runWorkspace } from "./piston";
 
-export default function DsaWorkspace({ data }) {
-  const key = `tyyari.dsa.${data.id}`;
+export default function DsaWorkspace({
+  data,
+  storageKey,
+  backTo = "/practice/DSA",
+  backLabel = "Back to DSA sheet",
+  hideBack = false,
+  hideHints = false,
+}) {
+  const key = storageKey || `tyyari.dsa.${data.id}`;
   const cases = useMemo(() => casesFromQuestion(data), [data]);
   const initial = useMemo(() => loadDsa(key, data.title, cases), [key, data.title, cases]);
   const [language, setLanguage] = useState(initial.language);
@@ -109,8 +116,9 @@ export default function DsaWorkspace({ data }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
       <WorkspaceHeader
-        backTo="/practice/DSA"
-        backLabel="Back to DSA sheet"
+        backTo={backTo}
+        backLabel={backLabel}
+        hideBack={hideBack}
         title={data.title}
         language={language}
         onLanguageChange={switchLanguage}
@@ -124,7 +132,7 @@ export default function DsaWorkspace({ data }) {
         {!focus && (
           <>
             <Panel defaultSize={32} minSize={18} maxSize={46} className="h-full min-h-0">
-              <PromptCard data={data} />
+              <PromptCard data={data} hideHints={hideHints} />
             </Panel>
             <PanelResizeHandle className="tyyari-resize" />
           </>

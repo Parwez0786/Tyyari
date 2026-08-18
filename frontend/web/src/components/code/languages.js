@@ -4,6 +4,16 @@ export const LANGUAGES = [
   { id: "cpp", label: "C++", ext: "cpp", monaco: "cpp", piston: "cpp", tabSize: 4, main: "main.cpp" },
 ];
 
+const FRONTEND_EXT = {
+  jsx: { id: "javascript", label: "JavaScript", ext: "jsx", monaco: "javascript", piston: "", tabSize: 2, main: "App.jsx" },
+  js: { id: "javascript", label: "JavaScript", ext: "js", monaco: "javascript", piston: "", tabSize: 2, main: "App.jsx" },
+  tsx: { id: "typescript", label: "TypeScript", ext: "tsx", monaco: "typescript", piston: "", tabSize: 2, main: "App.tsx" },
+  ts: { id: "typescript", label: "TypeScript", ext: "ts", monaco: "typescript", piston: "", tabSize: 2, main: "App.tsx" },
+  css: { id: "css", label: "CSS", ext: "css", monaco: "css", piston: "", tabSize: 2, main: "styles.css" },
+  html: { id: "html", label: "HTML", ext: "html", monaco: "html", piston: "", tabSize: 2, main: "index.html" },
+  json: { id: "json", label: "JSON", ext: "json", monaco: "json", piston: "", tabSize: 2, main: "data.json" },
+};
+
 const EXT = {
   java: "java",
   py: "python",
@@ -22,6 +32,8 @@ export function languageById(id) {
 
 export function languageFromName(name = "") {
   const ext = name.split(".").pop()?.toLowerCase() || "";
+  const frontend = FRONTEND_EXT[ext];
+  if (frontend) return frontend;
   const found = LANGUAGES.find((item) => item.id === EXT[ext]);
   if (found) return found;
   return {
@@ -152,6 +164,48 @@ public class Main {
     }
 }
 `;
+}
+
+export function frontendStarterFor(name, title = "") {
+  const note = title ? ` // ${title}` : "";
+  if (/\.css$/i.test(name)) {
+    return `* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; }
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+`;
+  }
+  if (/(^|\/)App\.(jsx?|tsx?)$/i.test(name)) {
+    return `export default function App() {${note}
+  return (
+    <div className="app">
+      <h1>Frontend round</h1>
+      <p>Edit App.js and styles.css, then click Run Code to refresh the preview.</p>
+    </div>
+  );
+}
+`;
+  }
+  const cls = classNameFromFile(name);
+  return `export default function ${cls}() {
+  return <div>${cls}</div>;
+}
+`;
+}
+
+export function frontendDefaultFiles(title = "") {
+  return [
+    { id: newFileId(), type: "file", name: "App.js", content: frontendStarterFor("App.js", title) },
+    { id: newFileId(), type: "file", name: "styles.css", content: frontendStarterFor("styles.css", title) },
+  ];
 }
 
 export function defaultFiles(title, languageId = "java") {

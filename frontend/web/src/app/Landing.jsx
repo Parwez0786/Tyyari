@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 
 const stats = [
   { value: "6", label: "Interview tracks" },
-  { value: "HLD · LLD · DSA", label: "Live sheets" },
+  { value: "HLD · LLD · DSA · OA", label: "Live sheets" },
   { value: "50+", label: "Company tags" },
   { value: "Phase 1", label: "Practice library" },
 ];
@@ -32,8 +32,14 @@ const features = [
     badge: "HLD",
   },
   {
+    title: "Timed online assessments",
+    detail: "DSA question sets with a countdown and a camera check before you start — closer to a company OA.",
+    to: "/practice/OA",
+    badge: "OA",
+  },
+  {
     title: "Frontend challenges",
-    detail: "Machine-coding style UI problems for frontend rounds, with company and topic tags.",
+    detail: "React machine-coding rounds with a live desktop and mobile preview as you type.",
     to: "/practice/FRONTEND",
     badge: "UI",
   },
@@ -121,8 +127,8 @@ export default function Landing() {
       <section className="mt-16">
         <p className="label-caps">Structured practice sheets</p>
         <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Practice sheets</h2>
-        <p className="mt-2 max-w-2xl text-mute">Topic-wise HLD, LLD, and DSA sheets with company tags and a clear progression.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <p className="mt-2 max-w-2xl text-mute">Topic-wise HLD, LLD, DSA, Frontend, and timed OA sheets with company tags.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <SheetCard
             tag="HLD"
             title="High Level Design Sheet"
@@ -141,6 +147,18 @@ export default function Landing() {
             detail="LeetCode-style algorithm problems with examples, constraints, and a code editor."
             to="/practice/DSA"
           />
+          <SheetCard
+            tag="OA"
+            title="Online Assessment"
+            detail="Timed DSA sets. Camera must be on before you enter, and the clock runs until you submit."
+            to="/practice/OA"
+          />
+          <SheetCard
+            tag="FRONTEND"
+            title="Frontend Sheet"
+            detail="React UI challenges with a live desktop and mobile preview."
+            to="/practice/FRONTEND"
+          />
         </div>
       </section>
 
@@ -149,7 +167,7 @@ export default function Landing() {
         <h2 className="mt-2 max-w-xl text-3xl font-extrabold tracking-tight">Complete preparation, one workspace</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {features.map((f) =>
-            f.badge === "HLD" || f.badge === "DSA" ? (
+            f.badge === "HLD" || f.badge === "DSA" || f.badge === "OA" || f.badge === "UI" ? (
               <Link key={f.title} to={f.to} className="rounded-2xl border border-line bg-surface p-6 hover:border-brand/40">
                 <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-brand dark:bg-orange-950/40">{f.badge}</span>
                 <p className="mt-3 text-lg font-bold">{f.title}</p>

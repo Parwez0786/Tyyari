@@ -46,6 +46,10 @@ spring:
           uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/v1/tags/**
+        - id: assessment-sets
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/assessment-sets,/api/v1/assessment-sets/**
         - id: admin
           uri: ${ADMIN_SERVICE_URL:http://localhost:8084}
           predicates:

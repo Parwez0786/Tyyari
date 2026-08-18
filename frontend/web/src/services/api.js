@@ -82,4 +82,6 @@ export const contentApi = {
   companies: () => api("/api/v1/companies"),
   topics: (category) => api(category ? `/api/v1/topics?category=${category}` : "/api/v1/topics"),
   tags: () => api("/api/v1/tags"),
+  assessmentSets: () => api("/api/v1/assessment-sets"),
+  assessmentSet: (id) => api(`/api/v1/assessment-sets/${id}`),
 };

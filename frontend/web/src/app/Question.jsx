@@ -6,6 +6,7 @@ import { ChevronLeft, Columns2, Download } from "lucide-react";
 import BlueprintBoard from "../components/BlueprintBoard";
 import CodeWorkspace from "../components/code/CodeWorkspace";
 import DsaWorkspace from "../components/code/DsaWorkspace";
+import FrontendWorkspace from "../components/code/FrontendWorkspace";
 import Layout from "../components/Layout";
 import ModeOverlay from "../components/ModeOverlay";
 import NotesPanel from "../components/NotesPanel";
@@ -26,11 +27,13 @@ export default function Question() {
   const hld = data?.type === "HLD";
   const lld = data?.type === "LLD";
   const dsa = data?.type === "DSA";
+  const frontend = data?.type === "FRONTEND";
   const canvas = view === "blueprint" || view === "whiteboard";
   const lldCode = lld && (view === "code" || !view);
   const dsaCode = dsa && (view === "code" || !view);
+  const feCode = frontend && (view === "code" || !view);
   const needPick = hld && !canvas;
-  const workspace = (hld && canvas) || lldCode || dsaCode;
+  const workspace = (hld && canvas) || lldCode || dsaCode || feCode;
 
   function setView(next) {
     setParams({ view: next }, { replace: true });
@@ -39,11 +42,11 @@ export default function Question() {
   return (
     <Layout wide={workspace} fill={workspace} hideNav={workspace}>
       {q.isLoading && <p className="p-6 text-sm text-mute">Loading…</p>}
-      {data && !hld && !lld && !dsa && (
+      {data && !hld && !lld && !dsa && !frontend && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Coming soon</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data.title}</h1>
-          <p className="mt-3 text-sm text-mute">HLD, LLD, and DSA are open right now. Other tracks are still coming soon.</p>
+          <p className="mt-3 text-sm text-mute">HLD, LLD, DSA, OA, and Frontend are open right now. Other tracks are still coming soon.</p>
           <Link to="/practice/HLD" className="btn-black mt-8">Open HLD sheet</Link>
         </section>
       )}
@@ -52,6 +55,7 @@ export default function Question() {
       {data && hld && view === "whiteboard" && <WhiteboardMode data={data} />}
       {data && lldCode && <CodeWorkspace key={data.id} data={data} />}
       {data && dsaCode && <DsaWorkspace key={data.id} data={data} />}
+      {data && feCode && <FrontendWorkspace key={data.id} data={data} />}
       {data && hld && needPick && (
         <ModeOverlay
           question={data}

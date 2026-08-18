@@ -1,12 +1,15 @@
 package com.interview.content.controller;
 
 import com.interview.content.dto.ApiResponse;
+import com.interview.content.dto.AssessmentSetDetail;
+import com.interview.content.dto.AssessmentSetListItem;
 import com.interview.content.dto.PageResponse;
 import com.interview.content.dto.QuestionDetail;
 import com.interview.content.dto.QuestionListItem;
 import com.interview.content.model.Company;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
+import com.interview.content.service.AssessmentSetService;
 import com.interview.content.service.CatalogService;
 import com.interview.content.service.QuestionService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,10 +27,16 @@ public class ContentController {
 
     private final QuestionService questionService;
     private final CatalogService catalogService;
+    private final AssessmentSetService assessmentSetService;
 
-    public ContentController(QuestionService questionService, CatalogService catalogService) {
+    public ContentController(
+            QuestionService questionService,
+            CatalogService catalogService,
+            AssessmentSetService assessmentSetService
+    ) {
         this.questionService = questionService;
         this.catalogService = catalogService;
+        this.assessmentSetService = assessmentSetService;
     }
 
     @GetMapping("/questions")
@@ -53,6 +62,16 @@ public class ContentController {
     @GetMapping("/questions/{id}/hints")
     public ApiResponse<Map<String, List<String>>> hints(@PathVariable String id) {
         return ApiResponse.ok(Map.of("hints", questionService.hints(id)));
+    }
+
+    @GetMapping("/assessment-sets")
+    public ApiResponse<List<AssessmentSetListItem>> assessmentSets() {
+        return ApiResponse.ok(assessmentSetService.listPublished());
+    }
+
+    @GetMapping("/assessment-sets/{id}")
+    public ApiResponse<AssessmentSetDetail> assessmentSet(@PathVariable String id) {
+        return ApiResponse.ok(assessmentSetService.getPublished(id));
     }
 
     @GetMapping("/companies")

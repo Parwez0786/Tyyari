@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Camera, Clock } from "lucide-react";
 import Layout from "../components/Layout";
 import ModeOverlay from "../components/ModeOverlay";
 import ProblemCard from "../components/ProblemCard";
+import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
+import { formatClock, isActive, loadSession, remainingMs } from "../components/oa/session";
 import { contentApi } from "../services/api";
 
 const TYPES = [
@@ -12,7 +15,7 @@ const TYPES = [
   { key: "DSA", title: "DSA", detail: "Data structures and algorithms" },
   { key: "FRONTEND", title: "Frontend Coding", detail: "UI machine-coding rounds" },
   { key: "CS", title: "CS Fundamentals", detail: "OS, DBMS, networks" },
-  { key: "OA", title: "Online Assessment", detail: "Timed coding questions" },
+  { key: "OA", title: "Online Assessment", detail: "Timed DSA sets with camera check" },
 ];
 
 const PAGE = {
@@ -30,7 +33,7 @@ const PAGE = {
   },
   FRONTEND: {
     title: "Frontend Problems",
-    subtitle: "Build UI challenges that show up in frontend machine-coding rounds.",
+    subtitle: "Build React UI challenges with a live desktop and mobile preview.",
   },
   CS: {
     title: "CS Fundamentals",
@@ -38,7 +41,7 @@ const PAGE = {
   },
   OA: {
     title: "Online Assessments",
-    subtitle: "Timed-style questions from company OA patterns.",
+    subtitle: "Timed DSA sets with a camera check before you enter — closer to a real online assessment.",
   },
 };
 
@@ -58,7 +61,7 @@ export default function Practice() {
         </section>
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {TYPES.map((item) =>
-            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" ? (
+            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" || item.key === "OA" || item.key === "FRONTEND" ? (
               <Link key={item.key} to={`/practice/${item.key}`} className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-brand/40">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
@@ -80,7 +83,7 @@ export default function Practice() {
     );
   }
 
-  if (type !== "HLD" && type !== "LLD" && type !== "DSA") {
+  if (type !== "HLD" && type !== "LLD" && type !== "DSA" && type !== "OA" && type !== "FRONTEND") {
     return (
       <Layout>
         <ComingSoon title={PAGE[type].title} />
@@ -88,7 +91,7 @@ export default function Practice() {
     );
   }
 
-  return <TypeSheet type={type} />;
+  return type === "OA" ? <OaSheet /> : <TypeSheet type={type} />;
 }
 
 function ComingSoon({ title }) {
@@ -96,7 +99,7 @@ function ComingSoon({ title }) {
     <section className="mx-auto max-w-lg py-16 text-center">
       <p className="label-caps">Coming soon</p>
       <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{title}</h1>
-      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, and DSA are available now.</p>
+      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, DSA, Frontend, and OA are available now.</p>
       <Link to="/practice/HLD" className="btn-black mt-8">Open HLD sheet</Link>
     </section>
   );
@@ -123,7 +126,7 @@ function TypeSheet({ type }) {
       setPicked(question);
       return;
     }
-    if (type === "LLD" || type === "DSA") {
+    if (type === "LLD" || type === "DSA" || type === "FRONTEND") {
       navigate(`/questions/${question.id}?view=code`);
       return;
     }
@@ -190,6 +193,71 @@ function TypeSheet({ type }) {
         />
       )}
     </Layout>
+  );
+}
+
+function OaSheet() {
+  const meta = PAGE.OA;
+  const navigate = useNavigate();
+  const setsQuery = useQuery({ queryKey: ["assessment-sets"], queryFn: contentApi.assessmentSets });
+  const sets = setsQuery.data?.data ?? [];
+
+  return (
+    <Layout>
+      <section className="mx-auto max-w-3xl text-center">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
+        <p className="mt-3 text-[15px] text-mute">{meta.subtitle}</p>
+      </section>
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        {sets.map((set) => (
+          <AssessmentCard key={set.id} set={set} onStart={() => navigate(`/oa/${set.id}/precheck`)} />
+        ))}
+      </div>
+      {!setsQuery.isLoading && !sets.length && (
+        <p className="mt-10 text-center text-sm text-mute">No assessments are published yet.</p>
+      )}
+    </Layout>
+  );
+}
+
+function AssessmentCard({ set, onStart }) {
+  const session = loadSession(set.id);
+  const active = isActive(session);
+  const submitted = Boolean(session?.submittedAt);
+  const cta = submitted ? "View result" : active ? `Resume · ${formatClock(remainingMs(session))}` : "Start Assessment";
+
+  return (
+    <article className="flex flex-col rounded-xl border border-white/10 bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <DifficultyBadge difficulty={set.difficulty} />
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-mute">
+          <Camera size={13} className="text-brand" />
+          Camera
+        </span>
+      </div>
+      <h3 className="mt-4 text-lg font-bold leading-snug">{set.title}</h3>
+      <p className="mt-2 line-clamp-3 text-sm leading-6 text-mute">{set.description}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold text-ink">
+        <span className="inline-flex items-center gap-1.5">
+          <Clock size={14} className="text-brand" />
+          {set.durationMinutes} min
+        </span>
+        <span>{set.questionCount} DSA problems</span>
+      </div>
+      <div className="mt-4">
+        <CompanyTags companies={set.companies} />
+      </div>
+      <div className="mt-auto pt-5">
+        <button
+          type="button"
+          onClick={onStart}
+          className="flex w-full items-center justify-between rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold hover:bg-white/10"
+        >
+          {cta}
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </article>
   );
 }
 

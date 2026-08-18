@@ -30,6 +30,9 @@ db.topics.createIndex({ slug: 1 }, { unique: true });
 db.createCollection("tags");
 db.tags.createIndex({ slug: 1 }, { unique: true });
 db.createCollection("categories");
+db.createCollection("assessment_sets");
+db.assessment_sets.createIndex({ slug: 1 }, { unique: true });
+db.assessment_sets.createIndex({ isPublished: 1 });
 
 db = db.getSiblingDB("admin_db");
 db.createCollection("audit_logs");
