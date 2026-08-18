@@ -2,8 +2,8 @@ import { useState } from "react";
 import { ChevronRight, FileText, Lightbulb } from "lucide-react";
 import { QuestionMeta } from "./QuestionMeta";
 
-export default function PromptCard({ data }) {
-  const dsa = data.type === "DSA";
+export default function PromptCard({ data, hideHints = false }) {
+  const dsa = data.type === "DSA" || data.type === "OA";
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-white/10 bg-card">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/10 px-4">
@@ -14,7 +14,7 @@ export default function PromptCard({ data }) {
         <QuestionMeta data={data} compact />
         <h2 className="mt-4 text-lg font-bold leading-snug text-ink">{data.title}</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data.description}</p>
-        {dsa ? <DsaDetails data={data} /> : <RequirementsLists data={data} />}
+        {dsa ? <DsaDetails data={data} hideHints={hideHints} /> : <RequirementsLists data={data} />}
       </div>
     </aside>
   );
@@ -29,7 +29,7 @@ export function RequirementsBlock({ data }) {
   );
 }
 
-function DsaDetails({ data }) {
+function DsaDetails({ data, hideHints = false }) {
   return (
     <div className="mt-5 space-y-4">
       {(data.examples || []).map((example, index) => (
@@ -50,7 +50,7 @@ function DsaDetails({ data }) {
         </section>
       ))}
       <RequirementCard title="Constraints" items={data.constraints} tone="nfr" />
-      <HintList items={data.hints} />
+      {!hideHints && <HintList items={data.hints} />}
       <TopicPills items={data.topics} />
     </div>
   );

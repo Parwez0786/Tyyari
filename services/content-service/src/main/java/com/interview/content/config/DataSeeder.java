@@ -1,10 +1,12 @@
 package com.interview.content.config;
 
+import com.interview.content.model.AssessmentSet;
 import com.interview.content.model.Company;
 import com.interview.content.model.Example;
 import com.interview.content.model.Question;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
+import com.interview.content.repository.AssessmentSetRepository;
 import com.interview.content.repository.CompanyRepository;
 import com.interview.content.repository.QuestionRepository;
 import com.interview.content.repository.TagRepository;
@@ -24,6 +26,7 @@ public class DataSeeder implements ApplicationRunner {
     private final TopicRepository topics;
     private final TagRepository tags;
     private final QuestionRepository questions;
+    private final AssessmentSetRepository assessmentSets;
     private final ContentCache cache;
 
     public DataSeeder(
@@ -31,12 +34,14 @@ public class DataSeeder implements ApplicationRunner {
             TopicRepository topics,
             TagRepository tags,
             QuestionRepository questions,
+            AssessmentSetRepository assessmentSets,
             ContentCache cache
     ) {
         this.companies = companies;
         this.topics = topics;
         this.tags = tags;
         this.questions = questions;
+        this.assessmentSets = assessmentSets;
         this.cache = cache;
     }
 
@@ -238,7 +243,9 @@ public class DataSeeder implements ApplicationRunner {
 
         seedHldRequirements();
         seedLldRequirements();
+        seedFrontendRequirements();
         seedDsaDetails();
+        seedAssessmentSets();
     }
 
     private void seedHldRequirements() {
@@ -481,6 +488,63 @@ public class DataSeeder implements ApplicationRunner {
         );
     }
 
+    private void seedFrontendRequirements() {
+        ensureRequirements(
+                "build-todo-app",
+                List.of(
+                        "Add a new todo from an input and submit control",
+                        "Mark a todo complete and incomplete",
+                        "Filter the list by All, Active, and Completed",
+                        "Keep todos in component state while the preview is open"
+                ),
+                List.of(
+                        "The UI should stay usable on a 375px mobile preview",
+                        "Empty and completed states should be obvious",
+                        "Adding an empty todo should be ignored"
+                )
+        );
+        ensureRequirements(
+                "infinite-scroll-feed",
+                List.of(
+                        "Render a vertical feed of posts",
+                        "Load more posts when the user scrolls near the bottom",
+                        "Show a loading state while the next page is fetched",
+                        "Stop loading when there is no more data"
+                ),
+                List.of(
+                        "Scrolling should stay smooth with a growing list",
+                        "Do not trigger duplicate fetches for the same page",
+                        "Works in both desktop and mobile preview"
+                )
+        );
+        ensureRequirements(
+                "pricing-table",
+                List.of(
+                        "Show three pricing plans in a table or card row",
+                        "Toggle monthly vs yearly prices",
+                        "Highlight a recommended plan",
+                        "Include a clear call-to-action on each plan"
+                ),
+                List.of(
+                        "The layout should match a marketing pricing section",
+                        "On mobile, plans stack or scroll without breaking",
+                        "Yearly prices should be derived from the monthly ones"
+                )
+        );
+        ensureRequirements(
+                "explain-react-reconciliation",
+                List.of(
+                        "Build a small list demo that shows why keys matter",
+                        "Let the user add, remove, or reorder items",
+                        "Call out what React reuses vs remounts"
+                ),
+                List.of(
+                        "The demo should run in the live preview",
+                        "Keep the explanation next to the interactive list"
+                )
+        );
+    }
+
     private void seedDsaDetails() {
         ensureDsaDetails(
                 "two-sum",
@@ -698,6 +762,63 @@ public class DataSeeder implements ApplicationRunner {
                 .published(true)
                 .premium(premium)
                 .createdBy("seed")
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
+    }
+
+    private void seedAssessmentSets() {
+        seedAssessmentSet(
+                "warmup-oa",
+                "Warmup OA",
+                "A short DSA round with two easy problems. Camera stays on for the full duration.",
+                45,
+                "EASY",
+                List.of("Amazon", "Google"),
+                List.of("two-sum", "binary-search")
+        );
+        seedAssessmentSet(
+                "amazon-oa",
+                "Amazon OA",
+                "A 90-minute DSA set covering arrays, intervals, and graphs — typical Amazon online assessment mix.",
+                90,
+                "MEDIUM",
+                List.of("Amazon"),
+                List.of("two-sum", "merge-intervals", "number-of-islands")
+        );
+        seedAssessmentSet(
+                "google-oa",
+                "Google OA",
+                "A 90-minute DSA set with search, strings, and backtracking. Enable your camera before you start.",
+                90,
+                "MEDIUM",
+                List.of("Google"),
+                List.of("binary-search", "longest-substring", "word-search")
+        );
+    }
+
+    private void seedAssessmentSet(
+            String slug,
+            String title,
+            String description,
+            int durationMinutes,
+            String difficulty,
+            List<String> companies,
+            List<String> questionSlugs
+    ) {
+        if (assessmentSets.existsBySlug(slug)) {
+            return;
+        }
+        Instant now = Instant.now();
+        assessmentSets.save(AssessmentSet.builder()
+                .slug(slug)
+                .title(title)
+                .description(description)
+                .durationMinutes(durationMinutes)
+                .difficulty(difficulty)
+                .companies(companies)
+                .questionSlugs(questionSlugs)
+                .published(true)
                 .createdAt(now)
                 .updatedAt(now)
                 .build());

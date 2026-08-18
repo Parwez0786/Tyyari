@@ -12,6 +12,8 @@ import Onboarding from "./app/Onboarding";
 import Dashboard from "./app/Dashboard";
 import Practice from "./app/Practice";
 import Question from "./app/Question";
+import OaPrecheck from "./app/OaPrecheck";
+import OaExam from "./app/OaExam";
 
 function Private({ children }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -35,6 +37,8 @@ export default function App() {
       <Route path="/practice" element={<Private><Practice /></Private>} />
       <Route path="/practice/:type" element={<Private><Practice /></Private>} />
       <Route path="/questions/:id" element={<Private><Question /></Private>} />
+      <Route path="/oa/:id/precheck" element={<Private><OaPrecheck /></Private>} />
+      <Route path="/oa/:id/exam" element={<Private><OaExam /></Private>} />
     </Routes>
   );
 }

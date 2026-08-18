@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
@@ -108,6 +109,20 @@ public class QuestionService {
                 .orElseThrow(() -> new ApiException(ErrorCode.QUESTION_NOT_FOUND, "Question not found", HttpStatus.NOT_FOUND));
         cache.putQuestion(question);
         return toDetail(question);
+    }
+
+    public List<QuestionListItem> publishedDsaBySlugs(List<String> slugs) {
+        if (slugs == null || slugs.isEmpty()) {
+            return List.of();
+        }
+        return slugs.stream()
+                .map(questions::findBySlug)
+                .flatMap(Optional::stream)
+                .filter(Question::isPublished)
+                .filter(question -> "DSA".equalsIgnoreCase(question.getType()))
+                .filter(question -> !question.isPremium())
+                .map(this::toListItem)
+                .toList();
     }
 
     public List<String> hints(String id) {
