@@ -40,8 +40,8 @@ public class RateLimitFilter implements WebFilter, Ordered {
         String id = userId != null ? userId : ip;
         int limit = switch (role) {
             case "ADMIN" -> 1000;
-            case "USER", "EDITOR" -> 300;
-            default -> 100;
+            case "USER", "EDITOR" -> 1000;
+            default -> 200;
         };
         String key = "rate_limit:" + id;
         return redis.opsForValue().increment(key)

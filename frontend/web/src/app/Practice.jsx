@@ -22,11 +22,11 @@ const PAGE = {
   },
   LLD: {
     title: "Low Level Design Problems",
-    subtitle: "Practice OOP and machine-coding rounds with class design and patterns.",
+    subtitle: "Practice OOP and machine-coding rounds in a full multi-file code editor.",
   },
   DSA: {
     title: "DSA Problems",
-    subtitle: "Practice data structures and algorithms with company-wise filters.",
+    subtitle: "Practice data structures and algorithms in a LeetCode-style editor.",
   },
   FRONTEND: {
     title: "Frontend Problems",
@@ -58,7 +58,7 @@ export default function Practice() {
         </section>
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {TYPES.map((item) =>
-            item.key === "HLD" ? (
+            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" ? (
               <Link key={item.key} to={`/practice/${item.key}`} className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-brand/40">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
@@ -80,7 +80,7 @@ export default function Practice() {
     );
   }
 
-  if (type !== "HLD") {
+  if (type !== "HLD" && type !== "LLD" && type !== "DSA") {
     return (
       <Layout>
         <ComingSoon title={PAGE[type].title} />
@@ -96,7 +96,7 @@ function ComingSoon({ title }) {
     <section className="mx-auto max-w-lg py-16 text-center">
       <p className="label-caps">Coming soon</p>
       <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{title}</h1>
-      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD system design is available now.</p>
+      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, and DSA are available now.</p>
       <Link to="/practice/HLD" className="btn-black mt-8">Open HLD sheet</Link>
     </section>
   );
@@ -117,11 +117,14 @@ function TypeSheet({ type }) {
   });
 
   const items = questionsQuery.data?.data?.items ?? [];
-  const designType = type === "HLD" || type === "LLD";
 
   function startQuestion(question) {
-    if (designType) {
+    if (type === "HLD") {
       setPicked(question);
+      return;
+    }
+    if (type === "LLD" || type === "DSA") {
+      navigate(`/questions/${question.id}?view=code`);
       return;
     }
     navigate(`/questions/${question.id}`);
@@ -140,8 +143,8 @@ function TypeSheet({ type }) {
       </section>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <label className="relative min-w-0 flex-1">
-          <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-mute">
+        <label className="relative block min-w-0 flex-1">
+          <span className="pointer-events-none absolute inset-y-0 left-4 z-10 flex items-center text-mute">
             <SearchIcon />
           </span>
           <input
@@ -151,7 +154,7 @@ function TypeSheet({ type }) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <label className="relative sm:w-40">
+        <label className="relative block sm:w-40">
           <select className="field mt-0 appearance-none pr-10" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
             <option value="">Difficulty</option>
             {DIFFS.map((d) => (
@@ -160,7 +163,7 @@ function TypeSheet({ type }) {
           </select>
           <Chevron />
         </label>
-        <label className="relative sm:w-44">
+        <label className="relative block sm:w-44">
           <select className="field mt-0 appearance-none pr-10" value={company} onChange={(e) => setCompany(e.target.value)}>
             <option value="">All Companies</option>
             {(companiesQuery.data?.data ?? []).map((c) => (
@@ -192,7 +195,7 @@ function TypeSheet({ type }) {
 
 function Chevron() {
   return (
-    <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-mute">
+    <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-mute">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="m6 9 6 6 6-6" />
       </svg>
