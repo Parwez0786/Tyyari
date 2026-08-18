@@ -108,6 +108,7 @@ html.dark .btn-ghost:hover {
   color: var(--ink);
 }
 .search-field {
+  margin-top: 0 !important;
   padding-left: 2.75rem !important;
 }
 .field:focus {
@@ -187,4 +188,33 @@ html.dark .btn-ghost:hover {
 .tyyari-resize:hover::after,
 .tyyari-resize[data-resize-handle-active]::after {
   background: #f97316;
+}
+
+.tyyari-resize-y {
+  height: 8px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: transparent;
+  cursor: row-resize;
+}
+.tyyari-resize-y::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+}
+.tyyari-resize-y:hover::after,
+.tyyari-resize-y[data-resize-handle-active]::after {
+  background: #f97316;
+}
+
+.tyyari-monaco,
+.tyyari-monaco .monaco-editor,
+.tyyari-monaco .overflow-guard {
+  height: 100% !important;
 }

@@ -21,27 +21,25 @@ export function CompanyMark({ name, size = "md" }) {
   const src = companyIconUrl(name);
   const box = size === "sm" ? "h-6 w-6 text-[9px]" : "h-7 w-7 text-[11px]";
   const bg = COMPANY_ICONS[name]?.color || "#3f3f46";
-
-  if (!src || failed) {
-    return (
-      <span
-        title={name}
-        className={`inline-flex items-center justify-center rounded-full font-bold text-white ring-2 ring-[var(--card)] ${box}`}
-        style={{ backgroundColor: bg }}
-      >
-        {name.charAt(0)}
-      </span>
-    );
-  }
+  const fallback = !src || failed;
 
   return (
-    <img
-      src={src}
-      alt={name}
+    <span
       title={name}
-      className={`${box} rounded-full bg-white object-contain p-px ring-2 ring-[var(--card)]`}
-      onError={() => setFailed(true)}
-    />
+      className={`inline-flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-full leading-none ring-2 ring-[var(--card)] ${fallback ? "font-bold text-white" : "bg-white"}`}
+      style={fallback ? { backgroundColor: bg } : undefined}
+    >
+      {fallback ? (
+        name.charAt(0)
+      ) : (
+        <img
+          src={src}
+          alt=""
+          className="block h-full w-full object-contain p-0.5"
+          onError={() => setFailed(true)}
+        />
+      )}
+    </span>
   );
 }
 

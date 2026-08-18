@@ -9,11 +9,11 @@ const groups = [
     label: "Practice",
     items: [
       { to: "/practice/HLD", title: "System Design (HLD)", detail: "High-level design" },
-      { title: "Low Level Design", detail: "OOP & machine coding", soon: true },
+      { to: "/practice/LLD", title: "Low Level Design", detail: "OOP & machine coding" },
+      { to: "/practice/DSA", title: "DSA", detail: "Data structures & algorithms" },
       { title: "Frontend Coding", detail: "UI challenges", soon: true },
       { title: "Online Assessment", detail: "Timed questions", soon: true },
       { title: "CS Fundamentals", detail: "Quiz & theory", soon: true },
-      { title: "DSA", detail: "Data structures & algorithms", soon: true },
     ],
   },
   {
@@ -27,8 +27,9 @@ const groups = [
   {
     label: "Sheets",
     items: [
-      { title: "HLD — System Design", detail: "Design question sheet", soon: true },
-      { title: "LLD — Low Level Design", detail: "LLD question sheet", soon: true },
+      { to: "/practice/HLD", title: "HLD — System Design", detail: "Design question sheet" },
+      { to: "/practice/LLD", title: "LLD — Low Level Design", detail: "LLD question sheet" },
+      { to: "/practice/DSA", title: "DSA — Algorithms", detail: "LeetCode-style problem sheet" },
     ],
   },
   {

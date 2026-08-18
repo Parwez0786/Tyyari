@@ -237,6 +237,8 @@ public class DataSeeder implements ApplicationRunner {
                 List.of(), List.of(), List.of());
 
         seedHldRequirements();
+        seedLldRequirements();
+        seedDsaDetails();
     }
 
     private void seedHldRequirements() {
@@ -383,6 +385,246 @@ public class DataSeeder implements ApplicationRunner {
                         "Balance freshness against crawl budget"
                 )
         );
+    }
+
+    private void seedLldRequirements() {
+        ensureRequirements(
+                "design-parking-lot",
+                List.of(
+                        "Park cars, bikes, and trucks across multiple floors",
+                        "Issue a ticket on entry and free the spot on exit",
+                        "Assign the nearest available spot for the vehicle type"
+                ),
+                List.of(
+                        "Do not double-book a spot under concurrent entry",
+                        "Spot lookup should stay fast as floors grow",
+                        "Fee calculation is deterministic from entry and exit time"
+                )
+        );
+        ensureRequirements(
+                "design-bookmyshow",
+                List.of(
+                        "Browse movies, shows, and seats for a venue",
+                        "Book one or more seats in a single transaction",
+                        "Prevent two users from buying the same seat"
+                ),
+                List.of(
+                        "Seat lock expires if payment is not completed",
+                        "Booking stays consistent under high contention",
+                        "Show inventory must not go negative"
+                )
+        );
+        ensureRequirements(
+                "design-splitwise",
+                List.of(
+                        "Add expenses to a group or between two people",
+                        "Split equally, by percent, or by exact shares",
+                        "Show simplified balances and a settle-up plan"
+                ),
+                List.of(
+                        "Balances stay consistent after edits and deletes",
+                        "Simplify debts without creating new money",
+                        "History of who paid whom is auditable"
+                )
+        );
+        ensureRequirements(
+                "design-lru-cache-lld",
+                List.of(
+                        "get(key) returns the value or a miss",
+                        "put(key, value) inserts or updates and evicts LRU when full",
+                        "Both operations run in constant time"
+                ),
+                List.of(
+                        "Capacity is fixed after construction",
+                        "Most recently used keys stay in cache",
+                        "Eviction order is deterministic"
+                )
+        );
+        ensureRequirements(
+                "design-elevator",
+                List.of(
+                        "Accept hall and cabin requests",
+                        "Move cars between floors and open doors",
+                        "Dispatch requests to a car using a strategy"
+                ),
+                List.of(
+                        "No two cars claim the same request",
+                        "Direction changes only at a stop",
+                        "Wait time should stay reasonable under load"
+                )
+        );
+        ensureRequirements(
+                "design-snake-game",
+                List.of(
+                        "Move the snake on a grid with food and walls",
+                        "Grow on eating food and end the game on collision",
+                        "Track score and restart a round"
+                ),
+                List.of(
+                        "Movement ticks at a fixed interval",
+                        "The snake cannot reverse into itself in one tick",
+                        "Food never spawns on the snake"
+                )
+        );
+        ensureRequirements(
+                "design-logger",
+                List.of(
+                        "Log messages at debug, info, warn, and error",
+                        "Format messages and write them to pluggable appenders",
+                        "Filter logs below a configured level"
+                ),
+                List.of(
+                        "Appender failures should not crash the app",
+                        "Level checks are cheap on the hot path",
+                        "Messages keep order per logger"
+                )
+        );
+    }
+
+    private void seedDsaDetails() {
+        ensureDsaDetails(
+                "two-sum",
+                "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.",
+                List.of(
+                        "2 <= nums.length <= 10^4",
+                        "-10^9 <= nums[i] <= 10^9",
+                        "-10^9 <= target <= 10^9",
+                        "Only one valid answer exists."
+                ),
+                List.of(
+                        new Example("nums = [2,7,11,15], target = 9", "[0,1]", "Because nums[0] + nums[1] == 9, we return [0, 1]."),
+                        new Example("nums = [3,2,4], target = 6", "[1,2]", null),
+                        new Example("nums = [3,3], target = 6", "[0,1]", null)
+                ),
+                List.of(
+                        "A brute-force check of every pair is O(n^2). Can you do better?",
+                        "Store each number's index in a hash map and look up target - nums[i]."
+                )
+        );
+        ensureDsaDetails(
+                "longest-substring",
+                "Given a string s, find the length of the longest substring without repeating characters.",
+                List.of("0 <= s.length <= 5 * 10^4", "s consists of English letters, digits, symbols and spaces."),
+                List.of(
+                        new Example("s = \"abcabcbb\"", "3", "The answer is \"abc\", with the length of 3."),
+                        new Example("s = \"bbbbb\"", "1", "The answer is \"b\", with the length of 1."),
+                        new Example("s = \"pwwkew\"", "3", "The answer is \"wke\", with the length of 3. Notice that the answer must be a substring, \"pwke\" is a subsequence and not a substring.")
+                ),
+                List.of(
+                        "Use a sliding window over the string.",
+                        "Keep the last index of each character so you can jump the left pointer when a repeat appears."
+                )
+        );
+        ensureDsaDetails(
+                "merge-intervals",
+                "Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.",
+                List.of("1 <= intervals.length <= 10^4", "intervals[i].length == 2", "0 <= starti <= endi <= 10^4"),
+                List.of(
+                        new Example("intervals = [[1,3],[2,6],[8,10],[15,18]]", "[[1,6],[8,10],[15,18]]", "Since intervals [1,3] and [2,6] overlap, merge them into [1,6]."),
+                        new Example("intervals = [[1,4],[4,5]]", "[[1,5]]", "Intervals [1,4] and [4,5] are considered overlapping.")
+                ),
+                List.of("Sort by start time, then merge into the last range when the next start is <= the current end.")
+        );
+        ensureDsaDetails(
+                "number-of-islands",
+                "Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands.\n\nAn island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.",
+                List.of("m == grid.length", "n == grid[i].length", "1 <= m, n <= 300", "grid[i][j] is '0' or '1'."),
+                List.of(
+                        new Example(
+                                "grid = [\n  [\"1\",\"1\",\"1\",\"1\",\"0\"],\n  [\"1\",\"1\",\"0\",\"1\",\"0\"],\n  [\"1\",\"1\",\"0\",\"0\",\"0\"],\n  [\"0\",\"0\",\"0\",\"0\",\"0\"]\n]",
+                                "1",
+                                null
+                        ),
+                        new Example(
+                                "grid = [\n  [\"1\",\"1\",\"0\",\"0\",\"0\"],\n  [\"1\",\"1\",\"0\",\"0\",\"0\"],\n  [\"0\",\"0\",\"1\",\"0\",\"0\"],\n  [\"0\",\"0\",\"0\",\"1\",\"1\"]\n]",
+                                "3",
+                                null
+                        )
+                ),
+                List.of("Flood-fill each unvisited land cell with DFS or BFS and count how many times you start a fill.")
+        );
+        ensureDsaDetails(
+                "word-search",
+                "Given an m x n grid of characters board and a string word, return true if word exists in the grid.\n\nThe word can be constructed from letters of sequentially adjacent cells, where adjacent cells are horizontally or vertically neighboring. The same letter cell may not be used more than once.",
+                List.of(
+                        "m == board.length",
+                        "n == board[i].length",
+                        "1 <= m, n <= 6",
+                        "1 <= word.length <= 15",
+                        "board and word consist of only lowercase and uppercase English letters."
+                ),
+                List.of(
+                        new Example("board = [[\"A\",\"B\",\"C\",\"E\"],[\"S\",\"F\",\"C\",\"S\"],[\"A\",\"D\",\"E\",\"E\"]], word = \"ABCCED\"", "true", null),
+                        new Example("board = [[\"A\",\"B\",\"C\",\"E\"],[\"S\",\"F\",\"C\",\"S\"],[\"A\",\"D\",\"E\",\"E\"]], word = \"SEE\"", "true", null),
+                        new Example("board = [[\"A\",\"B\",\"C\",\"E\"],[\"S\",\"F\",\"C\",\"S\"],[\"A\",\"D\",\"E\",\"E\"]], word = \"ABCB\"", "false", null)
+                ),
+                List.of("Backtrack from each cell that matches word[0], marking visited cells so they are not reused.")
+        );
+        ensureDsaDetails(
+                "trapping-rain-water",
+                "Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.",
+                List.of("n == height.length", "1 <= n <= 2 * 10^4", "0 <= height[i] <= 10^5"),
+                List.of(
+                        new Example("height = [0,1,0,2,1,0,1,3,2,1,2,1]", "6", "The elevation map traps 6 units of rain water."),
+                        new Example("height = [4,2,0,3,2,5]", "9", null)
+                ),
+                List.of(
+                        "Water at i is min(maxLeft, maxRight) - height[i] when that value is positive.",
+                        "Two pointers or prefix/suffix max arrays both work in linear time."
+                )
+        );
+        ensureDsaDetails(
+                "binary-search",
+                "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1.\n\nYou must write an algorithm with O(log n) runtime complexity.",
+                List.of("1 <= nums.length <= 10^4", "-10^4 < nums[i], target < 10^4", "All the integers in nums are unique.", "nums is sorted in ascending order."),
+                List.of(
+                        new Example("nums = [-1,0,3,5,9,12], target = 9", "4", "9 exists in nums and its index is 4."),
+                        new Example("nums = [-1,0,3,5,9,12], target = 2", "-1", "2 does not exist in nums so return -1.")
+                ),
+                List.of("Keep a low/high window and move to the half that can still contain the target.")
+        );
+    }
+
+    private void ensureDsaDetails(
+            String slug,
+            String description,
+            List<String> constraints,
+            List<Example> examples,
+            List<String> hints
+    ) {
+        questions.findBySlug(slug).ifPresent(question -> {
+            boolean changed = false;
+            if (description != null && (isBlank(question.getDescription()) || question.getDescription().length() < description.length())) {
+                question.setDescription(description);
+                changed = true;
+            }
+            if (missing(question.getConstraints()) || (constraints != null && question.getConstraints().size() < constraints.size())) {
+                question.setConstraints(constraints);
+                changed = true;
+            }
+            if (missing(question.getExamples()) || (examples != null && question.getExamples().size() < examples.size())) {
+                question.setExamples(examples);
+                changed = true;
+            }
+            if (missing(question.getHints()) && hints != null) {
+                question.setHints(hints);
+                changed = true;
+            }
+            if (!changed) {
+                return;
+            }
+            question.setUpdatedAt(Instant.now());
+            questions.save(question);
+            cache.evictQuestion(question.getId());
+        });
+    }
+
+    private static boolean missing(List<?> list) {
+        return list == null || list.isEmpty();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private void ensureRequirements(String slug, List<String> functional, List<String> nonFunctional) {

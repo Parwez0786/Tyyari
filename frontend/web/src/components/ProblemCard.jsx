@@ -3,7 +3,7 @@ import { CompanyMark, DifficultyBadge } from "./QuestionMeta";
 
 const ctaByType = {
   HLD: "Start Design",
-  LLD: "Start Design",
+  LLD: "Start Coding",
   DSA: "Start Solving",
   FRONTEND: "Start Challenge",
   CS: "Start Quiz",
@@ -19,7 +19,7 @@ export default function ProblemCard({ question, onStart }) {
     <article className="flex flex-col rounded-xl border border-white/10 bg-card p-5 text-white shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <DifficultyBadge difficulty={q.difficulty} />
-        <span className="flex items-center gap-2 text-neutral-500">
+        <span className="flex h-6 items-center gap-2 text-neutral-500">
           {locked && <LockIcon />}
           <TypeIcon type={q.type} />
         </span>
@@ -30,7 +30,7 @@ export default function ProblemCard({ question, onStart }) {
         {q.description || "Open this problem to read the full prompt, constraints, and hints."}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {(q.companies || []).slice(0, 5).map((name) => (
           <CompanyMark key={name} name={name} />
         ))}

@@ -18,5 +18,6 @@ public record QuestionDetail(
         List<String> constraints,
         List<String> functionalRequirements,
         List<String> nonFunctionalRequirements,
-        List<Example> examples
+        List<Example> examples,
+        List<String> hints
 ) {}

@@ -226,7 +226,8 @@ public class QuestionService {
                 q.getConstraints(),
                 q.getFunctionalRequirements(),
                 q.getNonFunctionalRequirements(),
-                q.getExamples()
+                q.getExamples(),
+                q.getHints()
         );
     }
 
