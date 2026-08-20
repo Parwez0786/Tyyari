@@ -5,6 +5,7 @@ import { authApi, userApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
 import AppMenu from "./AppMenu";
 import Avatar from "./Avatar";
+import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
@@ -36,8 +37,10 @@ export default function Layout({ children, publicPage = false, wide = false, fil
     navigate("/");
   }
 
+  const showFooter = !fill && !hideNav;
+
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       {!hideNav && (
         <header className="sticky top-0 z-20 bg-surface">
           <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -83,12 +86,13 @@ export default function Layout({ children, publicPage = false, wide = false, fil
               ? "flex h-screen min-h-0 w-full flex-col p-0"
               : "flex h-[calc(100vh-61px)] min-h-0 w-full flex-col px-3 py-3"
             : wide
-              ? "mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6"
-              : "mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8"
+              ? "mx-auto w-full max-w-[1600px] flex-1 px-4 py-4 sm:px-6"
+              : "mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"
         }
       >
         {children}
       </main>
+      {showFooter && <Footer signedIn={Boolean(accessToken)} />}
     </div>
   );
 }

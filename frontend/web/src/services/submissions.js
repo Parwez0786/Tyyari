@@ -21,6 +21,9 @@ export async function saveSubmission(payload) {
     explanation: payload.explanation || "",
   };
   if (payload.assessmentSetId) body.assessmentSetId = payload.assessmentSetId;
+  if (typeof payload.quizScore === "number") body.quizScore = payload.quizScore;
+  if (typeof payload.quizTotal === "number") body.quizTotal = payload.quizTotal;
+  if (Array.isArray(payload.quizAnswers)) body.quizAnswers = payload.quizAnswers;
   const res = await userApi.saveSubmission(body);
   queryClient.invalidateQueries({ queryKey: ["practice-progress"] });
   return res?.data || null;

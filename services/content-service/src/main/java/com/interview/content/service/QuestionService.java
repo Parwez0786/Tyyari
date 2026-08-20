@@ -210,6 +210,7 @@ public class QuestionService {
         if (req.functionalRequirements() != null) question.setFunctionalRequirements(req.functionalRequirements());
         if (req.nonFunctionalRequirements() != null) question.setNonFunctionalRequirements(req.nonFunctionalRequirements());
         if (req.examples() != null) question.setExamples(req.examples());
+        if (req.quiz() != null) question.setQuiz(req.quiz());
         if (req.hints() != null) question.setHints(req.hints());
         if (req.published() != null) question.setPublished(req.published());
         if (req.slug() != null) question.setSlug(Slugs.from(req.slug()));
@@ -247,6 +248,7 @@ public class QuestionService {
                 q.getFunctionalRequirements(),
                 q.getNonFunctionalRequirements(),
                 q.getExamples(),
+                q.getQuiz(),
                 q.getHints()
         );
     }

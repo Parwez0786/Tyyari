@@ -27,7 +27,8 @@ import java.util.Set;
 @Service
 public class SubmissionService {
 
-    private static final List<String> TRACKS = List.of("HLD", "LLD", "DSA", "FRONTEND");
+    private static final List<String> TRACKS = List.of("HLD", "LLD", "DSA", "FRONTEND", "CS");
+    private static final int MAX_QUIZ_ANSWERS = 50;
     private static final int MAX_FILES = 40;
     private static final int MAX_FILE_CHARS = 400_000;
     private static final int MAX_NOTES_CHARS = 80_000;
@@ -63,6 +64,9 @@ public class SubmissionService {
         current.setCanvas(request.canvas());
         current.setMath(clipNotes(request.math()));
         current.setExplanation(clipNotes(request.explanation()));
+        current.setQuizScore(clipScore(request.quizScore()));
+        current.setQuizTotal(clipScore(request.quizTotal()));
+        current.setQuizAnswers(sanitizeQuizAnswers(request.quizAnswers()));
         current.setSubmittedAt(now);
         return SubmissionResponse.from(submissions.save(current));
     }
@@ -244,5 +248,22 @@ public class SubmissionService {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Notes are too long", HttpStatus.BAD_REQUEST);
         }
         return text;
+    }
+
+    private Integer clipScore(Integer value) {
+        if (value == null) {
+            return null;
+        }
+        return Math.max(0, Math.min(value, MAX_QUIZ_ANSWERS));
+    }
+
+    private List<Integer> sanitizeQuizAnswers(List<Integer> answers) {
+        if (answers == null || answers.isEmpty()) {
+            return List.of();
+        }
+        if (answers.size() > MAX_QUIZ_ANSWERS) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Too many quiz answers", HttpStatus.BAD_REQUEST);
+        }
+        return answers.stream().map(item -> item == null ? -1 : item).toList();
     }
 }

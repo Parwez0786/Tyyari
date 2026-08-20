@@ -3,6 +3,7 @@ package com.interview.content.config;
 import com.interview.content.model.AssessmentSet;
 import com.interview.content.model.Company;
 import com.interview.content.model.Example;
+import com.interview.content.model.QuizItem;
 import com.interview.content.model.Question;
 import com.interview.content.model.QuestionSheet;
 import com.interview.content.model.Tag;
@@ -70,6 +71,10 @@ public class DataSeeder implements ApplicationRunner {
         seedTopic("OOP", "oop", "LLD");
         seedTopic("Design Patterns", "design-patterns", "LLD");
         seedTopic("Indexing", "indexing", "CS");
+        seedTopic("Operating Systems", "operating-systems", "CS");
+        seedTopic("DBMS", "dbms", "CS");
+        seedTopic("OOP Theory", "oop-theory", "CS");
+        seedTopic("Computer Networks", "computer-networks", "CS");
         seedTopic("React", "react", "FRONTEND");
         seedTopic("Online Assessment", "oa", "OA");
 
@@ -103,14 +108,6 @@ public class DataSeeder implements ApplicationRunner {
                 List.of("Multiple floors", "Cars, bikes, trucks"),
                 List.of(),
                 List.of("Model Vehicle, Spot, Ticket, and ParkingLot as first-class types.")
-        );
-        seedQuestion(
-                "CS", "DBMS", "What is database indexing?", "what-is-database-indexing", "EASY",
-                "Explain what an index is, how B-Trees help lookups, and the write trade-off.",
-                List.of("Indexing"), List.of("Microsoft"), List.of(),
-                List.of(),
-                List.of(),
-                List.of("Compare a full table scan with a B-Tree lookup.")
         );
         seedQuestion(
                 "FRONTEND", null, "Explain React reconciliation", "explain-react-reconciliation", "MEDIUM",
@@ -233,14 +230,6 @@ public class DataSeeder implements ApplicationRunner {
                 List.of("React"), List.of("Airbnb", "Uber"), List.of(),
                 List.of(), List.of(), List.of(), true);
 
-        seedQuestion("CS", "OS", "What is virtual memory?", "what-is-virtual-memory", "EASY",
-                "Explain paging, page faults, and why virtual memory lets processes exceed RAM.",
-                List.of("Indexing"), List.of("Microsoft", "Amazon"), List.of(),
-                List.of(), List.of(), List.of());
-        seedQuestion("CS", "NETWORKS", "TCP vs UDP", "tcp-vs-udp", "EASY",
-                "Compare reliability, ordering, and use-cases for TCP and UDP.",
-                List.of("Indexing"), List.of("Google", "Cisco"), List.of(),
-                List.of(), List.of(), List.of());
         seedQuestion("OA", null, "Two Sum unique pairs", "two-sum-oa", "EASY",
                 "Count unique pairs that add up to a target in an OA-style timed round.",
                 List.of("Arrays", "Hashing"), List.of("Amazon", "Uber"), List.of("Array"),
@@ -250,6 +239,7 @@ public class DataSeeder implements ApplicationRunner {
         seedLldRequirements();
         seedFrontendRequirements();
         seedDsaDetails();
+        seedCsQuizzes();
         seedAssessmentSets();
         seedQuestionSheets();
     }
@@ -720,6 +710,318 @@ public class DataSeeder implements ApplicationRunner {
         if (!companies.existsBySlug(slug)) {
             companies.save(Company.builder().name(name).slug(slug).active(true).build());
         }
+    }
+
+    private void seedCsQuizzes() {
+        cache.evictTopics();
+        ensureCsQuiz(
+                "what-is-virtual-memory",
+                "OS",
+                "Virtual Memory & Paging",
+                "EASY",
+                "Five questions on paging, page faults, and why processes can use more memory than RAM.",
+                List.of("Operating Systems"),
+                List.of("Microsoft", "Amazon"),
+                List.of(
+                        qi("What does virtual memory primarily let a process do?", 2,
+                                "Share one CPU core across sockets",
+                                "Replace the page table with disk blocks",
+                                "Use more address space than physical RAM",
+                                "Keep every page resident for the process lifetime"),
+                        qi("A page fault occurs when:", 0,
+                                "The CPU references a page that is not currently in RAM",
+                                "The TLB has unused entries",
+                                "The process hits its open-file limit",
+                                "The instruction cache misses once"),
+                        qi("A page table maps:", 1,
+                                "Sockets to ephemeral ports",
+                                "Virtual pages to physical frames",
+                                "Threads onto specific CPU cores",
+                                "Files directly onto RAID stripes"),
+                        qi("Thrashing is best described as:", 3,
+                                "A RAID array rebuilding after a disk failure",
+                                "The kernel panicking from stack overflow",
+                                "Write-back cache flushing on idle",
+                                "Spending most of the time paging instead of doing useful work"),
+                        qi("Demand paging means pages are:", 0,
+                                "Loaded only when they are referenced",
+                                "Copied into RAM at process start",
+                                "Never written out to swap",
+                                "Pinned in the TLB forever")
+                )
+        );
+        ensureCsQuiz(
+                "os-processes-threads",
+                "OS",
+                "Processes, Threads & Deadlock",
+                "MEDIUM",
+                "Short quiz on processes vs threads, context switches, and deadlock conditions.",
+                List.of("Operating Systems"),
+                List.of("Amazon", "Google"),
+                List.of(
+                        qi("Threads in the same process typically share:", 1,
+                                "Their own page tables and file-descriptor tables",
+                                "The process address space and open files",
+                                "Nothing except the CPU scheduler",
+                                "Only the instruction pointer"),
+                        qi("A context switch between processes is usually more expensive than between threads because it must:", 2,
+                                "Flush the disk cache",
+                                "Recompile the program",
+                                "Switch address spaces (and often the TLB)",
+                                "Allocate a new heap"),
+                        qi("Which four conditions are required for deadlock?", 0,
+                                "Mutual exclusion, hold and wait, no preemption, circular wait",
+                                "Paging, swapping, interrupts, DMA",
+                                "Race, livelock, starvation, priority inversion",
+                                "Fork, exec, wait, exit"),
+                        qi("A mutex differs from a counting semaphore because a mutex:", 3,
+                                "Can be acquired by any number of waiters at once",
+                                "Is only used in userspace",
+                                "Never blocks the caller",
+                                "Is typically owned by one locker at a time"),
+                        qi("User-level threads (without kernel support) cannot:", 1,
+                                "Share an address space",
+                                "Run in parallel on multiple cores if one thread blocks in the kernel",
+                                "Call functions",
+                                "Be created faster than processes")
+                )
+        );
+        ensureCsQuiz(
+                "what-is-database-indexing",
+                "DBMS",
+                "Indexing & B-Trees",
+                "EASY",
+                "Five questions on indexes, B-Trees, and the write trade-off.",
+                List.of("DBMS"),
+                List.of("Microsoft", "Amazon"),
+                List.of(
+                        qi("The main reason to add an index is to:", 1,
+                                "Guarantee ACID for every write",
+                                "Avoid a full table scan on lookups and range filters",
+                                "Compress every row on disk",
+                                "Remove the need for a primary key"),
+                        qi("A B-Tree (or B+Tree) index is a good default because it supports:", 0,
+                                "Equality and range lookups efficiently",
+                                "Only full-text search",
+                                "Only hash-style point lookups",
+                                "Writes with no extra I/O"),
+                        qi("A hash index is a poor fit when queries need:", 2,
+                                "Exact-match lookups on a unique key",
+                                "Joins on equality",
+                                "Ordered scans and BETWEEN ranges",
+                                "Primary-key point reads"),
+                        qi("The write-side cost of an extra index is mainly:", 3,
+                                "Larger SELECT result sets",
+                                "Slower commits of unrelated tables",
+                                "Disabled foreign keys",
+                                "Extra I/O to maintain the index on INSERT/UPDATE/DELETE"),
+                        qi("A clustered index typically:", 1,
+                                "Stores a copy of the table in a separate file only",
+                                "Defines the physical order of table rows",
+                                "Can only be built on VARCHAR columns",
+                                "Replaces the need for a buffer pool")
+                )
+        );
+        ensureCsQuiz(
+                "dbms-transactions-isolation",
+                "DBMS",
+                "Transactions & Isolation",
+                "MEDIUM",
+                "ACID, isolation levels, and how databases keep concurrent writes safe.",
+                List.of("DBMS"),
+                List.of("Google", "Uber"),
+                List.of(
+                        qi("ACID stands for:", 2,
+                                "Array, Cursor, Index, Disk",
+                                "Atomic, Cached, Isolated, Durable",
+                                "Atomicity, Consistency, Isolation, Durability",
+                                "Append, Commit, Index, Dump"),
+                        qi("A dirty read is:", 0,
+                                "Reading a value written by a transaction that has not committed",
+                                "Reading a row that was vacuumed",
+                                "A sequential scan of a large table",
+                                "Using a stale replica for analytics"),
+                        qi("READ COMMITTED (unlike READ UNCOMMITTED) prevents:", 1,
+                                "Phantom rows in range scans",
+                                "Dirty reads",
+                                "All write skew",
+                                "Lost updates in every engine"),
+                        qi("Write-ahead logging (WAL) exists so that:", 3,
+                                "Indexes never need to be rebuilt",
+                                "Reads never hit disk",
+                                "Replicas can skip the primary",
+                                "Committed changes can be recovered after a crash"),
+                        qi("Two-phase locking (2PL) gets serializability by:", 0,
+                                "Not releasing any lock until the transaction will take no more locks",
+                                "Using only snapshot isolation",
+                                "Disabling concurrent writers",
+                                "Storing the entire database in memory")
+                )
+        );
+        ensureCsQuiz(
+                "oop-fundamentals-quiz",
+                "OOP",
+                "Classes, Inheritance & Polymorphism",
+                "EASY",
+                "Core OOP theory you get on phone screens: encapsulation, is-a, and override vs overload.",
+                List.of("OOP Theory"),
+                List.of("Amazon", "Microsoft"),
+                List.of(
+                        qi("Encapsulation is primarily about:", 1,
+                                "Making every field public for faster access",
+                                "Hiding internal state behind a controlled interface",
+                                "Using multiple inheritance everywhere",
+                                "Avoiding classes in favor of globals"),
+                        qi("Inheritance models which relationship?", 0,
+                                "is-a",
+                                "has-a only",
+                                "uses-a only",
+                                "runs-on"),
+                        qi("Runtime polymorphism (in languages like Java) is usually achieved with:", 2,
+                                "Private fields",
+                                "Method overloading only",
+                                "Overridden methods dispatched on the actual object type",
+                                "Static imports"),
+                        qi("An abstract class differs from an interface in that it can typically:", 3,
+                                "Never declare methods",
+                                "Be instantiated directly",
+                                "Only contain constants",
+                                "Hold fields and partial implementations (language rules vary)"),
+                        qi("Overloading vs overriding: overloading is:", 1,
+                                "Replacing a superclass method with the same signature",
+                                "Defining multiple methods with the same name and different parameters",
+                                "Deleting a method at runtime",
+                                "Making a method final")
+                )
+        );
+        ensureCsQuiz(
+                "tcp-vs-udp",
+                "NETWORKS",
+                "TCP vs UDP",
+                "EASY",
+                "Reliability, ordering, handshakes, and when you actually want UDP.",
+                List.of("Computer Networks"),
+                List.of("Google", "Amazon"),
+                List.of(
+                        qi("TCP provides which pair of guarantees that UDP does not?", 0,
+                                "Reliable, ordered byte-stream delivery",
+                                "Lower latency than any UDP datagram",
+                                "No congestion control ever",
+                                "Built-in multicast to every host"),
+                        qi("UDP is a better default for:", 2,
+                                "Bank transfers that cannot lose a byte",
+                                "SSH sessions",
+                                "Latency-sensitive media or simple request/reply like DNS",
+                                "Downloading a large file over a lossy link"),
+                        qi("TCP connection setup is the:", 1,
+                                "Two-way handshake",
+                                "Three-way handshake (SYN, SYN-ACK, ACK)",
+                                "Four-way handshake only",
+                                "ARP broadcast"),
+                        qi("TCP congestion control exists to:", 3,
+                                "Encrypt the payload",
+                                "Assign ephemeral ports",
+                                "Resolve hostnames",
+                                "Slow senders when the network is overloaded"),
+                        qi("A port number identifies:", 0,
+                                "A specific application endpoint on a host",
+                                "The MAC address of the NIC",
+                                "The AS number of the ISP",
+                                "The TLS certificate serial")
+                )
+        );
+        ensureCsQuiz(
+                "networks-http-dns-tls",
+                "NETWORKS",
+                "HTTP, DNS & TLS",
+                "MEDIUM",
+                "What happens when a browser loads https://example.com — DNS, TLS, and HTTP methods.",
+                List.of("Computer Networks"),
+                List.of("Google", "Meta"),
+                List.of(
+                        qi("HTTP sits at which layer of the Internet model?", 2,
+                                "Link",
+                                "Transport",
+                                "Application",
+                                "Physical"),
+                        qi("DNS's main job is to:", 1,
+                                "Encrypt HTTP bodies",
+                                "Resolve names to IP addresses (and related records)",
+                                "Assign TCP sequence numbers",
+                                "Terminate TLS sessions"),
+                        qi("TLS is used to:", 0,
+                                "Encrypt and authenticate the connection (as in HTTPS)",
+                                "Replace TCP with UDP",
+                                "Compress HTML only",
+                                "Allocate private IP addresses"),
+                        qi("HTTPS is:", 3,
+                                "A new transport protocol beside TCP",
+                                "HTTP with gzip enabled",
+                                "DNS over UDP only",
+                                "HTTP running over a TLS session"),
+                        qi("Which statement about GET vs POST is most accurate?", 1,
+                                "GET always mutates server state; POST never does",
+                                "GET is meant to be safe/idempotent retrieval; POST is for requests that may change state",
+                                "They are identical on the wire",
+                                "POST cannot send a body")
+                )
+        );
+    }
+
+    private void ensureCsQuiz(
+            String slug,
+            String subType,
+            String title,
+            String difficulty,
+            String description,
+            List<String> topics,
+            List<String> companies,
+            List<QuizItem> quiz
+    ) {
+        Instant now = Instant.now();
+        Question existing = questions.findBySlug(slug).orElse(null);
+        if (existing == null) {
+            questions.save(Question.builder()
+                    .type("CS")
+                    .subType(subType)
+                    .title(title)
+                    .slug(slug)
+                    .description(description)
+                    .difficulty(difficulty)
+                    .topics(topics)
+                    .companies(companies)
+                    .tags(List.of())
+                    .constraints(List.of())
+                    .examples(List.of())
+                    .quiz(quiz)
+                    .hints(List.of())
+                    .published(true)
+                    .premium(false)
+                    .createdBy("seed")
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build());
+            return;
+        }
+        if (!missing(existing.getQuiz())) {
+            return;
+        }
+        existing.setQuiz(quiz);
+        existing.setTitle(title);
+        existing.setDescription(description);
+        existing.setTopics(topics);
+        existing.setSubType(subType);
+        existing.setUpdatedAt(now);
+        questions.save(existing);
+        cache.evictQuestion(existing.getId());
+    }
+
+    private static QuizItem qi(String prompt, int answerIndex, String... options) {
+        return QuizItem.builder()
+                .prompt(prompt)
+                .options(List.of(options))
+                .answerIndex(answerIndex)
+                .build();
     }
 
     private void seedTopic(String name, String slug, String category) {

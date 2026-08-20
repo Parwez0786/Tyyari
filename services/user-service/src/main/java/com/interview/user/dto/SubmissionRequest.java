@@ -14,7 +14,10 @@ public record SubmissionRequest(
         List<SubmissionFileDto> files,
         Map<String, Object> canvas,
         String math,
-        String explanation
+        String explanation,
+        Integer quizScore,
+        Integer quizTotal,
+        List<Integer> quizAnswers
 ) {
     public record SubmissionFileDto(
             String id,
