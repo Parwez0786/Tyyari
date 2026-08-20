@@ -8,10 +8,10 @@ const groups = [
   {
     label: "Practice",
     items: [
-      { to: "/practice/HLD", title: "System Design (HLD)", detail: "High-level design" },
-      { to: "/practice/LLD", title: "Low Level Design", detail: "OOP & machine coding" },
-      { to: "/practice/DSA", title: "DSA", detail: "Data structures & algorithms" },
-      { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "React UI challenges" },
+      { to: "/practice/HLD", title: "System Design (HLD)", detail: "Full HLD question library" },
+      { to: "/practice/LLD", title: "Low Level Design", detail: "Full LLD question library" },
+      { to: "/practice/DSA", title: "DSA", detail: "Full DSA question library" },
+      { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "Full frontend question library" },
       { to: "/practice/OA", title: "Online Assessment", detail: "Timed DSA sets + camera" },
       { title: "CS Fundamentals", detail: "Quiz & theory", soon: true },
     ],
@@ -27,11 +27,10 @@ const groups = [
   {
     label: "Sheets",
     items: [
-      { to: "/practice/HLD", title: "HLD — System Design", detail: "Design question sheet" },
-      { to: "/practice/LLD", title: "LLD — Low Level Design", detail: "LLD question sheet" },
-      { to: "/practice/DSA", title: "DSA — Algorithms", detail: "LeetCode-style problem sheet" },
-      { to: "/practice/FRONTEND", title: "Frontend — React", detail: "UI machine-coding sheet" },
-      { to: "/practice/OA", title: "OA — Timed DSA sets", detail: "Camera-gated assessments" },
+      { to: "/sheets/hld-core-sheet", title: "HLD sheets", detail: "System design sets" },
+      { to: "/sheets/lld-machine-coding", title: "LLD sheets", detail: "Machine-coding sets" },
+      { to: "/sheets/dsa-sde-sheet", title: "DSA sheets", detail: "Ordered problem sets" },
+      { to: "/sheets/frontend-ui-sheet", title: "Frontend sheets", detail: "UI challenge sets" },
     ],
   },
   {

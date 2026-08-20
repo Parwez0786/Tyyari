@@ -17,6 +17,10 @@ export default function WorkspaceHeader({
   hideLanguage = false,
   hideRun = false,
   extra = null,
+  onSubmit,
+  submitting = false,
+  submitted = false,
+  hideSubmit = false,
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-4">
@@ -62,6 +66,16 @@ export default function WorkspaceHeader({
         >
           <Play size={15} fill="currentColor" />
           {running ? "Running…" : "Run code"}
+        </button>
+      )}
+      {!hideSubmit && onSubmit && (
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={submitting}
+          className="inline-flex h-10 shrink-0 items-center rounded-xl bg-white/10 px-4 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
+        >
+          {submitting ? "Saving…" : submitted ? "Submitted" : "Submit"}
         </button>
       )}
     </header>

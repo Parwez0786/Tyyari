@@ -70,6 +70,14 @@ export const userApi = {
   preferences: () => api("/api/v1/users/me/preferences"),
   goals: () => api("/api/v1/users/me/goals"),
   saveGoals: (body) => api("/api/v1/users/me/goals", { method: "PUT", body: JSON.stringify(body) }),
+  saveSubmission: (body) => api("/api/v1/users/me/submissions", { method: "PUT", body: JSON.stringify(body) }),
+  getSubmission: (questionId, assessmentSetId) => {
+    const q = new URLSearchParams({ questionId });
+    if (assessmentSetId) q.set("assessmentSetId", assessmentSetId);
+    return api(`/api/v1/users/me/submissions?${q.toString()}`);
+  },
+  assessmentSubmissions: (assessmentSetId) => api(`/api/v1/users/me/assessments/${assessmentSetId}/submissions`),
+  practiceProgress: () => api("/api/v1/users/me/progress"),
 };
 
 export const contentApi = {
@@ -84,4 +92,6 @@ export const contentApi = {
   tags: () => api("/api/v1/tags"),
   assessmentSets: () => api("/api/v1/assessment-sets"),
   assessmentSet: (id) => api(`/api/v1/assessment-sets/${id}`),
+  sheets: (type) => api(type ? `/api/v1/sheets?type=${encodeURIComponent(type)}` : "/api/v1/sheets"),
+  sheet: (id) => api(`/api/v1/sheets/${id}`),
 };

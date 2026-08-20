@@ -10,16 +10,17 @@ const ctaByType = {
   OA: "Start Assessment",
 };
 
-export default function ProblemCard({ question, onStart }) {
+export default function ProblemCard({ question, onStart, completed = false }) {
   const q = question;
   const locked = Boolean(q.premium);
-  const cta = ctaByType[q.type] || "Start";
+  const cta = completed ? "Solve again" : (ctaByType[q.type] || "Start");
 
   return (
-    <article className="flex flex-col rounded-xl border border-white/10 bg-card p-5 text-white shadow-sm">
+    <article className={`flex flex-col rounded-xl border p-5 text-white shadow-sm ${completed ? "border-emerald-500/40 bg-card" : "border-white/10 bg-card"}`}>
       <div className="flex items-start justify-between gap-3">
         <DifficultyBadge difficulty={q.difficulty} />
         <span className="flex h-6 items-center gap-2 text-neutral-500">
+          {completed && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400">Done</span>}
           {locked && <LockIcon />}
           <TypeIcon type={q.type} />
         </span>

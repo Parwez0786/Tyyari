@@ -7,14 +7,18 @@ import WorkspaceHeader from "./WorkspaceHeader";
 import { formatOutput } from "./formatOutput";
 import { dsaStarterFor, languageById, newFileId } from "./languages";
 import { runWorkspace } from "./piston";
+import { dsaFiles, dsaFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 export default function DsaWorkspace({
   data,
   storageKey,
   backTo = "/practice/DSA",
-  backLabel = "Back to DSA sheet",
+  backLabel = "Back to DSA practice",
   hideBack = false,
   hideHints = false,
+  hideSubmit = false,
+  assessmentSetId,
+  snapshotRef,
 }) {
   const key = storageKey || `tyyari.dsa.${data.id}`;
   const cases = useMemo(() => casesFromQuestion(data), [data]);
@@ -27,6 +31,8 @@ export default function DsaWorkspace({
   const [output, setOutput] = useState(null);
   const [running, setRunning] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(initial.submittedAt));
   const saveTimer = useRef(null);
   const runRef = useRef(null);
 
@@ -40,6 +46,36 @@ export default function DsaWorkspace({
     }),
     [language, lang.main, codeByLang, data.title],
   );
+
+  function payload() {
+    return {
+      questionId: data.id,
+      questionType: "DSA",
+      assessmentSetId,
+      language,
+      view: "code",
+      files: dsaFiles(codeByLang),
+    };
+  }
+
+  if (snapshotRef) snapshotRef.current = payload;
+
+  useEffect(() => {
+    let cancelled = false;
+    const hadDraft = hasDsaDraft(key);
+    loadSubmission(data.id, assessmentSetId).then((saved) => {
+      if (cancelled || !saved) return;
+      setSubmitted(true);
+      if (hadDraft) return;
+      const next = dsaFromSubmission(saved, data.title, cases);
+      if (!next) return;
+      setLanguage(next.language);
+      setCodeByLang(next.codeByLang);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentSetId, cases, data.id, data.title, key]);
 
   useEffect(() => {
     clearTimeout(saveTimer.current);
@@ -70,6 +106,20 @@ export default function DsaWorkspace({
   }
 
   runRef.current = run;
+
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await saveSubmission(payload());
+      setSubmitted(true);
+    } catch (err) {
+      setOutput({ status: "error", message: err.message || "Could not save submission." });
+      setTab("result");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     function onKey(event) {
@@ -126,6 +176,10 @@ export default function DsaWorkspace({
         onToggleFocus={() => setFocus((v) => !v)}
         running={running}
         onRun={run}
+        hideSubmit={hideSubmit}
+        onSubmit={submit}
+        submitting={submitting}
+        submitted={submitted}
       />
 
       <PanelGroup direction="horizontal" autoSaveId="tyyari.dsa" className="min-h-0 flex-1">
@@ -309,6 +363,7 @@ function loadDsa(key, title, cases) {
     codeByLang: { [fallbackLang]: dsaStarterFor(fallbackLang, title) },
     testcases: cases,
     activeCase: 0,
+    submittedAt: null,
   };
   try {
     const raw = JSON.parse(localStorage.getItem(key) || "{}");
@@ -324,6 +379,7 @@ function loadDsa(key, title, cases) {
       codeByLang,
       testcases: savedCases,
       activeCase: Math.min(raw.activeCase || 0, savedCases.length - 1),
+      submittedAt: raw.submittedAt || null,
     };
   } catch {
     return starter;
@@ -346,4 +402,13 @@ function judge(output, expected) {
 
 function normalizeOut(value) {
   return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function hasDsaDraft(key) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(key) || "null");
+    return Boolean(raw && raw.codeByLang && Object.keys(raw.codeByLang).length);
+  } catch {
+    return false;
+  }
 }

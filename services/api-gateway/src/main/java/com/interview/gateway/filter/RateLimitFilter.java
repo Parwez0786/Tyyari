@@ -39,9 +39,9 @@ public class RateLimitFilter implements WebFilter, Ordered {
                 : exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
         String id = userId != null ? userId : ip;
         int limit = switch (role) {
-            case "ADMIN" -> 1000;
-            case "USER", "EDITOR" -> 1000;
-            default -> 200;
+            case "ADMIN" -> 10000;
+            case "USER", "EDITOR" -> 5000;
+            default -> 1000;
         };
         String key = "rate_limit:" + id;
         return redis.opsForValue().increment(key)

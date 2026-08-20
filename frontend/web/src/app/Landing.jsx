@@ -3,9 +3,9 @@ import Layout from "../components/Layout";
 
 const stats = [
   { value: "6", label: "Interview tracks" },
-  { value: "HLD · LLD · DSA · OA", label: "Live sheets" },
-  { value: "50+", label: "Company tags" },
-  { value: "Phase 1", label: "Practice library" },
+  { value: "Practice", label: "Full question library" },
+  { value: "Sheets", label: "Curated question sets" },
+  { value: "OA", label: "Timed camera rounds" },
 ];
 
 const companies = ["Google", "Meta", "Amazon", "Netflix", "Uber", "Microsoft", "Airbnb"];
@@ -27,8 +27,8 @@ const features = [
   },
   {
     title: "System design sheets",
-    detail: "Topic-wise HLD and LLD problems with clear progression — from URL shorteners to large-scale systems.",
-    to: "/practice/HLD",
+    detail: "Curated HLD sets you work through in order — not the full library.",
+    to: "/sheets/hld-core-sheet",
     badge: "HLD",
   },
   {
@@ -66,7 +66,7 @@ const faqs = [
   },
   {
     q: "How do I start?",
-    a: "Create an account with a valid email, confirm the inbox link, set your target role, then open a sheet or the question library.",
+    a: "Create an account with a valid email, confirm the inbox link, set your target role, then open Practice or a sheet.",
   },
 ];
 
@@ -79,11 +79,11 @@ export default function Landing() {
           Master DSA, System Design, and Frontend interviews.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-mute sm:text-lg">
-          Tyyari is an interview-prep workspace for SDE rounds. One library for DSA, HLD, LLD, frontend, CS, and OAs — with company tags and progress-style sheets.
+          Tyyari is an interview-prep workspace for SDE rounds. Practice is the full question library. Sheets are curated sets of questions you work through in order.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link to="/register" className="btn-black !px-6 !py-3">Get started free</Link>
-          <Link to="/practice/HLD" className="btn-ghost !px-6 !py-3">Browse HLD sheet</Link>
+          <Link to="/sheets/hld-core-sheet" className="btn-ghost !px-6 !py-3">Browse sheets</Link>
         </div>
         <p className="mt-5 font-hand text-2xl text-brand">Join engineers preparing with Tyyari</p>
       </section>
@@ -125,39 +125,33 @@ export default function Landing() {
       </section>
 
       <section className="mt-16">
-        <p className="label-caps">Structured practice sheets</p>
-        <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Practice sheets</h2>
-        <p className="mt-2 max-w-2xl text-mute">Topic-wise HLD, LLD, DSA, Frontend, and timed OA sheets with company tags.</p>
+        <p className="label-caps">Curated question sets</p>
+        <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Sheets</h2>
+        <p className="mt-2 max-w-2xl text-mute">Each sheet is a set of questions. Practice is the full library if you want to browse everything.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <SheetCard
             tag="HLD"
-            title="High Level Design Sheet"
-            detail="Curated architecture problems from URL shorteners to large-scale systems."
-            to="/practice/HLD"
+            title="HLD Core Sheet"
+            detail="Foundational architecture problems from URL shorteners to feeds and chat."
+            to="/sheets/hld-core-sheet"
           />
           <SheetCard
             tag="LLD"
-            title="Low Level Design Sheet"
-            detail="Machine-coding and OOP design problems. Progress from patterns to full interview systems."
-            to="/practice/LLD"
+            title="LLD Machine Coding"
+            detail="OOP and machine-coding problems in a multi-file editor."
+            to="/sheets/lld-machine-coding"
           />
           <SheetCard
             tag="DSA"
-            title="DSA Sheet"
-            detail="LeetCode-style algorithm problems with examples, constraints, and a code editor."
-            to="/practice/DSA"
-          />
-          <SheetCard
-            tag="OA"
-            title="Online Assessment"
-            detail="Timed DSA sets. Camera must be on before you enter, and the clock runs until you submit."
-            to="/practice/OA"
+            title="SDE-1 DSA Sheet"
+            detail="A core DSA set covering arrays, hashing, search, graphs, and more."
+            to="/sheets/dsa-sde-sheet"
           />
           <SheetCard
             tag="FRONTEND"
-            title="Frontend Sheet"
-            detail="React UI challenges with a live desktop and mobile preview."
-            to="/practice/FRONTEND"
+            title="Frontend UI Sheet"
+            detail="React UI challenges with desktop and mobile preview."
+            to="/sheets/frontend-ui-sheet"
           />
         </div>
       </section>
@@ -228,12 +222,12 @@ function SheetCard({ tag, title, detail, to, soon }) {
         <span className="rounded-full border border-line px-3 py-1">25</span>
         <span className="rounded-full border border-line px-3 py-1">75</span>
         <span className="rounded-full bg-brand px-3 py-1 text-white">150</span>
-        <span className="self-center">problems</span>
+        <span className="self-center">questions</span>
       </div>
       {soon ? (
         <span className="btn-black mt-6 pointer-events-none opacity-60">Coming soon</span>
       ) : (
-        <Link to={to} className="btn-black mt-6">Open {tag} sheet</Link>
+        <Link to={to} className="btn-black mt-6">Open {tag} sheets</Link>
       )}
     </div>
   );
