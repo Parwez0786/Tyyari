@@ -14,6 +14,10 @@ db.createCollection("preferences");
 db.preferences.createIndex({ userId: 1 }, { unique: true });
 db.createCollection("goals");
 db.goals.createIndex({ userId: 1 }, { unique: true });
+db.createCollection("submissions");
+db.submissions.createIndex({ uniqueKey: 1 }, { unique: true });
+db.submissions.createIndex({ userId: 1, questionId: 1 });
+db.submissions.createIndex({ userId: 1, assessmentSetId: 1 });
 
 db = db.getSiblingDB("content_db");
 db.createCollection("questions");

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Info, PanelRightClose } from "lucide-react";
 
-export default function NotesPanel({ questionId, onCollapse }) {
+export default function NotesPanel({ questionId, onCollapse, onApi }) {
   const key = `tyyari.notes.${questionId}`;
   const [math, setMath] = useState("");
   const [explanation, setExplanation] = useState("");
@@ -25,6 +25,12 @@ export default function NotesPanel({ questionId, onCollapse }) {
     }, 250);
     return () => clearTimeout(saveTimer.current);
   }, [key, math, explanation]);
+
+  useEffect(() => {
+    onApi?.({
+      getState: () => ({ math, explanation }),
+    });
+  }, [onApi, math, explanation]);
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-l border-line bg-card">

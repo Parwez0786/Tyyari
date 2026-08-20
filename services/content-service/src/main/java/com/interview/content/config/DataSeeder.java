@@ -4,11 +4,13 @@ import com.interview.content.model.AssessmentSet;
 import com.interview.content.model.Company;
 import com.interview.content.model.Example;
 import com.interview.content.model.Question;
+import com.interview.content.model.QuestionSheet;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
 import com.interview.content.repository.AssessmentSetRepository;
 import com.interview.content.repository.CompanyRepository;
 import com.interview.content.repository.QuestionRepository;
+import com.interview.content.repository.QuestionSheetRepository;
 import com.interview.content.repository.TagRepository;
 import com.interview.content.repository.TopicRepository;
 import com.interview.content.service.ContentCache;
@@ -27,6 +29,7 @@ public class DataSeeder implements ApplicationRunner {
     private final TagRepository tags;
     private final QuestionRepository questions;
     private final AssessmentSetRepository assessmentSets;
+    private final QuestionSheetRepository sheets;
     private final ContentCache cache;
 
     public DataSeeder(
@@ -35,6 +38,7 @@ public class DataSeeder implements ApplicationRunner {
             TagRepository tags,
             QuestionRepository questions,
             AssessmentSetRepository assessmentSets,
+            QuestionSheetRepository sheets,
             ContentCache cache
     ) {
         this.companies = companies;
@@ -42,6 +46,7 @@ public class DataSeeder implements ApplicationRunner {
         this.tags = tags;
         this.questions = questions;
         this.assessmentSets = assessmentSets;
+        this.sheets = sheets;
         this.cache = cache;
     }
 
@@ -246,6 +251,7 @@ public class DataSeeder implements ApplicationRunner {
         seedFrontendRequirements();
         seedDsaDetails();
         seedAssessmentSets();
+        seedQuestionSheets();
     }
 
     private void seedHldRequirements() {
@@ -815,6 +821,73 @@ public class DataSeeder implements ApplicationRunner {
                 .title(title)
                 .description(description)
                 .durationMinutes(durationMinutes)
+                .difficulty(difficulty)
+                .companies(companies)
+                .questionSlugs(questionSlugs)
+                .published(true)
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
+    }
+
+    private void seedQuestionSheets() {
+        sheets.findBySlug("amazon-dsa-sheet").ifPresent(sheets::delete);
+        seedQuestionSheet(
+                "dsa-sde-sheet",
+                "SDE-1 DSA Sheet",
+                "A core DSA set covering arrays, hashing, search, intervals, graphs, and backtracking.",
+                "DSA",
+                "MEDIUM",
+                List.of("Amazon", "Google"),
+                List.of("two-sum", "binary-search", "longest-substring", "merge-intervals", "number-of-islands", "word-search", "trapping-rain-water")
+        );
+        seedQuestionSheet(
+                "hld-core-sheet",
+                "HLD Core Sheet",
+                "Foundational system-design problems from URL shorteners to large-scale feeds and chat.",
+                "HLD",
+                "MEDIUM",
+                List.of("Amazon", "Google", "Meta"),
+                List.of("design-url-shortener", "design-tinyurl", "design-instagram", "design-rate-limiter", "design-notification-system", "design-twitter")
+        );
+        seedQuestionSheet(
+                "lld-machine-coding",
+                "LLD Machine Coding Sheet",
+                "OOP and machine-coding problems to work through in the multi-file editor.",
+                "LLD",
+                "MEDIUM",
+                List.of("Amazon", "Uber"),
+                List.of("design-parking-lot", "design-bookmyshow", "design-splitwise", "design-lru-cache-lld", "design-snake-game", "design-logger")
+        );
+        seedQuestionSheet(
+                "frontend-ui-sheet",
+                "Frontend UI Sheet",
+                "React machine-coding challenges with desktop and mobile preview.",
+                "FRONTEND",
+                "MEDIUM",
+                List.of("Meta", "Uber"),
+                List.of("build-todo-app", "infinite-scroll-feed", "pricing-table")
+        );
+    }
+
+    private void seedQuestionSheet(
+            String slug,
+            String title,
+            String description,
+            String type,
+            String difficulty,
+            List<String> companies,
+            List<String> questionSlugs
+    ) {
+        if (sheets.existsBySlug(slug)) {
+            return;
+        }
+        Instant now = Instant.now();
+        sheets.save(QuestionSheet.builder()
+                .slug(slug)
+                .title(title)
+                .description(description)
+                .type(type)
                 .difficulty(difficulty)
                 .companies(companies)
                 .questionSlugs(questionSlugs)

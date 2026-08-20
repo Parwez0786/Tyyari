@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -16,6 +16,7 @@ import { QuestionMeta } from "../components/QuestionMeta";
 import ThemeToggle from "../components/ThemeToggle";
 import WhiteboardBoard from "../components/WhiteboardBoard";
 import { contentApi } from "../services/api";
+import { loadSubmission, saveSubmission } from "../services/submissions";
 
 export default function Question() {
   const { id } = useParams();
@@ -24,6 +25,7 @@ export default function Question() {
   const q = useQuery({ queryKey: ["question", id], queryFn: () => contentApi.question(id) });
   const data = q.data?.data;
   const view = params.get("view");
+  const sheet = params.get("sheet");
   const hld = data?.type === "HLD";
   const lld = data?.type === "LLD";
   const dsa = data?.type === "DSA";
@@ -34,9 +36,13 @@ export default function Question() {
   const feCode = frontend && (view === "code" || !view);
   const needPick = hld && !canvas;
   const workspace = (hld && canvas) || lldCode || dsaCode || feCode;
+  const backTo = sheet ? `/sheets/${sheet}` : `/practice/${data?.type || "DSA"}`;
+  const backLabel = sheet ? "Back to sheet" : `Back to ${data?.type || "practice"}`;
 
   function setView(next) {
-    setParams({ view: next }, { replace: true });
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("view", next);
+    setParams(nextParams, { replace: true });
   }
 
   return (
@@ -47,30 +53,30 @@ export default function Question() {
           <p className="label-caps">Coming soon</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data.title}</h1>
           <p className="mt-3 text-sm text-mute">HLD, LLD, DSA, OA, and Frontend are open right now. Other tracks are still coming soon.</p>
-          <Link to="/practice/HLD" className="btn-black mt-8">Open HLD sheet</Link>
+          <Link to={backTo} className="btn-black mt-8">{sheet ? "Back to sheet" : "Open HLD practice"}</Link>
         </section>
       )}
-      {data && hld && needPick && <ProblemPreview data={data} />}
-      {data && hld && view === "blueprint" && <BlueprintMode data={data} />}
-      {data && hld && view === "whiteboard" && <WhiteboardMode data={data} />}
-      {data && lldCode && <CodeWorkspace key={data.id} data={data} />}
-      {data && dsaCode && <DsaWorkspace key={data.id} data={data} />}
-      {data && feCode && <FrontendWorkspace key={data.id} data={data} />}
+      {data && hld && needPick && <ProblemPreview data={data} backTo={backTo} sheet={sheet} />}
+      {data && hld && view === "blueprint" && <BlueprintMode data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && hld && view === "whiteboard" && <WhiteboardMode data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && lldCode && <CodeWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && dsaCode && <DsaWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && feCode && <FrontendWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
       {data && hld && needPick && (
         <ModeOverlay
           question={data}
           onPick={setView}
-          onClose={() => navigate("/practice/HLD")}
+          onClose={() => navigate(backTo)}
         />
       )}
     </Layout>
   );
 }
 
-function ProblemPreview({ data }) {
+function ProblemPreview({ data, backTo, sheet }) {
   return (
     <div>
-      <Link to={`/practice/${data.type}`} className="text-sm font-medium text-brand">← {data.type} sheet</Link>
+      <Link to={backTo} className="text-sm font-medium text-brand">← {sheet ? "Sheet" : `${data.type} practice`}</Link>
       <section className="mx-auto mt-8 max-w-3xl text-center">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{data.title}</h1>
         <div className="mt-4">
@@ -83,13 +89,71 @@ function ProblemPreview({ data }) {
   );
 }
 
-function BlueprintMode({ data }) {
+function BlueprintMode({ data, backTo, backLabel }) {
   const apiRef = useRef(null);
+  const notesRef = useRef(null);
   const key = `tyyari.blueprint.${data.id}`;
+  const [ready, setReady] = useState(() => Boolean(localStorage.getItem(key)));
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSubmission(data.id).then((saved) => {
+      if (cancelled) return;
+      if (saved) setSubmitted(true);
+      if (!localStorage.getItem(key) && saved?.canvas) {
+        localStorage.setItem(key, JSON.stringify(saved.canvas));
+      }
+      hydrateNotes(data.id, saved);
+      setReady(true);
+    }).catch(() => setReady(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [data.id, key]);
+
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      let canvas = apiRef.current?.getState?.();
+      if (!canvas) {
+        try {
+          canvas = JSON.parse(localStorage.getItem(key) || "{}");
+        } catch {
+          canvas = {};
+        }
+      }
+      const notes = readNotes(notesRef.current, data.id);
+      await saveSubmission({
+        questionId: data.id,
+        questionType: "HLD",
+        view: "blueprint",
+        canvas,
+        math: notes.math,
+        explanation: notes.explanation,
+      });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!ready) {
+    return <p className="p-6 text-sm text-mute">Loading workspace…</p>;
+  }
+
   return (
     <DesignWorkspace
       data={data}
+      backTo={backTo}
+      backLabel={backLabel}
       onDownload={() => apiRef.current?.download()}
+      onSubmit={submit}
+      submitting={submitting}
+      submitted={submitted}
+      notesRef={notesRef}
     >
       <BlueprintBoard
         storageKey={key}
@@ -108,13 +172,71 @@ function BlueprintMode({ data }) {
   );
 }
 
-function WhiteboardMode({ data }) {
+function WhiteboardMode({ data, backTo, backLabel }) {
   const apiRef = useRef(null);
+  const notesRef = useRef(null);
   const key = `tyyari.whiteboard.${data.id}`;
+  const [ready, setReady] = useState(() => Boolean(localStorage.getItem(key)));
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSubmission(data.id).then((saved) => {
+      if (cancelled) return;
+      if (saved) setSubmitted(true);
+      if (!localStorage.getItem(key) && saved?.canvas) {
+        localStorage.setItem(key, JSON.stringify(saved.canvas));
+      }
+      hydrateNotes(data.id, saved);
+      setReady(true);
+    }).catch(() => setReady(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [data.id, key]);
+
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      let canvas = apiRef.current?.getState?.();
+      if (!canvas) {
+        try {
+          canvas = JSON.parse(localStorage.getItem(key) || "{}");
+        } catch {
+          canvas = {};
+        }
+      }
+      const notes = readNotes(notesRef.current, data.id);
+      await saveSubmission({
+        questionId: data.id,
+        questionType: "HLD",
+        view: "whiteboard",
+        canvas,
+        math: notes.math,
+        explanation: notes.explanation,
+      });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!ready) {
+    return <p className="p-6 text-sm text-mute">Loading workspace…</p>;
+  }
+
   return (
     <DesignWorkspace
       data={data}
+      backTo={backTo}
+      backLabel={backLabel}
       onDownload={() => apiRef.current?.download()}
+      onSubmit={submit}
+      submitting={submitting}
+      submitted={submitted}
+      notesRef={notesRef}
     >
       <WhiteboardBoard
         storageKey={key}
@@ -126,16 +248,46 @@ function WhiteboardMode({ data }) {
   );
 }
 
-function DesignWorkspace({ data, onDownload, children }) {
+function notesKey(questionId) {
+  return `tyyari.notes.${questionId}`;
+}
+
+function readNotes(api, questionId) {
+  const live = api?.getState?.();
+  if (live) {
+    return { math: live.math || "", explanation: live.explanation || "" };
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem(notesKey(questionId)) || "{}");
+    return { math: saved.math || "", explanation: saved.explanation || "" };
+  } catch {
+    return { math: "", explanation: "" };
+  }
+}
+
+function hydrateNotes(questionId, saved) {
+  const math = saved?.math || "";
+  const explanation = saved?.explanation || "";
+  if (!math && !explanation) return;
+  try {
+    const current = JSON.parse(localStorage.getItem(notesKey(questionId)) || "{}");
+    if (current.math || current.explanation) return;
+  } catch {
+    // seed from the saved submission
+  }
+  localStorage.setItem(notesKey(questionId), JSON.stringify({ math, explanation }));
+}
+
+function DesignWorkspace({ data, backTo = "/practice/HLD", backLabel = "Back to HLD practice", onDownload, onSubmit, submitting = false, submitted = false, notesRef, children }) {
   const [focus, setFocus] = useState(false);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-3">
         <Link
-          to="/practice/HLD"
+          to={backTo}
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-mute hover:bg-field hover:text-ink"
-          aria-label="Back to HLD sheet"
+          aria-label={backLabel}
         >
           <ChevronLeft size={18} />
         </Link>
@@ -158,6 +310,16 @@ function DesignWorkspace({ data, onDownload, children }) {
           <Download size={15} />
           Download
         </button>
+        {onSubmit && (
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submitting}
+            className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
+          >
+            {submitting ? "Saving…" : submitted ? "Submitted" : "Submit"}
+          </button>
+        )}
       </header>
 
       <PanelGroup direction="horizontal" autoSaveId="tyyari.design" className="min-h-0 flex-1">
@@ -176,7 +338,13 @@ function DesignWorkspace({ data, onDownload, children }) {
           <>
             <PanelResizeHandle className="tyyari-resize" />
             <Panel defaultSize={28} minSize={18} maxSize={40} className="h-full min-h-0">
-              <NotesPanel questionId={data.id} onCollapse={() => setFocus(true)} />
+              <NotesPanel
+                questionId={data.id}
+                onCollapse={() => setFocus(true)}
+                onApi={(api) => {
+                  if (notesRef) notesRef.current = api;
+                }}
+              />
             </Panel>
           </>
         )}

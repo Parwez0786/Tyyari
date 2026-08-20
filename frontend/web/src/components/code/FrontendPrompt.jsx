@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Lightbulb } from "lucide-react";
 import { CompanyTags } from "../QuestionMeta";
 
-export default function FrontendPrompt({ data }) {
+export default function FrontendPrompt({ data, submitted = false }) {
   const [tab, setTab] = useState("problem");
   const features = data.functionalRequirements || [];
   const constraints = [...(data.constraints || []), ...(data.nonFunctionalRequirements || [])];
@@ -53,7 +53,7 @@ export default function FrontendPrompt({ data }) {
         {tab === "solution" && (
           <p className="text-sm leading-6 text-mute">Official solutions will show up here later. Keep iterating in the editor for now.</p>
         )}
-        {tab === "history" && <HistoryTab questionId={data.id} />}
+        {tab === "history" && <HistoryTab questionId={data.id} submitted={submitted} />}
       </div>
     </aside>
   );
@@ -73,19 +73,18 @@ function Section({ title, items }) {
   );
 }
 
-function HistoryTab({ questionId }) {
+function HistoryTab({ questionId, submitted }) {
   let saved = null;
   try {
     saved = JSON.parse(localStorage.getItem(`tyyari.fe.${questionId}`) || "null");
   } catch {
     saved = null;
   }
-  const submitted = localStorage.getItem(`tyyari.fe.submit.${questionId}`);
   return (
     <div className="space-y-3 text-sm leading-6 text-mute">
-      <p>Auto-save keeps the latest files on this device.</p>
+      <p>Auto-save keeps drafts on this device. Submit stores your last answer in your account.</p>
       {saved?.files ? <p className="text-ink">{saved.files.length} files in the last snapshot.</p> : <p>No snapshot yet.</p>}
-      {submitted ? <p className="text-ink">Last submit: {new Date(Number(submitted)).toLocaleString()}</p> : <p>No submit yet.</p>}
+      {submitted ? <p className="text-ink">Last answer is saved to your account.</p> : <p>No submit yet.</p>}
     </div>
   );
 }

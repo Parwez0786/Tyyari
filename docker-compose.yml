@@ -161,6 +161,7 @@ services:
     container_name: tyyari-gateway
     environment:
       SERVER_PORT: 8080
+      JAVA_TOOL_OPTIONS: -Dnetworkaddress.cache.ttl=5 -Dnetworkaddress.cache.negative.ttl=0
       SPRING_DATA_REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-secret-at-least-32-chars}
       JWT_ISSUER: ${JWT_ISSUER:-interview-platform}

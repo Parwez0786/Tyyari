@@ -15,17 +15,19 @@ import {
   newFileId,
   normalizeFilePath,
 } from "./languages";
+import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 const DURATION = { EASY: 20, MEDIUM: 30, HARD: 45 };
 
-export default function FrontendWorkspace({ data }) {
+export default function FrontendWorkspace({ data, backTo = "/practice/FRONTEND", backLabel = "Back to Frontend practice" }) {
   const key = `tyyari.fe.${data.id}`;
   const initial = useMemo(() => loadFrontend(key, data.title), [key, data.title]);
   const [entries, setEntries] = useState(initial.files);
   const [activeId, setActiveId] = useState(initial.activeId);
   const [autoSave, setAutoSave] = useState(true);
   const [dialog, setDialog] = useState(false);
-  const [submitted, setSubmitted] = useState(() => Boolean(localStorage.getItem(`tyyari.fe.submit.${data.id}`)));
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [srcDoc, setSrcDoc] = useState("");
   const { logs, clearLogs } = usePreviewLogs();
   const saveTimer = useMemo(() => ({ current: null }), []);
@@ -49,6 +51,23 @@ export default function FrontendWorkspace({ data }) {
     return () => clearTimeout(saveTimer.current);
   }, [autoSave, key, entries, activeId, saveTimer]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const hadDraft = hasFrontendDraft(key);
+    loadSubmission(data.id).then((saved) => {
+      if (cancelled || !saved) return;
+      setSubmitted(true);
+      if (hadDraft) return;
+      const next = filesFromSubmission(saved);
+      if (!next) return;
+      setEntries(next.files);
+      setActiveId(next.activeId || next.files[0]?.id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.id, key]);
+
   function updateActive(content) {
     setEntries((prev) => prev.map((item) => (item.id === active?.id ? { ...item, content } : item)));
   }
@@ -58,10 +77,25 @@ export default function FrontendWorkspace({ data }) {
     setSrcDoc(buildPreviewSrcDoc(files));
   }
 
-  function submit() {
-    localStorage.setItem(`tyyari.fe.submit.${data.id}`, String(Date.now()));
-    localStorage.setItem(key, JSON.stringify({ files: entries, activeId }));
-    setSubmitted(true);
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await saveSubmission({
+        questionId: data.id,
+        questionType: "FRONTEND",
+        language: "javascript",
+        view: "code",
+        activeId,
+        files,
+      });
+      localStorage.setItem(key, JSON.stringify({ files: entries, activeId }));
+      setSubmitted(true);
+    } catch {
+      /* keep local draft */
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function addFile(name) {
@@ -85,9 +119,9 @@ export default function FrontendWorkspace({ data }) {
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
         <Link
-          to="/practice/FRONTEND"
+          to={backTo}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-mute hover:bg-white/5 hover:text-ink"
-          aria-label="Back to Frontend sheet"
+          aria-label={backLabel}
         >
           <ChevronLeft size={18} />
         </Link>
@@ -113,15 +147,16 @@ export default function FrontendWorkspace({ data }) {
         <button
           type="button"
           onClick={submit}
-          className="inline-flex h-10 items-center rounded-xl bg-white/10 px-4 text-sm font-semibold text-ink hover:bg-white/15"
+          disabled={submitting}
+          className="inline-flex h-10 items-center rounded-xl bg-white/10 px-4 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
         >
-          {submitted ? "Submitted" : "Submit"}
+          {submitting ? "Saving…" : submitted ? "Submitted" : "Submit"}
         </button>
       </header>
 
       <PanelGroup direction="horizontal" autoSaveId="tyyari.fe.cols" className="min-h-0 flex-1">
         <Panel defaultSize={24} minSize={16} maxSize={36} className="h-full min-h-0">
-          <FrontendPrompt data={data} />
+          <FrontendPrompt data={data} submitted={submitted} />
         </Panel>
         <PanelResizeHandle className="tyyari-resize" />
         <Panel defaultSize={44} minSize={28} className="h-full min-h-0">
@@ -232,6 +267,15 @@ function loadFrontend(key, title) {
   }
   const files = frontendDefaultFiles(title);
   return { files, activeId: files[0].id };
+}
+
+function hasFrontendDraft(key) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    return Boolean(saved && Array.isArray(saved.files) && saved.files.length);
+  } catch {
+    return false;
+  }
 }
 
 function uniqueFrontendPath(entries, path) {

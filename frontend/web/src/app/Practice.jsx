@@ -18,22 +18,29 @@ const TYPES = [
   { key: "OA", title: "Online Assessment", detail: "Timed DSA sets with camera check" },
 ];
 
+const SHEET_BY_TYPE = {
+  HLD: "hld-core-sheet",
+  LLD: "lld-machine-coding",
+  DSA: "dsa-sde-sheet",
+  FRONTEND: "frontend-ui-sheet",
+};
+
 const PAGE = {
   HLD: {
     title: "System Design Problems",
-    subtitle: "Practice High-Level Design (HLD) with company-tagged questions and a structured sheet.",
+    subtitle: "The full HLD library. Filter by company and difficulty, then open any problem.",
   },
   LLD: {
     title: "Low Level Design Problems",
-    subtitle: "Practice OOP and machine-coding rounds in a full multi-file code editor.",
+    subtitle: "The full LLD library. Practice OOP and machine-coding rounds in a multi-file editor.",
   },
   DSA: {
     title: "DSA Problems",
-    subtitle: "Practice data structures and algorithms in a LeetCode-style editor.",
+    subtitle: "The full DSA library. Solve any published problem with testcases.",
   },
   FRONTEND: {
     title: "Frontend Problems",
-    subtitle: "Build React UI challenges with a live desktop and mobile preview.",
+    subtitle: "The full frontend library. Build React UI challenges with desktop and mobile preview.",
   },
   CS: {
     title: "CS Fundamentals",
@@ -57,7 +64,11 @@ export default function Practice() {
       <Layout>
         <section className="text-center">
           <h1 className="text-4xl font-extrabold tracking-tight">Practice</h1>
-          <p className="mt-3 text-mute">Pick a track. Each one opens a card grid of problems.</p>
+          <p className="mt-3 text-mute">The question library. Pick a track and open any problem.</p>
+          <p className="mt-2 text-sm text-mute">
+            Want a curated set instead?{" "}
+            <Link to="/sheets/hld-core-sheet" className="font-semibold text-brand">Open sheets</Link>
+          </p>
         </section>
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {TYPES.map((item) =>
@@ -100,7 +111,7 @@ function ComingSoon({ title }) {
       <p className="label-caps">Coming soon</p>
       <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{title}</h1>
       <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, DSA, Frontend, and OA are available now.</p>
-      <Link to="/practice/HLD" className="btn-black mt-8">Open HLD sheet</Link>
+      <Link to="/practice/HLD" className="btn-black mt-8">Open HLD practice</Link>
     </section>
   );
 }
@@ -143,6 +154,12 @@ function TypeSheet({ type }) {
       <section className="mx-auto max-w-3xl text-center">
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
         <p className="mt-3 text-[15px] text-mute">{meta.subtitle}</p>
+        {SHEET_BY_TYPE[type] && (
+          <p className="mt-2 text-sm text-mute">
+            Looking for a curated set?{" "}
+            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">Open {type} sheet</Link>
+          </p>
+        )}
       </section>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">

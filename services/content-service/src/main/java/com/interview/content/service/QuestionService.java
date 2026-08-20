@@ -112,6 +112,13 @@ public class QuestionService {
     }
 
     public List<QuestionListItem> publishedDsaBySlugs(List<String> slugs) {
+        return publishedBySlugs(slugs).stream()
+                .filter(item -> "DSA".equalsIgnoreCase(item.type()))
+                .filter(item -> !item.premium())
+                .toList();
+    }
+
+    public List<QuestionListItem> publishedBySlugs(List<String> slugs) {
         if (slugs == null || slugs.isEmpty()) {
             return List.of();
         }
@@ -119,8 +126,6 @@ public class QuestionService {
                 .map(questions::findBySlug)
                 .flatMap(Optional::stream)
                 .filter(Question::isPublished)
-                .filter(question -> "DSA".equalsIgnoreCase(question.getType()))
-                .filter(question -> !question.isPremium())
                 .map(this::toListItem)
                 .toList();
     }

@@ -12,6 +12,8 @@ import Onboarding from "./app/Onboarding";
 import Dashboard from "./app/Dashboard";
 import Practice from "./app/Practice";
 import Question from "./app/Question";
+import Sheets from "./app/Sheets";
+import SheetDetail from "./app/SheetDetail";
 import OaPrecheck from "./app/OaPrecheck";
 import OaExam from "./app/OaExam";
 
@@ -36,6 +38,8 @@ export default function App() {
       <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
       <Route path="/practice" element={<Private><Practice /></Private>} />
       <Route path="/practice/:type" element={<Private><Practice /></Private>} />
+      <Route path="/sheets" element={<Private><Sheets /></Private>} />
+      <Route path="/sheets/:id" element={<Private><SheetDetail /></Private>} />
       <Route path="/questions/:id" element={<Private><Question /></Private>} />
       <Route path="/oa/:id/precheck" element={<Private><OaPrecheck /></Private>} />
       <Route path="/oa/:id/exam" element={<Private><OaExam /></Private>} />

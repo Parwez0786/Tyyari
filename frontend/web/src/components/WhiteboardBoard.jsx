@@ -82,9 +82,32 @@ export default function WhiteboardBoard({ storageKey, onApi }) {
     URL.revokeObjectURL(url);
   }, [theme]);
 
+  const getState = useCallback(() => {
+    const api = apiRef.current;
+    if (!api) {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey) || "{}");
+      } catch {
+        return {};
+      }
+    }
+    const appState = api.getAppState?.() || {};
+    return {
+      elements: api.getSceneElements?.() || [],
+      files: api.getFiles?.() || {},
+      appState: {
+        currentItemStrokeColor: appState.currentItemStrokeColor,
+        currentItemBackgroundColor: appState.currentItemBackgroundColor,
+        zoom: appState.zoom,
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+      },
+    };
+  }, [storageKey]);
+
   useEffect(() => {
-    onApi?.({ download });
-  }, [download, onApi]);
+    onApi?.({ download, getState });
+  }, [download, getState, onApi]);
 
   const onChange = useCallback(
     (elements, appState, files) => {

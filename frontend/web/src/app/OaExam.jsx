@@ -17,6 +17,7 @@ import {
   submitSession,
 } from "../components/oa/session";
 import { contentApi } from "../services/api";
+import { dsaFiles, oaDraftFromStorage, saveSubmission } from "../services/submissions";
 
 export default function OaExam() {
   const { id } = useParams();
@@ -35,6 +36,7 @@ export default function OaExam() {
     queryFn: () => contentApi.question(current.id),
     enabled: Boolean(current?.id),
   });
+  const snapshotRef = useRef(null);
   const question = questionQuery.data?.data;
   const submitted = Boolean(session?.submittedAt);
   const needsCamera = !submitted && !camera.ready;
@@ -55,9 +57,30 @@ export default function OaExam() {
     setIndex(next.index || 0);
   }, [data, navigate]);
 
-  const finish = useCallback((ask = false) => {
+  const finish = useCallback(async (ask = false) => {
     if (ask && !window.confirm("Submit this assessment? You cannot change answers after this.")) return;
     if (!data) return;
+    try {
+      const currentSnap = snapshotRef.current?.();
+      const jobs = [];
+      if (currentSnap) jobs.push(saveSubmission({ ...currentSnap, assessmentSetId: data.id, questionType: "DSA" }));
+      (data.questions || []).forEach((item) => {
+        if (item.id === currentSnap?.questionId) return;
+        const draft = oaDraftFromStorage(data.id, item.id);
+        if (!draft?.codeByLang) return;
+        jobs.push(saveSubmission({
+          questionId: item.id,
+          questionType: "DSA",
+          assessmentSetId: data.id,
+          language: draft.language || "java",
+          view: "code",
+          files: dsaFiles(draft.codeByLang),
+        }));
+      });
+      await Promise.all(jobs);
+    } catch {
+      /* session still locks locally */
+    }
     const next = submitSession(data.id);
     setSession(next);
     cameraStop.current();
@@ -70,6 +93,8 @@ export default function OaExam() {
   }, [session, finish]);
 
   function selectQuestion(nextIndex) {
+    const snap = snapshotRef.current?.();
+    if (snap) saveSubmission({ ...snap, assessmentSetId: data.id, questionType: "DSA" }).catch(() => {});
     setIndex(nextIndex);
     const next = { ...(loadSession(data.id) || session || {}), index: nextIndex };
     saveSession(data.id, next);
@@ -99,7 +124,7 @@ export default function OaExam() {
           <p className="label-caps">Assessment complete</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data?.title}</h1>
           <p className="mt-3 text-sm text-mute">
-            Your answers were saved on this device. The round is locked because you submitted or the timer ended.
+            Your last answer for each question was saved to your account. Practice submissions for the same problems are stored separately.
           </p>
           <ul className="mt-8 space-y-2 text-left text-sm">
             {questions.map((item) => (
@@ -175,8 +200,11 @@ export default function OaExam() {
             key={question.id}
             data={question}
             storageKey={`tyyari.oa.${data.id}.${question.id}`}
+            assessmentSetId={data.id}
+            snapshotRef={snapshotRef}
             hideBack
             hideHints
+            hideSubmit
             backTo="/practice/OA"
           />
         )}

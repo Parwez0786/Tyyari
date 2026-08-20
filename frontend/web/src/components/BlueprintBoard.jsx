@@ -94,9 +94,11 @@ function BlueprintCanvas({ storageKey, lld, onApi, palette }) {
     link.click();
   }, [theme]);
 
+  const getGraph = useCallback(() => ({ nodes, edges }), [nodes, edges]);
+
   useEffect(() => {
-    onApi?.({ addNode, download });
-  }, [addNode, download, onApi]);
+    onApi?.({ addNode, download, getState: getGraph });
+  }, [addNode, download, getGraph, onApi]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();

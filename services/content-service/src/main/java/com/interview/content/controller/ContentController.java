@@ -6,12 +6,15 @@ import com.interview.content.dto.AssessmentSetListItem;
 import com.interview.content.dto.PageResponse;
 import com.interview.content.dto.QuestionDetail;
 import com.interview.content.dto.QuestionListItem;
+import com.interview.content.dto.SheetDetail;
+import com.interview.content.dto.SheetListItem;
 import com.interview.content.model.Company;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
 import com.interview.content.service.AssessmentSetService;
 import com.interview.content.service.CatalogService;
 import com.interview.content.service.QuestionService;
+import com.interview.content.service.QuestionSheetService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,15 +31,18 @@ public class ContentController {
     private final QuestionService questionService;
     private final CatalogService catalogService;
     private final AssessmentSetService assessmentSetService;
+    private final QuestionSheetService questionSheetService;
 
     public ContentController(
             QuestionService questionService,
             CatalogService catalogService,
-            AssessmentSetService assessmentSetService
+            AssessmentSetService assessmentSetService,
+            QuestionSheetService questionSheetService
     ) {
         this.questionService = questionService;
         this.catalogService = catalogService;
         this.assessmentSetService = assessmentSetService;
+        this.questionSheetService = questionSheetService;
     }
 
     @GetMapping("/questions")
@@ -72,6 +78,16 @@ public class ContentController {
     @GetMapping("/assessment-sets/{id}")
     public ApiResponse<AssessmentSetDetail> assessmentSet(@PathVariable String id) {
         return ApiResponse.ok(assessmentSetService.getPublished(id));
+    }
+
+    @GetMapping("/sheets")
+    public ApiResponse<List<SheetListItem>> sheets(@RequestParam(required = false) String type) {
+        return ApiResponse.ok(questionSheetService.listPublished(type));
+    }
+
+    @GetMapping("/sheets/{id}")
+    public ApiResponse<SheetDetail> sheet(@PathVariable String id) {
+        return ApiResponse.ok(questionSheetService.getPublished(id));
     }
 
     @GetMapping("/companies")

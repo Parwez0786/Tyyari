@@ -3,31 +3,41 @@ package com.interview.user.controller;
 import com.interview.user.dto.ApiResponse;
 import com.interview.user.dto.GoalsRequest;
 import com.interview.user.dto.PreferencesRequest;
+import com.interview.user.dto.PracticeProgress;
 import com.interview.user.dto.ProfileRequest;
+import com.interview.user.dto.SubmissionRequest;
+import com.interview.user.dto.SubmissionResponse;
 import com.interview.user.exception.ApiException;
 import com.interview.user.exception.ErrorCode;
 import com.interview.user.model.Goals;
 import com.interview.user.model.Preferences;
 import com.interview.user.model.Profile;
+import com.interview.user.service.SubmissionService;
 import com.interview.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
+    private final SubmissionService submissionService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, SubmissionService submissionService) {
         this.userService = userService;
+        this.submissionService = submissionService;
     }
 
     @GetMapping("/me")
@@ -75,6 +85,38 @@ public class UserController {
             @RequestBody GoalsRequest request
     ) {
         return ApiResponse.ok(userService.saveGoals(requireUser(userId), request));
+    }
+
+    @PutMapping("/me/submissions")
+    public ApiResponse<SubmissionResponse> saveSubmission(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestBody SubmissionRequest request
+    ) {
+        return ApiResponse.ok(submissionService.upsert(requireUser(userId), request), "Submission saved");
+    }
+
+    @GetMapping("/me/submissions")
+    public ApiResponse<SubmissionResponse> getSubmission(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestParam String questionId,
+            @RequestParam(required = false) String assessmentSetId
+    ) {
+        return ApiResponse.ok(submissionService.get(requireUser(userId), questionId, assessmentSetId));
+    }
+
+    @GetMapping("/me/assessments/{assessmentSetId}/submissions")
+    public ApiResponse<List<SubmissionResponse>> assessmentSubmissions(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String assessmentSetId
+    ) {
+        return ApiResponse.ok(submissionService.listForAssessment(requireUser(userId), assessmentSetId));
+    }
+
+    @GetMapping("/me/progress")
+    public ApiResponse<PracticeProgress> practiceProgress(
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return ApiResponse.ok(submissionService.practiceProgress(requireUser(userId)));
     }
 
     private String requireUser(String userId) {

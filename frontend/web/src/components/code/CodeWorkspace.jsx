@@ -33,8 +33,9 @@ import {
   starterFor,
 } from "./languages";
 import { runWorkspace } from "./piston";
+import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
-export default function CodeWorkspace({ data }) {
+export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabel = "Back to LLD practice" }) {
   const key = `tyyari.lld.${data.id}`;
   const initial = useMemo(() => loadWorkspace(key, data.title), [key, data.title]);
   const [entries, setEntries] = useState(initial.files);
@@ -53,6 +54,8 @@ export default function CodeWorkspace({ data }) {
     }
   });
   const [language, setLanguage] = useState(initial.language);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const saveTimer = useRef(null);
   const runRef = useRef(null);
 
@@ -77,6 +80,25 @@ export default function CodeWorkspace({ data }) {
     }
   }, [explorer]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const hadDraft = hasLldDraft(key);
+    loadSubmission(data.id).then((saved) => {
+      if (cancelled || !saved) return;
+      setSubmitted(true);
+      if (hadDraft) return;
+      const next = filesFromSubmission(saved);
+      if (!next) return;
+      setEntries(next.files);
+      setActiveId(next.activeId || next.files.find(isFile)?.id);
+      setStdin(next.stdin || "");
+      if (next.language) setLanguage(next.language);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.id, key]);
+
   async function run() {
     if (running) return;
     setRunning(true);
@@ -92,6 +114,27 @@ export default function CodeWorkspace({ data }) {
   }
 
   runRef.current = run;
+
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await saveSubmission({
+        questionId: data.id,
+        questionType: "LLD",
+        language,
+        view: "code",
+        activeId,
+        stdin,
+        files: entries,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setOutput({ status: "error", message: err.message || "Could not save submission." });
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     function onKey(event) {
@@ -190,8 +233,8 @@ export default function CodeWorkspace({ data }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
       <WorkspaceHeader
-        backTo="/practice/LLD"
-        backLabel="Back to LLD sheet"
+        backTo={backTo}
+        backLabel={backLabel}
         title={data.title}
         language={language}
         onLanguageChange={switchLanguage}
@@ -199,6 +242,9 @@ export default function CodeWorkspace({ data }) {
         onToggleFocus={() => setFocus((v) => !v)}
         running={running}
         onRun={run}
+        onSubmit={submit}
+        submitting={submitting}
+        submitted={submitted}
       />
 
       <PanelGroup direction="horizontal" autoSaveId="tyyari.lld" className="min-h-0 flex-1">
@@ -595,6 +641,15 @@ function loadWorkspace(key, title) {
   }
   const files = defaultFiles(title);
   return { files, activeId: files[0].id, stdin: "", language: "java" };
+}
+
+function hasLldDraft(key) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    return Boolean(saved && Array.isArray(saved.files) && saved.files.length);
+  } catch {
+    return false;
+  }
 }
 
 function uniquePath(entries, path) {
