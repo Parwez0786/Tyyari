@@ -10,6 +10,7 @@ import GitHubCallback from "./app/GitHubCallback";
 import ResetPassword from "./app/ResetPassword";
 import Onboarding from "./app/Onboarding";
 import Dashboard from "./app/Dashboard";
+import Learn from "./app/Learn";
 import Practice from "./app/Practice";
 import Question from "./app/Question";
 import Sheets from "./app/Sheets";
@@ -36,6 +37,7 @@ export default function App() {
       <Route path="/auth/github" element={<GitHubCallback />} />
       <Route path="/onboarding" element={<Private><Onboarding /></Private>} />
       <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
+      <Route path="/learn" element={<Private><Learn /></Private>} />
       <Route path="/practice" element={<Private><Practice /></Private>} />
       <Route path="/practice/:type" element={<Private><Practice /></Private>} />
       <Route path="/sheets" element={<Private><Sheets /></Private>} />

@@ -41,6 +41,7 @@ public class Question {
     private List<String> functionalRequirements;
     private List<String> nonFunctionalRequirements;
     private List<Example> examples;
+    private List<QuizItem> quiz;
     private List<String> hints;
     @Indexed
     @Field("isPublished")

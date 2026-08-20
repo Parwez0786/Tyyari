@@ -1,6 +1,7 @@
 package com.interview.content.dto;
 
 import com.interview.content.model.Example;
+import com.interview.content.model.QuizItem;
 
 import java.util.List;
 
@@ -19,5 +20,6 @@ public record QuestionDetail(
         List<String> functionalRequirements,
         List<String> nonFunctionalRequirements,
         List<Example> examples,
+        List<QuizItem> quiz,
         List<String> hints
 ) {}

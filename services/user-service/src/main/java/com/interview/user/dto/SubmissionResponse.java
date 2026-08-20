@@ -21,6 +21,9 @@ public record SubmissionResponse(
         Map<String, Object> canvas,
         String math,
         String explanation,
+        Integer quizScore,
+        Integer quizTotal,
+        List<Integer> quizAnswers,
         Instant submittedAt
 ) {
     public static SubmissionResponse from(Submission submission) {
@@ -38,6 +41,9 @@ public record SubmissionResponse(
                 submission.getCanvas(),
                 submission.getMath(),
                 submission.getExplanation(),
+                submission.getQuizScore(),
+                submission.getQuizTotal(),
+                submission.getQuizAnswers(),
                 submission.getSubmittedAt()
         );
     }

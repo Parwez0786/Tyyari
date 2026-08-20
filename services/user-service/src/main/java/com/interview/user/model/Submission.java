@@ -40,5 +40,8 @@ public class Submission {
     private Map<String, Object> canvas;
     private String math;
     private String explanation;
+    private Integer quizScore;
+    private Integer quizTotal;
+    private List<Integer> quizAnswers;
     private Instant submittedAt;
 }

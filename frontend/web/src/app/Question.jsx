@@ -7,6 +7,7 @@ import BlueprintBoard from "../components/BlueprintBoard";
 import CodeWorkspace from "../components/code/CodeWorkspace";
 import DsaWorkspace from "../components/code/DsaWorkspace";
 import FrontendWorkspace from "../components/code/FrontendWorkspace";
+import CsQuizWorkspace from "../components/cs/CsQuizWorkspace";
 import Layout from "../components/Layout";
 import ModeOverlay from "../components/ModeOverlay";
 import NotesPanel from "../components/NotesPanel";
@@ -30,12 +31,13 @@ export default function Question() {
   const lld = data?.type === "LLD";
   const dsa = data?.type === "DSA";
   const frontend = data?.type === "FRONTEND";
+  const cs = data?.type === "CS";
   const canvas = view === "blueprint" || view === "whiteboard";
   const lldCode = lld && (view === "code" || !view);
   const dsaCode = dsa && (view === "code" || !view);
   const feCode = frontend && (view === "code" || !view);
   const needPick = hld && !canvas;
-  const workspace = (hld && canvas) || lldCode || dsaCode || feCode;
+  const workspace = (hld && canvas) || lldCode || dsaCode || feCode || cs;
   const backTo = sheet ? `/sheets/${sheet}` : `/practice/${data?.type || "DSA"}`;
   const backLabel = sheet ? "Back to sheet" : `Back to ${data?.type || "practice"}`;
 
@@ -48,11 +50,11 @@ export default function Question() {
   return (
     <Layout wide={workspace} fill={workspace} hideNav={workspace}>
       {q.isLoading && <p className="p-6 text-sm text-mute">Loading…</p>}
-      {data && !hld && !lld && !dsa && !frontend && (
+      {data && !hld && !lld && !dsa && !frontend && !cs && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Coming soon</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data.title}</h1>
-          <p className="mt-3 text-sm text-mute">HLD, LLD, DSA, OA, and Frontend are open right now. Other tracks are still coming soon.</p>
+          <p className="mt-3 text-sm text-mute">HLD, LLD, DSA, OA, Frontend, and CS quizzes are open right now.</p>
           <Link to={backTo} className="btn-black mt-8">{sheet ? "Back to sheet" : "Open HLD practice"}</Link>
         </section>
       )}
@@ -62,6 +64,7 @@ export default function Question() {
       {data && lldCode && <CodeWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
       {data && dsaCode && <DsaWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
       {data && feCode && <FrontendWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && cs && <CsQuizWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
       {data && hld && needPick && (
         <ModeOverlay
           question={data}

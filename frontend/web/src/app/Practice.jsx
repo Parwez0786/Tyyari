@@ -14,7 +14,7 @@ const TYPES = [
   { key: "LLD", title: "Low Level Design", detail: "OOP and machine coding" },
   { key: "DSA", title: "DSA", detail: "Data structures and algorithms" },
   { key: "FRONTEND", title: "Frontend Coding", detail: "UI machine-coding rounds" },
-  { key: "CS", title: "CS Fundamentals", detail: "OS, DBMS, networks" },
+  { key: "CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks" },
   { key: "OA", title: "Online Assessment", detail: "Timed DSA sets with camera check" },
 ];
 
@@ -72,7 +72,7 @@ export default function Practice() {
         </section>
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {TYPES.map((item) =>
-            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" || item.key === "OA" || item.key === "FRONTEND" ? (
+            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" || item.key === "OA" || item.key === "FRONTEND" || item.key === "CS" ? (
               <Link key={item.key} to={`/practice/${item.key}`} className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-brand/40">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
@@ -94,7 +94,7 @@ export default function Practice() {
     );
   }
 
-  if (type !== "HLD" && type !== "LLD" && type !== "DSA" && type !== "OA" && type !== "FRONTEND") {
+  if (type !== "HLD" && type !== "LLD" && type !== "DSA" && type !== "OA" && type !== "FRONTEND" && type !== "CS") {
     return (
       <Layout>
         <ComingSoon title={PAGE[type].title} />
@@ -110,7 +110,7 @@ function ComingSoon({ title }) {
     <section className="mx-auto max-w-lg py-16 text-center">
       <p className="label-caps">Coming soon</p>
       <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{title}</h1>
-      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, DSA, Frontend, and OA are available now.</p>
+      <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, DSA, Frontend, CS, and OA are available now.</p>
       <Link to="/practice/HLD" className="btn-black mt-8">Open HLD practice</Link>
     </section>
   );
@@ -122,12 +122,18 @@ function TypeSheet({ type }) {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [company, setCompany] = useState("");
+  const [topic, setTopic] = useState("");
   const [picked, setPicked] = useState(null);
 
   const companiesQuery = useQuery({ queryKey: ["companies"], queryFn: contentApi.companies });
+  const topicsQuery = useQuery({
+    queryKey: ["topics", type],
+    queryFn: () => contentApi.topics(type),
+    enabled: type === "CS",
+  });
   const questionsQuery = useQuery({
-    queryKey: ["questions", type, difficulty, company, search],
-    queryFn: () => contentApi.questions({ type, difficulty, company, search, page: 1, limit: 60 }),
+    queryKey: ["questions", type, difficulty, company, topic, search],
+    queryFn: () => contentApi.questions({ type, difficulty, company, topic, search, page: 1, limit: 60 }),
   });
 
   const items = questionsQuery.data?.data?.items ?? [];
@@ -192,6 +198,17 @@ function TypeSheet({ type }) {
           </select>
           <Chevron />
         </label>
+        {type === "CS" && (
+          <label className="relative block sm:w-48">
+            <select className="field mt-0 appearance-none pr-10" value={topic} onChange={(e) => setTopic(e.target.value)}>
+              <option value="">All topics</option>
+              {(topicsQuery.data?.data ?? []).map((item) => (
+                <option key={item.id} value={item.name}>{item.name}</option>
+              ))}
+            </select>
+            <Chevron />
+          </label>
+        )}
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">

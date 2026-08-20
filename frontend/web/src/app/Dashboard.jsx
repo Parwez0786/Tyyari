@@ -7,6 +7,8 @@ import {
   Flame,
   LayoutTemplate,
   ListChecks,
+  BookOpen,
+  Map,
   Network,
   Puzzle,
   Shuffle,
@@ -20,6 +22,7 @@ import Avatar from "../components/Avatar";
 import { DifficultyBadge } from "../components/QuestionMeta";
 import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { contentApi, userApi, authApi } from "../services/api";
+import { ROADMAPS, roleFromProfile } from "../data/roadmaps";
 
 const TRACKS = [
   {
@@ -59,6 +62,14 @@ const TRACKS = [
     accent: "from-fuchsia-500/20 to-pink-500/5",
   },
   {
+    type: "CS",
+    title: "CS Fundamentals",
+    hook: "Short OS, DBMS, OOP, and networks quizzes.",
+    practice: "/practice/CS",
+    Icon: BookOpen,
+    accent: "from-lime-500/20 to-emerald-500/5",
+  },
+  {
     type: "OA",
     title: "Online Assessment",
     hook: "Timed, camera-gated DSA — like the real OA.",
@@ -75,7 +86,7 @@ const RANKS = [
   { name: "Interview ready", xp: 20 },
 ];
 
-const QUEST_TYPES = ["DSA", "HLD", "LLD", "FRONTEND"];
+const QUEST_TYPES = ["DSA", "HLD", "LLD", "FRONTEND", "CS"];
 const DAY_LABELS = ["6d", "5d", "4d", "3d", "2d", "Y", "T"];
 const WEEK_GOAL = 5;
 const TIPS = [
@@ -85,6 +96,7 @@ const TIPS = [
   "In LLD, list classes and ownership before you open the editor.",
   "Dry-run one example on paper. Most bugs show up there.",
   "Frontend rounds: make the empty, loading, and error states obvious.",
+  "CS quizzes: commit to an answer before you peek. Phone screens love OS and DBMS.",
   "OA timing: skip a stuck problem after 12 minutes. Come back later.",
   "End every design with trade-offs. That is the senior signal.",
 ];
@@ -109,7 +121,7 @@ export default function Dashboard() {
   const libraryQuery = useQuery({
     queryKey: ["library-totals"],
     queryFn: async () => {
-      const types = ["HLD", "LLD", "DSA", "FRONTEND"];
+      const types = ["HLD", "LLD", "DSA", "FRONTEND", "CS"];
       const pages = await Promise.all(types.map((type) => contentApi.questions({ type, page: 1, limit: 1 })));
       return Object.fromEntries(types.map((type, index) => [type, pages[index]?.data?.total || 0]));
     },
@@ -140,7 +152,7 @@ export default function Dashboard() {
 
   const firstName = (profile?.name || "there").split(" ")[0];
   const byType = Object.fromEntries((progress?.byType || []).map((item) => [item.type, item.completed]));
-  const libraryTotal = ["HLD", "LLD", "DSA", "FRONTEND"].reduce((sum, type) => sum + (library[type] || 0), 0);
+  const libraryTotal = ["HLD", "LLD", "DSA", "FRONTEND", "CS"].reduce((sum, type) => sum + (library[type] || 0), 0);
   const completed = progress?.completed || 0;
   const sheetIds = [...new Set(sheets.flatMap((sheet) => sheet.questionIds || []))];
   const sheetDone = countCompleted(sheetIds, done);
@@ -165,6 +177,8 @@ export default function Dashboard() {
   );
   const surprise = surprisePool.length ? surprisePool[(daySeed() + shuffle) % surprisePool.length] : null;
   const oaSet = assessments[0];
+  const pathRole = roleFromProfile(profile?.targetRole);
+  const path = ROADMAPS[pathRole] || ROADMAPS["SDE-1"];
 
   return (
     <Layout>
@@ -182,7 +196,9 @@ export default function Dashboard() {
                 {xp.name}
               </span>
               {profile?.targetRole && (
-                <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-ink">{profile.targetRole}</span>
+                <Link to="/learn" className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-ink hover:bg-white/10">
+                  {profile.targetRole} path
+                </Link>
               )}
               {companies.map((name) => (
                 <span key={name} className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-mute">{name}</span>
@@ -260,6 +276,20 @@ export default function Dashboard() {
             <p className="mt-2 text-sm text-mute">Submit any problem and this tile becomes your resume button.</p>
           </article>
         )}
+      </section>
+
+      <section className="mt-6 overflow-hidden rounded-[28px] border border-line bg-gradient-to-br from-brand/15 via-card to-card p-6">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+          <Map size={12} />
+          Roadmap
+        </p>
+        <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{pathRole} · 8 weeks</h2>
+        <p className="mt-2 max-w-2xl text-sm text-mute">
+          Week 1 is {path[0].title}. Each week deep-links into questions and sheets you already have.
+        </p>
+        <Link to={`/learn?role=${pathRole}`} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
+          Open path
+        </Link>
       </section>
 
       <section className="mt-6 grid gap-4 md:grid-cols-3">
@@ -461,6 +491,7 @@ function hrefFor(id, type, view) {
   if (type === "HLD") {
     return view ? `/questions/${id}?view=${view}` : `/questions/${id}`;
   }
+  if (type === "CS") return `/questions/${id}`;
   if (type === "OA") return "/practice/OA";
   return `/questions/${id}?view=code`;
 }

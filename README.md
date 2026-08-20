@@ -1,6 +1,6 @@
 # Tyyari
 
-SDE interview-prep platform backed by 6 microservices. Practice covers HLD Blueprint/Whiteboard, LLD multi-file coding, DSA with testcases, React frontend rounds with desktop/mobile preview, and timed camera-gated online assessments.
+SDE interview-prep platform backed by 6 microservices. Practice covers HLD Blueprint/Whiteboard, LLD multi-file coding, DSA with testcases, React frontend rounds with desktop/mobile preview, CS fundamentals quizzes, and timed camera-gated online assessments.
 
 **Stack:** Java 21 · Spring Boot 3.4 · Spring Security · Spring Cloud Gateway · MongoDB · Redis · Kafka · Maven · Docker · React (JavaScript) · Vite · Tailwind · Monaco Editor
 
@@ -12,13 +12,15 @@ SDE interview-prep platform backed by 6 microservices. Practice covers HLD Bluep
 | **LLD** | Multi-file Java / Python / C++ editor, Run against the local code runner. |
 | **DSA** | Single-file editor, example testcases, Accepted / WA. |
 | **Frontend** | `App.js` + `styles.css`, live desktop and mobile preview (no Piston). |
+| **CS** | Short OS, DBMS, OOP, and networks quizzes. Score is saved as a practice submit. |
 | **OA** | Timed DSA sets, camera required, per-question answers stored separately from practice. |
 | **Sheets** | One fixed question set per track (same list for every user). Progress = practice submits. |
 | **Dashboard** | Streak, weekly quest, badges, today’s quest, jump back in, company drill, OA lobby. |
+| **Roadmap** | Week-by-week SDE-1 and SDE-2 paths that deep-link into existing questions and sheets. |
 
 **Practice** is the full question library. **Sheets** are curated sets. OA stays under Practice.
 
-CS Fundamentals, Learn/Roadmap, Mock Interview, Premium payments, and HLD “Run AI Analysis” are still Coming soon.
+Mock Interview, Premium payments, and HLD “Run AI Analysis” are still Coming soon.
 
 ## Layout
 

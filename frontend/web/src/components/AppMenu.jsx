@@ -12,16 +12,14 @@ const groups = [
       { to: "/practice/LLD", title: "Low Level Design", detail: "Full LLD question library" },
       { to: "/practice/DSA", title: "DSA", detail: "Full DSA question library" },
       { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "Full frontend question library" },
+      { to: "/practice/CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks" },
       { to: "/practice/OA", title: "Online Assessment", detail: "Timed DSA sets + camera" },
-      { title: "CS Fundamentals", detail: "Quiz & theory", soon: true },
     ],
   },
   {
     label: "Learn",
     items: [
-      { title: "High Level Design", detail: "System architecture", soon: true },
-      { title: "Low Level Design", detail: "OOP & design patterns", soon: true },
-      { title: "Roadmap", detail: "Set your target role", soon: true },
+      { to: "/learn", title: "Roadmap", detail: "Week-by-week SDE-1 and SDE-2" },
     ],
   },
   {
