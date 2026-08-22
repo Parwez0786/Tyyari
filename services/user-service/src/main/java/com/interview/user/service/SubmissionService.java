@@ -1,6 +1,7 @@
 package com.interview.user.service;
 
 import com.interview.user.dto.PracticeProgress;
+import com.interview.user.dto.SubmissionListItem;
 import com.interview.user.dto.SubmissionRequest;
 import com.interview.user.dto.SubmissionResponse;
 import com.interview.user.exception.ApiException;
@@ -84,6 +85,20 @@ public class SubmissionService {
         return submissions.findByUserIdAndAssessmentSetIdOrderBySubmittedAtAsc(userId, setId).stream()
                 .map(SubmissionResponse::from)
                 .toList();
+    }
+
+    public List<SubmissionListItem> listForUser(String userId) {
+        return submissions.findByUserIdOrderBySubmittedAtDesc(userId).stream()
+                .limit(40)
+                .map(SubmissionListItem::from)
+                .toList();
+    }
+
+    public SubmissionResponse getForUser(String userId, String submissionId) {
+        Submission submission = submissions.findById(submissionId)
+                .filter(item -> userId.equals(item.getUserId()))
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "Submission not found", HttpStatus.NOT_FOUND));
+        return SubmissionResponse.from(submission);
     }
 
     public PracticeProgress practiceProgress(String userId) {

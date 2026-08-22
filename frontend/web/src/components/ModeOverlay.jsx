@@ -48,22 +48,22 @@ export default function ModeOverlay({ question, onPick, onClose }) {
         </div>
         <p className="mt-4 text-sm text-neutral-400">
           {lld
-            ? "Pick a workspace. Blueprint for class design, whiteboard for explanation."
-            : "Pick a workspace. Blueprint for structure, whiteboard for reasoning."}
+            ? "Choose how you want to work. Blueprint for classes and ownership. Whiteboard if you would rather talk through the design by hand."
+            : "Choose how you want to work. Blueprint for boxes and arrows. Whiteboard if you want a freehand sketch first."}
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <ModeCard
             title="Blueprint mode"
             detail={lld
-              ? "Drag & drop classes, interfaces, and services."
-              : "Drag & drop system components"}
+              ? "Drag classes, interfaces, and services onto a graph. Submit the canvas with your notes."
+              : "Drag load balancers, stores, and queues onto a graph. Submit the canvas with back-of-envelope math."}
             cta="Open Blueprint"
             icon={<BlueprintIcon />}
             onClick={() => onPick("blueprint")}
           />
           <ModeCard
             title="Whiteboard mode"
-            detail="Freehand drawing canvas"
+            detail="Freehand canvas for sequence diagrams, capacity math, and talking through trade-offs."
             cta="Open Whiteboard"
             icon={<WhiteboardIcon />}
             onClick={() => onPick("whiteboard")}

@@ -208,6 +208,17 @@ export function frontendDefaultFiles(title = "") {
   ];
 }
 
+export function filesFromStarter(starterFiles, fallback) {
+  const list = (starterFiles || []).filter((file) => file && String(file.name || "").trim());
+  if (!list.length) return fallback();
+  return list.map((file) => ({
+    id: newFileId(),
+    type: "file",
+    name: String(file.name).trim(),
+    content: file.content || "",
+  }));
+}
+
 export function defaultFiles(title, languageId = "java") {
   const lang = languageById(languageId);
   return [

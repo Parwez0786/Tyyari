@@ -33,7 +33,9 @@ public class JwtAuthFilter implements WebFilter, Ordered {
             "/api/v1/auth/resend-verification",
             "/api/v1/auth/google",
             "/api/v1/auth/github",
-            "/api/v1/auth/public-config"
+            "/api/v1/auth/public-config",
+            "/api/v1/billing/public-config",
+            "/api/v1/billing/webhook"
     );
 
     private final JwtService jwtService;
@@ -60,12 +62,16 @@ public class JwtAuthFilter implements WebFilter, Ordered {
             Claims claims = jwtService.parse(header.substring(7));
             String userId = claims.getSubject();
             String role = claims.get("role", String.class);
+            boolean premium = Boolean.TRUE.equals(claims.get("premium", Boolean.class))
+                    || "ADMIN".equals(role)
+                    || "EDITOR".equals(role);
             if (path.startsWith("/api/v1/admin") && !"ADMIN".equals(role)) {
                 return unauthorized(exchange, "AUTH_UNAUTHORIZED", "Admin role required", HttpStatus.FORBIDDEN);
             }
             ServerHttpRequest mutated = exchange.getRequest().mutate()
                     .header("X-User-Id", userId)
                     .header("X-User-Role", role == null ? "USER" : role)
+                    .header("X-User-Premium", premium ? "true" : "false")
                     .build();
             exchange.getAttributes().put("userId", userId);
             exchange.getAttributes().put("role", role);

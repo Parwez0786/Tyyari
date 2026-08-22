@@ -1,7 +1,9 @@
 package com.interview.auth.service;
 
+import com.interview.auth.dto.InviteUserResult;
 import com.interview.auth.dto.LoginResponse;
 import com.interview.auth.dto.MeResponse;
+import com.interview.auth.dto.SupportMailResult;
 import com.interview.auth.event.UserEventPublisher;
 import com.interview.auth.exception.ApiException;
 import com.interview.auth.exception.ErrorCode;
@@ -41,6 +43,7 @@ public class AuthService {
     private final UserEventPublisher events;
     private final MailService mailService;
     private final long refreshTokenDays;
+    private final String frontendUrl;
 
     public AuthService(
             UserRepository users,
@@ -52,7 +55,8 @@ public class AuthService {
             TokenHasher tokenHasher,
             UserEventPublisher events,
             MailService mailService,
-            @Value("${jwt.refresh-token-days}") long refreshTokenDays
+            @Value("${jwt.refresh-token-days}") long refreshTokenDays,
+            @Value("${app.frontend-url}") String frontendUrl
     ) {
         this.users = users;
         this.refreshTokens = refreshTokens;
@@ -64,6 +68,7 @@ public class AuthService {
         this.events = events;
         this.mailService = mailService;
         this.refreshTokenDays = refreshTokenDays;
+        this.frontendUrl = frontendUrl;
     }
 
     public String register(String name, String email, String password) {
@@ -150,7 +155,45 @@ public class AuthService {
     public MeResponse me(String userId) {
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
-        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name());
+        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name(), isPremium(user));
+    }
+
+    public boolean isPremium(User user) {
+        if (user.getRole() == User.Role.ADMIN) {
+            return true;
+        }
+        if (!user.isPremium()) {
+            return false;
+        }
+        return user.getPremiumUntil() == null || user.getPremiumUntil().isAfter(Instant.now());
+    }
+
+    public User requireUser(String userId) {
+        return users.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
+    }
+
+    public User grantPremium(String userId) {
+        return grantPremium(userId, null);
+    }
+
+    public User grantPremium(String userId, Instant until) {
+        User user = requireUser(userId);
+        user.setPremium(true);
+        user.setPremiumUntil(until);
+        user.setUpdatedAt(Instant.now());
+        return users.save(user);
+    }
+
+    public User revokePremium(String userId) {
+        User user = requireUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot revoke Premium on an admin account", HttpStatus.BAD_REQUEST);
+        }
+        user.setPremium(false);
+        user.setPremiumUntil(null);
+        user.setUpdatedAt(Instant.now());
+        return users.save(user);
     }
 
     public void verifyEmail(String token) {
@@ -227,12 +270,129 @@ public class AuthService {
         return users.findAll();
     }
 
+    public User getUser(String userId) {
+        return users.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
+    }
+
+    public SupportMailResult sendPasswordResetForUser(String userId) {
+        User user = getUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot reset an admin password from support", HttpStatus.BAD_REQUEST);
+        }
+        String raw = tokenHasher.randomToken();
+        Instant now = Instant.now();
+        resetTokens.save(PasswordResetToken.builder()
+                .userId(user.getId())
+                .tokenHash(tokenHasher.hash(raw))
+                .expiresAt(now.plus(1, ChronoUnit.HOURS))
+                .createdAt(now)
+                .used(false)
+                .build());
+        String actionUrl = frontendUrl + "/reset-password?token=" + raw;
+        boolean sent = true;
+        String message = "Reset email sent. Link expires in 1 hour.";
+        try {
+            mailService.sendPasswordReset(user.getEmail(), raw);
+        } catch (RuntimeException e) {
+            sent = false;
+            message = "Email was not delivered. Copy the reset link.";
+            log.warn("Support reset email failed for {}", user.getEmail(), e);
+        }
+        return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
+    }
+
+    public SupportMailResult resendVerificationForUser(String userId) {
+        User user = getUser(userId);
+        if (user.isEmailVerified()) {
+            return new SupportMailResult(false, user.getEmail(), null, "This inbox is already verified.");
+        }
+        Instant now = Instant.now();
+        String raw = issueVerificationToken(user.getId(), now);
+        String encoded = java.net.URLEncoder.encode(raw, java.nio.charset.StandardCharsets.UTF_8);
+        String actionUrl = frontendUrl + "/verify-email?token=" + encoded;
+        boolean sent = true;
+        String message = "Verification email sent. Link expires in 2 days.";
+        try {
+            mailService.sendVerification(user.getEmail(), null, raw);
+        } catch (RuntimeException e) {
+            sent = false;
+            message = "Email was not delivered. Copy the verification link.";
+            log.warn("Support verification email failed for {}", user.getEmail(), e);
+        }
+        return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
+    }
+
     public User updateStatus(String userId, User.Status status) {
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
         user.setStatus(status);
         user.setUpdatedAt(Instant.now());
         return users.save(user);
+    }
+
+    public InviteUserResult inviteUser(String email, String name, String roleName) {
+        String normalized = EmailAddresses.normalize(email);
+        if (!EmailAddresses.isValid(normalized)) {
+            throw new ApiException(ErrorCode.AUTH_INVALID_EMAIL, "Enter a valid email address", HttpStatus.BAD_REQUEST);
+        }
+        if (users.existsByEmail(normalized)) {
+            throw new ApiException(ErrorCode.AUTH_EMAIL_TAKEN, "Email already registered", HttpStatus.CONFLICT);
+        }
+        User.Role role = parseAssignableRole(roleName);
+        Instant now = Instant.now();
+        String displayName = name == null || name.isBlank() ? null : name.trim();
+        User user = users.save(User.builder()
+                .email(normalized)
+                .passwordHash(passwordEncoder.encode(tokenHasher.randomToken()))
+                .role(role)
+                .status(User.Status.ACTIVE)
+                .emailVerified(true)
+                .provider("LOCAL")
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
+        events.publishRegistered(user.getId(), user.getEmail(), displayName == null ? user.getEmail() : displayName);
+
+        String raw = tokenHasher.randomToken();
+        resetTokens.save(PasswordResetToken.builder()
+                .userId(user.getId())
+                .tokenHash(tokenHasher.hash(raw))
+                .expiresAt(now.plus(1, ChronoUnit.HOURS))
+                .createdAt(now)
+                .used(false)
+                .build());
+        String actionUrl = frontendUrl + "/reset-password?token=" + raw;
+        boolean sent = true;
+        String message = "Invite sent. They have 1 hour to set a password.";
+        try {
+            mailService.sendInvite(user.getEmail(), displayName, raw);
+        } catch (RuntimeException e) {
+            sent = false;
+            message = "Account created. Email was not delivered. Copy the set-password link.";
+            log.warn("Invite email failed for {}", user.getEmail(), e);
+        }
+        return new InviteUserResult(user.getId(), user.getEmail(), user.getRole().name(), sent, actionUrl, message);
+    }
+
+    public User updateRole(String userId, String roleName) {
+        User user = getUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change an admin role", HttpStatus.BAD_REQUEST);
+        }
+        user.setRole(parseAssignableRole(roleName));
+        user.setUpdatedAt(Instant.now());
+        return users.save(user);
+    }
+
+    private User.Role parseAssignableRole(String roleName) {
+        if (roleName == null || roleName.isBlank() || "USER".equalsIgnoreCase(roleName.trim())) {
+            return User.Role.USER;
+        }
+        if ("EDITOR".equalsIgnoreCase(roleName.trim())) {
+            return User.Role.EDITOR;
+        }
+        throw new ApiException(ErrorCode.VALIDATION_ERROR, "Assign USER or EDITOR only", HttpStatus.BAD_REQUEST);
     }
 
     private String issueVerificationToken(String userId, Instant now) {
@@ -248,7 +408,7 @@ public class AuthService {
     }
 
     public LoginResponse issueTokens(User user, String device) {
-        String access = jwtService.generateAccessToken(user.getId(), user.getRole().name());
+        String access = jwtService.generateAccessToken(user.getId(), user.getRole().name(), isPremium(user));
         String refreshRaw = tokenHasher.randomToken();
         Instant now = Instant.now();
         refreshTokens.save(RefreshToken.builder()

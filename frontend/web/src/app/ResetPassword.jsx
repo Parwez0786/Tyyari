@@ -34,11 +34,11 @@ export default function ResetPassword() {
         <form onSubmit={onSubmit} className="space-y-3">
           <label className="block text-sm font-medium">
             New password
-            <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+            <input className="field" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} placeholder="At least 8 characters" required />
           </label>
           <label className="block text-sm font-medium">
             Confirm password
-            <input className="field" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={8} required />
+            <input className="field" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={8} placeholder="Type it again" required />
           </label>
           {error && <p className="text-sm text-hard">{error}</p>}
           <button className="btn-black w-full">Update password</button>

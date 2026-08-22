@@ -51,7 +51,9 @@ export default function FrontendPrompt({ data, submitted = false }) {
           </>
         )}
         {tab === "solution" && (
-          <p className="text-sm leading-6 text-mute">Official solutions will show up here later. Keep iterating in the editor for now.</p>
+          <p className="text-sm leading-6 text-mute">
+            Official write-ups are not unlocked yet. Build the features in the problem tab, then Submit so this attempt is saved to your account.
+          </p>
         )}
         {tab === "history" && <HistoryTab questionId={data.id} submitted={submitted} />}
       </div>

@@ -71,6 +71,12 @@ export default function Learn() {
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Week-by-week roadmap</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-mute">{meta.blurb}</p>
+          {(libraryQuery.isLoading || progressQuery.isLoading) && (
+            <p className="mt-3 text-sm text-mute">Matching weeks to your submitted problems…</p>
+          )}
+          {libraryQuery.isError && (
+            <p className="mt-3 text-sm text-hard">Could not load the question library for this path. Refresh to retry.</p>
+          )}
           <div className="mt-5 flex flex-wrap gap-2">
             {ROLES.map((item) => (
               <button

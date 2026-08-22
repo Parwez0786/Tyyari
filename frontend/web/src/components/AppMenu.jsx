@@ -35,7 +35,7 @@ const groups = [
     label: "Platform",
     items: [
       { title: "Mock Interview", detail: "Guided practice rounds", soon: true },
-      { title: "Upgrade to Premium", detail: "Unlock all features", gold: true, soon: true },
+      { to: "/premium", title: "Upgrade to Premium", detail: "Unlock locked problems", gold: true },
     ],
   },
 ];

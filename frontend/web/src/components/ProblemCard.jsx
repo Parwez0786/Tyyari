@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
 import { CompanyMark, DifficultyBadge } from "./QuestionMeta";
 
 const ctaByType = {
@@ -12,7 +13,8 @@ const ctaByType = {
 
 export default function ProblemCard({ question, onStart, completed = false }) {
   const q = question;
-  const locked = Boolean(q.premium);
+  const entitled = useEntitled();
+  const locked = isPremiumLocked(q, entitled);
   const cta = completed ? "Solve again" : (ctaByType[q.type] || "Start");
 
   return (
@@ -28,7 +30,7 @@ export default function ProblemCard({ question, onStart, completed = false }) {
 
       <h3 className="mt-4 text-lg font-bold leading-snug">{q.title}</h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-400">
-        {q.description || "Open this problem to read the full prompt, constraints, and hints."}
+        {q.description || "Open this problem to read the full prompt, constraints, and hints before you start."}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
@@ -40,7 +42,7 @@ export default function ProblemCard({ question, onStart, completed = false }) {
       <div className="mt-auto pt-5">
         {locked ? (
           <Link
-            to="/onboarding"
+            to="/premium"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 py-3 text-sm font-semibold text-brand hover:bg-white/10"
           >
             <LockIcon />

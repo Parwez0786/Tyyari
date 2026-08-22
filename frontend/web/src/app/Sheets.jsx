@@ -32,7 +32,7 @@ export default function Sheets() {
   if (query.isLoading) {
     return (
       <Layout>
-        <p className="mt-8 text-sm text-mute">Loading sheet…</p>
+        <p className="mt-8 text-sm text-mute">Loading {selected} sheets…</p>
       </Layout>
     );
   }
@@ -71,7 +71,11 @@ export default function Sheets() {
         ))}
       </div>
       {!sheets.length && (
-        <p className="mt-10 text-center text-sm text-mute">No sheets published for this track yet.</p>
+        <p className="mt-10 text-center text-sm text-mute">
+          No {selected} sheets are published yet. Browse the{" "}
+          <Link to={`/practice/${selected}`} className="font-semibold text-brand">{selected} practice library</Link>
+          {" "}instead.
+        </p>
       )}
     </Layout>
   );

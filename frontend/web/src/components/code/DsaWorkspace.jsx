@@ -268,7 +268,7 @@ function TestcasePanel({
                   index === active ? "bg-white/10 text-ink" : "text-mute hover:bg-white/5 hover:text-ink"
                 }`}
               >
-                Case {index + 1}
+                {item.hidden ? `Hidden ${hiddenIndex(cases, index)}` : `Case ${visibleIndex(cases, index)}`}
               </button>
             ))}
             <button
@@ -279,7 +279,7 @@ function TestcasePanel({
             >
               <CirclePlus size={15} />
             </button>
-            {cases.length > 1 && (
+            {cases.length > 1 && !current?.hidden && (
               <button
                 type="button"
                 onClick={() => onRemove(active)}
@@ -295,17 +295,20 @@ function TestcasePanel({
             <textarea
               className="mt-1.5 h-24 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs leading-5 text-ink outline-none"
               value={current?.input || ""}
+              readOnly={current?.hidden}
               onChange={(event) => onChange({ input: event.target.value })}
             />
           </label>
-          <label className="mt-3 block">
-            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Expected</span>
-            <textarea
-              className="mt-1.5 h-16 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs leading-5 text-ink outline-none"
-              value={current?.expected || ""}
-              onChange={(event) => onChange({ expected: event.target.value })}
-            />
-          </label>
+          {!current?.hidden && (
+            <label className="mt-3 block">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Expected</span>
+              <textarea
+                className="mt-1.5 h-16 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs leading-5 text-ink outline-none"
+                value={current?.expected || ""}
+                onChange={(event) => onChange({ expected: event.target.value })}
+              />
+            </label>
+          )}
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto p-3">
@@ -322,7 +325,7 @@ function TestcasePanel({
           <pre className={`mt-2 whitespace-pre-wrap font-mono text-xs leading-5 ${view.tone}`}>
             {running ? "Running…" : view.text}
           </pre>
-          {current?.expected ? (
+          {!current?.hidden && current?.expected ? (
             <>
               <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Expected</p>
               <pre className="mt-2 whitespace-pre-wrap font-mono text-xs leading-5 text-ink">{current.expected}</pre>
@@ -332,6 +335,14 @@ function TestcasePanel({
       )}
     </div>
   );
+}
+
+function visibleIndex(cases, index) {
+  return cases.slice(0, index + 1).filter((item) => !item.hidden).length;
+}
+
+function hiddenIndex(cases, index) {
+  return cases.slice(0, index + 1).filter((item) => item.hidden).length;
 }
 
 function TabButton({ active, onClick, children }) {
@@ -347,13 +358,20 @@ function TabButton({ active, onClick, children }) {
 }
 
 function casesFromQuestion(data) {
-  const examples = data?.examples || [];
-  if (!examples.length) return [{ id: "case-1", input: "", expected: "" }];
-  return examples.map((example, index) => ({
+  const examples = (data?.examples || []).map((example, index) => ({
     id: `case-${index + 1}`,
     input: example.input || "",
     expected: example.output || "",
+    hidden: false,
   }));
+  const hidden = (data?.testcases || []).map((item, index) => ({
+    id: `hidden-${index + 1}`,
+    input: item.input || "",
+    expected: item.output || "",
+    hidden: true,
+  }));
+  const cases = [...examples, ...hidden];
+  return cases.length ? cases : [{ id: "case-1", input: "", expected: "", hidden: false }];
 }
 
 function loadDsa(key, title, cases) {

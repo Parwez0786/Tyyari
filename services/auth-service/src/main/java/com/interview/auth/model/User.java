@@ -29,6 +29,9 @@ public class User {
     private String provider;
     private String googleSub;
     private String githubId;
+    private boolean premium;
+    private Instant premiumUntil;
+    private String stripeCustomerId;
     private Instant createdAt;
     private Instant updatedAt;
 

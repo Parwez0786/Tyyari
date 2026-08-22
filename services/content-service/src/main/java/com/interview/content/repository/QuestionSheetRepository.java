@@ -11,4 +11,5 @@ public interface QuestionSheetRepository extends MongoRepository<QuestionSheet, 
     boolean existsBySlug(String slug);
     List<QuestionSheet> findByPublishedTrueOrderByCreatedAtAsc();
     List<QuestionSheet> findByTypeAndPublishedTrueOrderByCreatedAtAsc(String type);
+    List<QuestionSheet> findAllByOrderByUpdatedAtDesc();
 }

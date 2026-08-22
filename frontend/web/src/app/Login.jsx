@@ -94,7 +94,7 @@ export default function Login() {
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block text-sm font-medium">
           Email
-          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@company.com" />
         </label>
         <label className="block text-sm font-medium">
           Password
@@ -136,7 +136,12 @@ export default function Login() {
       <p className="mt-3 text-center text-sm text-mute">
         Don&apos;t have an account? <Link to="/register" className="font-medium text-brand">Register</Link>
       </p>
-      <p className="mt-6 text-center text-xs text-mute">Privacy · Terms</p>
+      <p className="mt-6 text-center text-xs text-mute">
+        By signing in you agree to our{" "}
+        <Link to="/terms" className="font-medium text-ink hover:text-brand">Terms</Link>
+        {" "}and{" "}
+        <Link to="/privacy" className="font-medium text-ink hover:text-brand">Privacy</Link>.
+      </p>
     </AuthShell>
   );
 }

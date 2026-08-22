@@ -20,6 +20,7 @@ import {
   basename,
   buildTree,
   defaultFiles,
+  filesFromStarter,
   dirname,
   isFile,
   isFolder,
@@ -37,7 +38,7 @@ import { filesFromSubmission, loadSubmission, saveSubmission } from "../../servi
 
 export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabel = "Back to LLD practice" }) {
   const key = `tyyari.lld.${data.id}`;
-  const initial = useMemo(() => loadWorkspace(key, data.title), [key, data.title]);
+  const initial = useMemo(() => loadWorkspace(key, data.title, data.starterFiles), [key, data.title, data.starterFiles]);
   const [entries, setEntries] = useState(initial.files);
   const [activeId, setActiveId] = useState(initial.activeId);
   const [stdin, setStdin] = useState(initial.stdin);
@@ -617,7 +618,7 @@ function AddItemDialog({ kind, parent, entries, fallbackExt, language, onClose, 
   );
 }
 
-function loadWorkspace(key, title) {
+function loadWorkspace(key, title, starterFiles) {
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     if (Array.isArray(saved.files) && saved.files.length) {
@@ -639,7 +640,7 @@ function loadWorkspace(key, title) {
   } catch {
     /* ignore */
   }
-  const files = defaultFiles(title);
+  const files = filesFromStarter(starterFiles, () => defaultFiles(title));
   return { files, activeId: files[0].id, stdin: "", language: "java" };
 }
 

@@ -9,6 +9,7 @@ import MonacoPane from "./MonacoPane";
 import PreviewPane, { usePreviewLogs } from "./PreviewPane";
 import { buildPreviewSrcDoc } from "./preview";
 import {
+  filesFromStarter,
   frontendDefaultFiles,
   frontendStarterFor,
   isFile,
@@ -21,7 +22,7 @@ const DURATION = { EASY: 20, MEDIUM: 30, HARD: 45 };
 
 export default function FrontendWorkspace({ data, backTo = "/practice/FRONTEND", backLabel = "Back to Frontend practice" }) {
   const key = `tyyari.fe.${data.id}`;
-  const initial = useMemo(() => loadFrontend(key, data.title), [key, data.title]);
+  const initial = useMemo(() => loadFrontend(key, data.title, data.starterFiles), [key, data.title, data.starterFiles]);
   const [entries, setEntries] = useState(initial.files);
   const [activeId, setActiveId] = useState(initial.activeId);
   const [autoSave, setAutoSave] = useState(true);
@@ -254,7 +255,7 @@ function AddFrontendFile({ entries, onClose, onCreate }) {
   );
 }
 
-function loadFrontend(key, title) {
+function loadFrontend(key, title, starterFiles) {
   try {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     if (Array.isArray(saved.files) && saved.files.length) {
@@ -265,7 +266,7 @@ function loadFrontend(key, title) {
   } catch {
     /* ignore */
   }
-  const files = frontendDefaultFiles(title);
+  const files = filesFromStarter(starterFiles, () => frontendDefaultFiles(title));
   return { files, activeId: files[0].id };
 }
 

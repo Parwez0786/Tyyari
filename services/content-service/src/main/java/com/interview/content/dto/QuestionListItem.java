@@ -12,5 +12,6 @@ public record QuestionListItem(
         List<String> topics,
         List<String> companies,
         boolean isSolved,
-        boolean premium
+        boolean premium,
+        boolean published
 ) {}

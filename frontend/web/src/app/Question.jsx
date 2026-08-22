@@ -16,6 +16,7 @@ import PromptCard, { RequirementsBlock } from "../components/PromptCard";
 import { QuestionMeta } from "../components/QuestionMeta";
 import ThemeToggle from "../components/ThemeToggle";
 import WhiteboardBoard from "../components/WhiteboardBoard";
+import { PremiumGate } from "./Premium";
 import { contentApi } from "../services/api";
 import { loadSubmission, saveSubmission } from "../services/submissions";
 
@@ -37,7 +38,7 @@ export default function Question() {
   const dsaCode = dsa && (view === "code" || !view);
   const feCode = frontend && (view === "code" || !view);
   const needPick = hld && !canvas;
-  const workspace = (hld && canvas) || lldCode || dsaCode || feCode || cs;
+  const workspace = !data?.locked && ((hld && canvas) || lldCode || dsaCode || feCode || cs);
   const backTo = sheet ? `/sheets/${sheet}` : `/practice/${data?.type || "DSA"}`;
   const backLabel = sheet ? "Back to sheet" : `Back to ${data?.type || "practice"}`;
 
@@ -49,8 +50,17 @@ export default function Question() {
 
   return (
     <Layout wide={workspace} fill={workspace} hideNav={workspace}>
-      {q.isLoading && <p className="p-6 text-sm text-mute">Loading…</p>}
-      {data && !hld && !lld && !dsa && !frontend && !cs && (
+      {q.isLoading && <p className="p-6 text-sm text-mute">Loading the problem prompt…</p>}
+      {q.isError && (
+        <section className="mx-auto max-w-lg py-16 text-center">
+          <p className="label-caps">Problem unavailable</p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">We could not open this question</h1>
+          <p className="mt-3 text-sm text-mute">It may be unpublished, or the link is wrong. Go back to practice and pick another one.</p>
+          <Link to={backTo} className="btn-black mt-8">{backLabel}</Link>
+        </section>
+      )}
+      {data?.locked && <PremiumGate question={data} backTo={backTo} />}
+      {data && !data.locked && !hld && !lld && !dsa && !frontend && !cs && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Coming soon</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data.title}</h1>
@@ -58,14 +68,14 @@ export default function Question() {
           <Link to={backTo} className="btn-black mt-8">{sheet ? "Back to sheet" : "Open HLD practice"}</Link>
         </section>
       )}
-      {data && hld && needPick && <ProblemPreview data={data} backTo={backTo} sheet={sheet} />}
-      {data && hld && view === "blueprint" && <BlueprintMode data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && hld && view === "whiteboard" && <WhiteboardMode data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && lldCode && <CodeWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && dsaCode && <DsaWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && feCode && <FrontendWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && cs && <CsQuizWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && hld && needPick && (
+      {data && !data.locked && hld && needPick && <ProblemPreview data={data} backTo={backTo} sheet={sheet} />}
+      {data && !data.locked && hld && view === "blueprint" && <BlueprintMode data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && hld && view === "whiteboard" && <WhiteboardMode data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && lldCode && <CodeWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && dsaCode && <DsaWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && feCode && <FrontendWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && cs && <CsQuizWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
+      {data && !data.locked && hld && needPick && (
         <ModeOverlay
           question={data}
           onPick={setView}
@@ -343,6 +353,7 @@ function DesignWorkspace({ data, backTo = "/practice/HLD", backLabel = "Back to 
             <Panel defaultSize={28} minSize={18} maxSize={40} className="h-full min-h-0">
               <NotesPanel
                 questionId={data.id}
+                defaults={{ math: data.estimates || "", explanation: data.canvasNotes || "" }}
                 onCollapse={() => setFocus(true)}
                 onApi={(api) => {
                   if (notesRef) notesRef.current = api;

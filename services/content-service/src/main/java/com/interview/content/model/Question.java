@@ -41,6 +41,10 @@ public class Question {
     private List<String> functionalRequirements;
     private List<String> nonFunctionalRequirements;
     private List<Example> examples;
+    private List<TestCase> testcases;
+    private List<StarterFile> starterFiles;
+    private String estimates;
+    private String canvasNotes;
     private List<QuizItem> quiz;
     private List<String> hints;
     @Indexed

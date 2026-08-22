@@ -38,7 +38,8 @@ export default function ForgotPassword() {
         <form onSubmit={onSubmit} className="space-y-3">
           <label className="block text-sm font-medium">
             Email
-            <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="The email on your Tyyari account" required />
+            <span className="mt-1.5 block text-xs font-normal text-mute">We only send a link if that inbox is registered.</span>
           </label>
           {error && <p className="text-sm text-hard">{error}</p>}
           <button className="btn-purple w-full">Send reset link</button>
