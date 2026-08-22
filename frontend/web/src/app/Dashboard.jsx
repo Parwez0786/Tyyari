@@ -23,6 +23,7 @@ import { DifficultyBadge } from "../components/QuestionMeta";
 import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { contentApi, userApi, authApi } from "../services/api";
 import { ROADMAPS, roleFromProfile } from "../data/roadmaps";
+import { useEntitled } from "../hooks/usePremium";
 
 const TRACKS = [
   {
@@ -179,6 +180,7 @@ export default function Dashboard() {
   const oaSet = assessments[0];
   const pathRole = roleFromProfile(profile?.targetRole);
   const path = ROADMAPS[pathRole] || ROADMAPS["SDE-1"];
+  const entitled = useEntitled();
 
   return (
     <Layout>
@@ -191,6 +193,9 @@ export default function Dashboard() {
             <p className="font-hand text-2xl text-brand">{greeting()}</p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{firstName}</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-mute">{nudge}</p>
+            {profileQuery.isError && (
+              <p className="mt-2 text-sm text-hard">Could not load your profile. Refresh — your streak still lives on the server.</p>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-brand/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand">
                 {xp.name}
@@ -203,6 +208,15 @@ export default function Dashboard() {
               {companies.map((name) => (
                 <span key={name} className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-mute">{name}</span>
               ))}
+              {entitled ? (
+                <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-premium">
+                  Premium
+                </span>
+              ) : (
+                <Link to="/premium" className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-premium hover:bg-blue-500/25">
+                  Upgrade
+                </Link>
+              )}
             </div>
             <div className="mt-4 max-w-md">
               <ProgressBar

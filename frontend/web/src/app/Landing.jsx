@@ -130,7 +130,7 @@ const FAQS = [
   },
   {
     q: "What is free vs Premium?",
-    a: "Phase 1 is the practice library. Upgrade to Premium is visual only for now — no payments. You keep access to published questions after you create an account.",
+    a: "Free is the published practice library. Premium unlocks the locked HLD, LLD, DSA, and frontend problems — a one-time payment. Checkout uses Stripe when keys are set.",
   },
 ];
 
@@ -322,6 +322,17 @@ export default function Landing() {
         </article>
       </section>
 
+      <section className="mt-8 overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-blue-500/15 via-card to-card p-6 sm:p-8">
+        <p className="label-caps">Premium</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Locks that actually lock</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-mute">
+          Locked cards stay closed until you pay. Free keeps the rest of the library. One payment, lifetime access.
+        </p>
+        <Link to="/premium" className="btn-premium mt-5 inline-flex !px-5 !py-2.5">
+          See Premium
+        </Link>
+      </section>
+
       <section className="mt-8 rounded-[28px] border border-line bg-card p-6 sm:p-8">
         <p className="label-caps">FAQ</p>
         <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Frequently asked questions</h2>
@@ -341,7 +352,7 @@ export default function Landing() {
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to={primaryTo} className="btn-brand">{primaryLabel}</Link>
-          {!authed && <Link to="/onboarding" className="btn-premium">View Premium</Link>}
+          <Link to="/premium" className="btn-premium">View Premium</Link>
         </div>
       </section>
     </Layout>

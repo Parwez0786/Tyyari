@@ -2,6 +2,7 @@ package com.interview.content.exception;
 
 public enum ErrorCode {
     AUTH_UNAUTHORIZED,
+    PREMIUM_REQUIRED,
     QUESTION_NOT_FOUND,
     ASSESSMENT_NOT_FOUND,
     SHEET_NOT_FOUND,

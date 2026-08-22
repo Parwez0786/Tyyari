@@ -32,7 +32,7 @@ export default function VerifyEmail() {
       title={status === "ok" ? "Email verified" : "Verify your email"}
       subtitle={status === "ok" ? "Your inbox is confirmed. You can sign in now." : "Confirming the link from your inbox."}
     >
-      {status === "pending" && <p className="text-sm text-mute">Verifying…</p>}
+      {status === "pending" && <p className="text-sm text-mute">Checking the link from your inbox. This takes a second.</p>}
       {status === "missing" && (
         <p className="text-sm text-hard">
           This link is missing a token. Request a new one from <Link to="/login" className="text-brand">login</Link>.

@@ -1,54 +1,95 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { adminApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import AppMenu from "./AppMenu";
+import Avatar from "./Avatar";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
-
-const nav = [
-  { to: "/", label: "Questions", end: true },
-  { to: "/questions/new", label: "New" },
-  { to: "/catalog", label: "Catalog" },
-  { to: "/users", label: "Users" },
-];
 
 export default function Shell() {
   const navigate = useNavigate();
   const clear = useAuthStore((s) => s.clear);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
+  const email = meQuery.data?.data?.email || "";
+
+  function logout() {
+    clear();
+    navigate("/login");
+  }
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-line/80 bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
-          <Logo />
-          <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium md:flex">
-            {nav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => (isActive ? "text-brand" : "text-ink hover:text-brand")}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden rounded-full border border-line px-3 py-1.5 text-xs text-mute lg:inline">MODEL · Admin</span>
-            <ThemeToggle />
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-20 bg-surface">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Logo to="/" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThemeToggle compact />
+            <Avatar email={email} />
             <button
-              onClick={() => {
-                clear();
-                navigate("/login");
-              }}
-              className="btn-black !px-4 !py-1.5"
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink hover:bg-field"
+              aria-label="Open menu"
+              onClick={() => setMenuOpen(true)}
             >
-              Logout
+              <MenuIcon />
             </button>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} email={email} onLogout={logout} />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
+      <footer className="mt-10 border-t border-line bg-card">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 md:grid-cols-[1.4fr_0.8fr_0.8fr]">
+          <div>
+            <Logo to="/" />
+            <p className="mt-3 max-w-xs text-sm leading-6 text-mute">
+              Admin for the same catalog the candidate app reads. Publish a problem and it shows up on practice.
+            </p>
+            <p className="mt-4 font-hand text-xl text-brand">Publish carefully.</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Catalog</p>
+            <ul className="mt-3 grid gap-2 text-sm">
+              <li><Link to="/" className="text-ink hover:text-brand">Dashboard</Link></li>
+              <li><Link to="/questions" className="text-ink hover:text-brand">Questions</Link></li>
+              <li><Link to="/questions/new" className="text-ink hover:text-brand">New question</Link></li>
+              <li><Link to="/questions/new/DSA" className="text-ink hover:text-brand">Add DSA</Link></li>
+              <li><Link to="/questions/new/HLD" className="text-ink hover:text-brand">Add HLD</Link></li>
+              <li><Link to="/catalog" className="text-ink hover:text-brand">Companies, topics, tags</Link></li>
+              <li><Link to="/sheets" className="text-ink hover:text-brand">Sheets</Link></li>
+              <li><Link to="/oa" className="text-ink hover:text-brand">OA sets</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Access</p>
+            <ul className="mt-3 grid gap-2 text-sm">
+              <li><Link to="/users" className="text-ink hover:text-brand">Users</Link></li>
+              <li><Link to="/billing" className="text-ink hover:text-brand">Billing</Link></li>
+              <li><Link to="/audit" className="text-ink hover:text-brand">Audit log</Link></li>
+              <li><button type="button" className="text-ink hover:text-brand" onClick={logout}>Sign out</button></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-line">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+            <p className="text-xs text-mute">© {new Date().getFullYear()} Tyyari. Admin console.</p>
+            <p className="text-xs text-mute">Same library. Same orange.</p>
+          </div>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
   );
 }

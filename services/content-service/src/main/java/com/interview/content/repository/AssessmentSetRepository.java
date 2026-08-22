@@ -10,4 +10,5 @@ public interface AssessmentSetRepository extends MongoRepository<AssessmentSet, 
     Optional<AssessmentSet> findBySlug(String slug);
     boolean existsBySlug(String slug);
     List<AssessmentSet> findByPublishedTrueOrderByCreatedAtAsc();
+    List<AssessmentSet> findAllByOrderByUpdatedAtDesc();
 }

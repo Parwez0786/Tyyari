@@ -123,6 +123,15 @@ function RequirementsLists({ data }) {
       <RequirementCard title="Functional requirements" items={data.functionalRequirements} tone="func" />
       <RequirementCard title="Non-functional requirements" items={data.nonFunctionalRequirements} tone="nfr" />
       <RequirementCard title="Constraints" items={data.constraints} tone="nfr" />
+      {data.estimates && (
+        <section>
+          <h3 className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            Estimates
+          </h3>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs leading-5 text-ink">{data.estimates}</pre>
+        </section>
+      )}
       <RequirementCard title="Hints" items={data.hints} tone="hint" />
     </div>
   );

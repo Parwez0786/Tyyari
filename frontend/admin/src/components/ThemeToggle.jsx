@@ -1,6 +1,6 @@
 import { useThemeStore } from "../stores/themeStore";
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ compact = false }) {
   const theme = useThemeStore((s) => s.theme);
   const toggle = useThemeStore((s) => s.toggle);
   const dark = theme === "dark";
@@ -9,11 +9,13 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-ink sm:w-auto sm:gap-1.5 sm:px-3"
+      className={compact
+        ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink hover:bg-field"
+        : "inline-flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-ink sm:w-auto sm:gap-1.5 sm:px-3"}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {dark ? <SunIcon /> : <MoonIcon />}
-      <span className="hidden text-xs font-medium sm:inline">{dark ? "Light" : "Dark"}</span>
+      {!compact && <span className="hidden text-xs font-medium sm:inline">{dark ? "Light" : "Dark"}</span>}
     </button>
   );
 }

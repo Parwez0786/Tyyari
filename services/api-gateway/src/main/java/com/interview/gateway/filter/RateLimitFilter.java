@@ -29,7 +29,7 @@ public class RateLimitFilter implements WebFilter, Ordered {
             return chain.filter(exchange);
         }
         String path = exchange.getRequest().getURI().getPath();
-        if (path.startsWith("/actuator")) {
+        if (path.startsWith("/actuator") || path.startsWith("/api/v1/billing/webhook")) {
             return chain.filter(exchange);
         }
         String role = (String) exchange.getAttributes().getOrDefault("role", "ANON");

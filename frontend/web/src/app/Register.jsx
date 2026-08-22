@@ -56,11 +56,11 @@ export default function Register() {
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block text-sm font-medium">
           Name
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="How the dashboard should greet you" required />
         </label>
         <label className="block text-sm font-medium">
           Email
-          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={254} required />
+          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={254} placeholder="you@company.com" required />
         </label>
         <label className="block text-sm font-medium">
           Password
@@ -81,7 +81,14 @@ export default function Register() {
         {error && <p className="text-sm text-hard">{error}</p>}
         <button className="btn-black mt-2 w-full !py-3.5 text-[15px] font-semibold">Get started</button>
       </form>
-      <p className="mt-8 text-center text-sm text-mute">
+      <p className="mt-6 text-center text-xs leading-5 text-mute">
+        Creating an account means you accept the{" "}
+        <Link to="/terms" className="font-medium text-ink hover:text-brand">Terms</Link>
+        {" "}and{" "}
+        <Link to="/privacy" className="font-medium text-ink hover:text-brand">Privacy</Link>
+        {" "}notice. We will email a verification link before you can sign in.
+      </p>
+      <p className="mt-6 text-center text-sm text-mute">
         Already have an account? <Link to="/login" className="font-medium text-brand">Sign in</Link>
       </p>
     </AuthShell>

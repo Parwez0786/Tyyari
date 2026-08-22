@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
 
 const badge = {
   EASY: "bg-green-50 text-easy dark:bg-green-950/40",
@@ -8,6 +9,7 @@ const badge = {
 
 export default function QuestionCard({ question, actionLabel = "Open", index }) {
   const q = question;
+  const locked = isPremiumLocked(q, useEntitled());
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
@@ -28,8 +30,11 @@ export default function QuestionCard({ question, actionLabel = "Open", index }) 
             {q.difficulty}
           </span>
         )}
-        <Link to={`/questions/${q.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">
-          {actionLabel}
+        <Link
+          to={locked ? "/premium" : `/questions/${q.id}`}
+          className="btn-ghost !px-4 !py-1.5 text-sm"
+        >
+          {locked ? "Upgrade" : actionLabel}
         </Link>
       </div>
     </article>

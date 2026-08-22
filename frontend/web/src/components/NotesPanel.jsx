@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Info, PanelRightClose } from "lucide-react";
 
-export default function NotesPanel({ questionId, onCollapse, onApi }) {
+export default function NotesPanel({ questionId, defaults, onCollapse, onApi }) {
   const key = `tyyari.notes.${questionId}`;
   const [math, setMath] = useState("");
   const [explanation, setExplanation] = useState("");
@@ -10,13 +10,13 @@ export default function NotesPanel({ questionId, onCollapse, onApi }) {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
-      setMath(saved.math || "");
-      setExplanation(saved.explanation || "");
+      setMath(saved.math || defaults?.math || "");
+      setExplanation(saved.explanation || defaults?.explanation || "");
     } catch {
-      setMath("");
-      setExplanation("");
+      setMath(defaults?.math || "");
+      setExplanation(defaults?.explanation || "");
     }
-  }, [key]);
+  }, [key, defaults?.math, defaults?.explanation]);
 
   useEffect(() => {
     clearTimeout(saveTimer.current);
@@ -74,7 +74,7 @@ export default function NotesPanel({ questionId, onCollapse, onApi }) {
         <button
           type="button"
           disabled
-          title="Coming soon"
+          title="AI analysis is not live yet. Submit your canvas and notes — they still save to your account."
           className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white opacity-80"
           style={{ background: "linear-gradient(90deg, #3b82f6 0%, #ec4899 100%)" }}
         >

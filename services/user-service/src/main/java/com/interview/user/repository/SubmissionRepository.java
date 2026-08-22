@@ -12,4 +12,6 @@ public interface SubmissionRepository extends MongoRepository<Submission, String
     List<Submission> findByUserIdAndScope(String userId, String scope);
 
     List<Submission> findByUserIdAndAssessmentSetIdOrderBySubmittedAtAsc(String userId, String assessmentSetId);
+
+    List<Submission> findByUserIdOrderBySubmittedAtDesc(String userId);
 }

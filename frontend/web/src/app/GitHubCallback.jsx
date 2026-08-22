@@ -52,7 +52,7 @@ export default function GitHubCallback() {
           <Link to="/login" className="mt-4 inline-block text-sm font-medium text-brand">Back to login</Link>
         </div>
       ) : (
-        <p className="text-sm text-mute">Please wait a moment.</p>
+        <p className="text-sm text-mute">GitHub approved the sign-in. We are creating your session and sending you to the dashboard or profile setup.</p>
       )}
     </AuthShell>
   );

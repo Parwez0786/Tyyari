@@ -60,7 +60,8 @@ public class QuestionService {
             boolean publishedOnly
     ) {
         int safePage = Math.max(page, 1);
-        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        int maxLimit = publishedOnly ? 50 : 200;
+        int safeLimit = Math.min(Math.max(limit, 1), maxLimit);
         Query query = new Query();
         List<Criteria> criteria = new ArrayList<>();
         if (publishedOnly) {
@@ -98,17 +99,17 @@ public class QuestionService {
         return new PageResponse<>(items, total, safePage, safeLimit);
     }
 
-    public QuestionDetail getPublished(String id) {
+    public QuestionDetail getPublished(String id, boolean entitled) {
         Question cached = cache.getQuestion(id);
         if (cached != null && cached.isPublished()) {
-            return toDetail(cached);
+            return entitled || !cached.isPremium() ? toDetail(cached) : toLockedDetail(cached);
         }
         Question question = questions.findById(id)
                 .or(() -> questions.findBySlug(id))
                 .filter(Question::isPublished)
                 .orElseThrow(() -> new ApiException(ErrorCode.QUESTION_NOT_FOUND, "Question not found", HttpStatus.NOT_FOUND));
         cache.putQuestion(question);
-        return toDetail(question);
+        return entitled || !question.isPremium() ? toDetail(question) : toLockedDetail(question);
     }
 
     public List<QuestionListItem> publishedDsaBySlugs(List<String> slugs) {
@@ -130,11 +131,14 @@ public class QuestionService {
                 .toList();
     }
 
-    public List<String> hints(String id) {
+    public List<String> hints(String id, boolean entitled) {
         Question question = questions.findById(id)
                 .or(() -> questions.findBySlug(id))
                 .filter(Question::isPublished)
                 .orElseThrow(() -> new ApiException(ErrorCode.QUESTION_NOT_FOUND, "Question not found", HttpStatus.NOT_FOUND));
+        if (question.isPremium() && !entitled) {
+            throw new ApiException(ErrorCode.PREMIUM_REQUIRED, "Upgrade to Premium to view hints", HttpStatus.FORBIDDEN);
+        }
         return question.getHints() == null ? List.of() : question.getHints();
     }
 
@@ -210,9 +214,14 @@ public class QuestionService {
         if (req.functionalRequirements() != null) question.setFunctionalRequirements(req.functionalRequirements());
         if (req.nonFunctionalRequirements() != null) question.setNonFunctionalRequirements(req.nonFunctionalRequirements());
         if (req.examples() != null) question.setExamples(req.examples());
+        if (req.testcases() != null) question.setTestcases(req.testcases());
+        if (req.starterFiles() != null) question.setStarterFiles(req.starterFiles());
+        if (req.estimates() != null) question.setEstimates(req.estimates());
+        if (req.canvasNotes() != null) question.setCanvasNotes(req.canvasNotes());
         if (req.quiz() != null) question.setQuiz(req.quiz());
         if (req.hints() != null) question.setHints(req.hints());
         if (req.published() != null) question.setPublished(req.published());
+        if (req.premium() != null) question.setPremium(req.premium());
         if (req.slug() != null) question.setSlug(Slugs.from(req.slug()));
         return question;
     }
@@ -228,7 +237,8 @@ public class QuestionService {
                 q.getTopics(),
                 q.getCompanies(),
                 false,
-                q.isPremium()
+                q.isPremium(),
+                q.isPublished()
         );
     }
 
@@ -248,8 +258,41 @@ public class QuestionService {
                 q.getFunctionalRequirements(),
                 q.getNonFunctionalRequirements(),
                 q.getExamples(),
+                q.getTestcases(),
+                q.getStarterFiles(),
+                q.getEstimates(),
+                q.getCanvasNotes(),
                 q.getQuiz(),
-                q.getHints()
+                q.getHints(),
+                q.isPremium(),
+                false
+        );
+    }
+
+    private QuestionDetail toLockedDetail(Question q) {
+        return new QuestionDetail(
+                q.getId(),
+                q.getTitle(),
+                q.getSlug(),
+                q.getType(),
+                q.getSubType(),
+                q.getDifficulty(),
+                q.getDescription(),
+                q.getTopics(),
+                q.getCompanies(),
+                q.getTags(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                "",
+                "",
+                List.of(),
+                List.of(),
+                true,
+                true
         );
     }
 

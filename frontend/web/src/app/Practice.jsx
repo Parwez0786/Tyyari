@@ -175,7 +175,7 @@ function TypeSheet({ type }) {
           </span>
           <input
             className="field search-field mt-0"
-            placeholder="Search problems..."
+            placeholder="Search by title, like two sum or YouTube"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -211,13 +211,27 @@ function TypeSheet({ type }) {
         )}
       </div>
 
+      {questionsQuery.isLoading && (
+        <p className="mt-10 text-center text-sm text-mute">Loading {type.toLowerCase()} problems…</p>
+      )}
+      {questionsQuery.isError && (
+        <p className="mt-10 text-center text-sm text-hard">Could not load this track. Refresh, or try another filter.</p>
+      )}
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         {items.map((q) => (
           <ProblemCard key={q.id} question={q} onStart={() => startQuestion(q)} />
         ))}
       </div>
-      {!questionsQuery.isLoading && !items.length && (
-        <p className="mt-10 text-center text-sm text-mute">No problems match these filters.</p>
+      {!questionsQuery.isLoading && !questionsQuery.isError && !items.length && (
+        <p className="mt-10 text-center text-sm text-mute">
+          No problems match these filters. Clear search or company, or open the{" "}
+          {SHEET_BY_TYPE[type] ? (
+            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">{type} sheet</Link>
+          ) : (
+            "full library"
+          )}
+          .
+        </p>
       )}
       {picked && (
         <ModeOverlay
@@ -247,8 +261,14 @@ function OaSheet() {
           <AssessmentCard key={set.id} set={set} onStart={() => navigate(`/oa/${set.id}/precheck`)} />
         ))}
       </div>
-      {!setsQuery.isLoading && !sets.length && (
-        <p className="mt-10 text-center text-sm text-mute">No assessments are published yet.</p>
+      {setsQuery.isLoading && (
+        <p className="mt-10 text-center text-sm text-mute">Loading timed assessment sets…</p>
+      )}
+      {setsQuery.isError && (
+        <p className="mt-10 text-center text-sm text-hard">Could not load OA sets. Refresh and try again.</p>
+      )}
+      {!setsQuery.isLoading && !setsQuery.isError && !sets.length && (
+        <p className="mt-10 text-center text-sm text-mute">No assessments are published yet. Practice DSA while you wait.</p>
       )}
     </Layout>
   );

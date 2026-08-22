@@ -30,6 +30,12 @@ public class DataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         seed("admin@tyyari.dev", "Admin@12345", User.Role.ADMIN, "Tyyari Admin");
         seed("demo@tyyari.dev", "Demo@12345", User.Role.USER, "Demo Candidate");
+        users.findByEmail("admin@tyyari.dev").ifPresent(user -> {
+            if (!user.isPremium()) {
+                user.setPremium(true);
+                users.save(user);
+            }
+        });
     }
 
     private void seed(String email, String password, User.Role role, String name) {
@@ -44,6 +50,7 @@ public class DataSeeder implements ApplicationRunner {
                 .status(User.Status.ACTIVE)
                 .emailVerified(true)
                 .provider("LOCAL")
+                .premium(role == User.Role.ADMIN)
                 .createdAt(now)
                 .updatedAt(now)
                 .build());

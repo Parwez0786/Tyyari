@@ -56,3 +56,9 @@ app:
     client-id: ${GITHUB_CLIENT_ID:}
     client-secret: ${GITHUB_CLIENT_SECRET:}
     redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:3000/auth/github}
+  billing:
+    stripe-secret-key: ${STRIPE_SECRET_KEY:}
+    stripe-webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    currency: ${PREMIUM_CURRENCY:inr}
+    amount: ${PREMIUM_AMOUNT:49900}
+    product-name: ${PREMIUM_PRODUCT_NAME:Tyyari Premium}

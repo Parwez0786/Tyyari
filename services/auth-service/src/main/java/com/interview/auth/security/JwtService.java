@@ -29,12 +29,13 @@ public class JwtService {
         this.accessTokenSeconds = accessTokenSeconds;
     }
 
-    public String generateAccessToken(String userId, String role) {
+    public String generateAccessToken(String userId, String role, boolean premium) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(issuer)
                 .subject(userId)
                 .claim("role", role)
+                .claim("premium", premium)
                 .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessTokenSeconds)))

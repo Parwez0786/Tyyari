@@ -88,7 +88,10 @@ export default function SheetDetail() {
             ))}
           </div>
           {!questions.length && (
-            <p className="mt-10 text-center text-sm text-mute">This sheet has no published questions yet.</p>
+            <p className="mt-10 text-center text-sm text-mute">
+              This sheet has no published questions yet. Try the{" "}
+              <Link to={backTo} className="font-semibold text-brand">{sheet.type} practice library</Link>.
+            </p>
           )}
         </>
       )}

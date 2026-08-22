@@ -37,7 +37,15 @@ export default function OaPrecheck() {
 
   return (
     <Layout>
-      {q.isLoading && <p className="text-sm text-mute">Loading assessment…</p>}
+      {q.isLoading && <p className="text-sm text-mute">Loading assessment rules and problem count…</p>}
+      {q.isError && (
+        <section className="mx-auto max-w-lg py-16 text-center">
+          <p className="label-caps">Assessment missing</p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">This OA set is not available</h1>
+          <p className="mt-3 text-sm text-mute">It may be unpublished. Pick another set from the OA lobby.</p>
+          <Link to="/practice/OA" className="btn-black mt-8">Back to OA lobby</Link>
+        </section>
+      )}
       {data && (
         <div className="mx-auto max-w-xl">
           <Link to="/practice/OA" className="text-sm font-medium text-blue-600 dark:text-blue-400">← Back</Link>
@@ -56,7 +64,7 @@ export default function OaPrecheck() {
 
             <InstructionBlock icon={Shield} title="Proctoring & Privacy">
               <li><strong>Webcam access is mandatory</strong> for this assessment.</li>
-              <li>Your video feed will be monitored for proctoring purposes.</li>
+              <li>The camera stays in your browser so we can confirm a live feed. Tyyari does not upload the video.</li>
               <li>Ensure your face is clearly visible within the frame.</li>
               <li>No other person should be present in the room.</li>
             </InstructionBlock>

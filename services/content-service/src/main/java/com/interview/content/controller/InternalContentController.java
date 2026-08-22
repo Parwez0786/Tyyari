@@ -1,19 +1,25 @@
 package com.interview.content.controller;
 
 import com.interview.content.dto.ApiResponse;
+import com.interview.content.dto.AssessmentWriteRequest;
 import com.interview.content.dto.CompanyRequest;
 import com.interview.content.dto.ContentStats;
 import com.interview.content.dto.PageResponse;
 import com.interview.content.dto.QuestionListItem;
 import com.interview.content.dto.QuestionWriteRequest;
+import com.interview.content.dto.SheetWriteRequest;
 import com.interview.content.dto.TagRequest;
 import com.interview.content.dto.TopicRequest;
+import com.interview.content.model.AssessmentSet;
 import com.interview.content.model.Company;
 import com.interview.content.model.Question;
+import com.interview.content.model.QuestionSheet;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
+import com.interview.content.service.AssessmentSetService;
 import com.interview.content.service.CatalogService;
 import com.interview.content.service.QuestionService;
+import com.interview.content.service.QuestionSheetService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,10 +41,81 @@ public class InternalContentController {
 
     private final QuestionService questionService;
     private final CatalogService catalogService;
+    private final QuestionSheetService sheetService;
+    private final AssessmentSetService assessmentSetService;
 
-    public InternalContentController(QuestionService questionService, CatalogService catalogService) {
+    public InternalContentController(
+            QuestionService questionService,
+            CatalogService catalogService,
+            QuestionSheetService sheetService,
+            AssessmentSetService assessmentSetService
+    ) {
         this.questionService = questionService;
         this.catalogService = catalogService;
+        this.sheetService = sheetService;
+        this.assessmentSetService = assessmentSetService;
+    }
+
+    @GetMapping("/sheets")
+    public ApiResponse<List<QuestionSheet>> sheets() {
+        return ApiResponse.ok(sheetService.listAll());
+    }
+
+    @GetMapping("/sheets/{id}")
+    public ApiResponse<QuestionSheet> sheet(@PathVariable String id) {
+        return ApiResponse.ok(sheetService.getRaw(id));
+    }
+
+    @PostMapping("/sheets")
+    public ApiResponse<QuestionSheet> createSheet(@RequestBody SheetWriteRequest request) {
+        return ApiResponse.ok(sheetService.create(request), "Sheet created");
+    }
+
+    @PutMapping("/sheets/{id}")
+    public ApiResponse<QuestionSheet> updateSheet(@PathVariable String id, @RequestBody SheetWriteRequest request) {
+        return ApiResponse.ok(sheetService.update(id, request));
+    }
+
+    @DeleteMapping("/sheets/{id}")
+    public ApiResponse<Void> deleteSheet(@PathVariable String id) {
+        sheetService.delete(id);
+        return ApiResponse.ok(null, "Deleted");
+    }
+
+    @PatchMapping("/sheets/{id}/publish")
+    public ApiResponse<QuestionSheet> publishSheet(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
+        return ApiResponse.ok(sheetService.publish(id, body.getOrDefault("published", true)));
+    }
+
+    @GetMapping("/assessment-sets")
+    public ApiResponse<List<AssessmentSet>> assessmentSets() {
+        return ApiResponse.ok(assessmentSetService.listAll());
+    }
+
+    @GetMapping("/assessment-sets/{id}")
+    public ApiResponse<AssessmentSet> assessmentSet(@PathVariable String id) {
+        return ApiResponse.ok(assessmentSetService.getRaw(id));
+    }
+
+    @PostMapping("/assessment-sets")
+    public ApiResponse<AssessmentSet> createAssessment(@RequestBody AssessmentWriteRequest request) {
+        return ApiResponse.ok(assessmentSetService.create(request), "Assessment created");
+    }
+
+    @PutMapping("/assessment-sets/{id}")
+    public ApiResponse<AssessmentSet> updateAssessment(@PathVariable String id, @RequestBody AssessmentWriteRequest request) {
+        return ApiResponse.ok(assessmentSetService.update(id, request));
+    }
+
+    @DeleteMapping("/assessment-sets/{id}")
+    public ApiResponse<Void> deleteAssessment(@PathVariable String id) {
+        assessmentSetService.delete(id);
+        return ApiResponse.ok(null, "Deleted");
+    }
+
+    @PatchMapping("/assessment-sets/{id}/publish")
+    public ApiResponse<AssessmentSet> publishAssessment(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
+        return ApiResponse.ok(assessmentSetService.publish(id, body.getOrDefault("published", true)));
     }
 
     @GetMapping("/questions")

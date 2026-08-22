@@ -17,6 +17,8 @@ import Sheets from "./app/Sheets";
 import SheetDetail from "./app/SheetDetail";
 import OaPrecheck from "./app/OaPrecheck";
 import OaExam from "./app/OaExam";
+import Premium from "./app/Premium";
+import Legal from "./app/Legal";
 
 function Private({ children }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -28,6 +30,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/privacy" element={<Legal kind="privacy" />} />
+      <Route path="/terms" element={<Legal kind="terms" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -35,6 +39,7 @@ export default function App() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/auth/github" element={<GitHubCallback />} />
+      <Route path="/premium" element={<Premium />} />
       <Route path="/onboarding" element={<Private><Onboarding /></Private>} />
       <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
       <Route path="/learn" element={<Private><Learn /></Private>} />

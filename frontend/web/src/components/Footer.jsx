@@ -41,12 +41,14 @@ export default function Footer({ signedIn = false }) {
                 <li><Link to="/learn" className="text-ink hover:text-brand">Roadmap</Link></li>
                 <li><Link to="/practice" className="text-ink hover:text-brand">Practice library</Link></li>
                 <li><Link to="/onboarding" className="text-ink hover:text-brand">Profile</Link></li>
+                <li><Link to="/premium" className="text-ink hover:text-brand">Premium</Link></li>
               </>
             ) : (
               <>
                 <li><Link to="/register" className="text-ink hover:text-brand">Get started free</Link></li>
                 <li><Link to="/login" className="text-ink hover:text-brand">Sign in</Link></li>
                 <li><Link to="/learn" className="text-ink hover:text-brand">Roadmap</Link></li>
+                <li><Link to="/premium" className="text-ink hover:text-brand">Premium</Link></li>
               </>
             )}
             <li className="text-mute">Mock interview · Coming soon</li>
@@ -56,7 +58,11 @@ export default function Footer({ signedIn = false }) {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <p className="text-xs text-mute">© {new Date().getFullYear()} Tyyari. Built for SDE interviews.</p>
-          <p className="text-xs text-mute">Practice is the library. Sheets are the grind.</p>
+          <p className="flex flex-wrap gap-3 text-xs text-mute">
+            <Link to="/privacy" className="hover:text-brand">Privacy</Link>
+            <Link to="/terms" className="hover:text-brand">Terms</Link>
+            <span>Practice is the library. Sheets are the grind.</span>
+          </p>
         </div>
       </div>
     </footer>

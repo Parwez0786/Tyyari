@@ -55,6 +55,7 @@ export const authApi = {
   login: (body) => api("/api/v1/auth/login", { method: "POST", body: JSON.stringify(body) }),
   me: () => api("/api/v1/auth/me"),
   logout: (refreshToken) => api("/api/v1/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }),
+  refresh: (refreshToken) => api("/api/v1/auth/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) }),
   google: (body) => api("/api/v1/auth/google", { method: "POST", body: JSON.stringify(body) }),
   github: (body) => api("/api/v1/auth/github", { method: "POST", body: JSON.stringify(body) }),
   publicConfig: () => api("/api/v1/auth/public-config"),
@@ -78,6 +79,14 @@ export const userApi = {
   },
   assessmentSubmissions: (assessmentSetId) => api(`/api/v1/users/me/assessments/${assessmentSetId}/submissions`),
   practiceProgress: () => api("/api/v1/users/me/progress"),
+};
+
+export const billingApi = {
+  publicConfig: () => api("/api/v1/billing/public-config"),
+  me: () => api("/api/v1/billing/me"),
+  checkout: () => api("/api/v1/billing/checkout", { method: "POST" }),
+  confirm: (sessionId) => api("/api/v1/billing/confirm", { method: "POST", body: JSON.stringify({ sessionId }) }),
+  activateDev: () => api("/api/v1/billing/dev-activate", { method: "POST" }),
 };
 
 export const contentApi = {

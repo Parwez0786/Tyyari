@@ -1,3 +1,3 @@
 package com.interview.auth.dto;
 
-public record MeResponse(String id, String email, String role) {}
+public record MeResponse(String id, String email, String role, boolean premium) {}

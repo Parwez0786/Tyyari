@@ -11,15 +11,18 @@ public class DownstreamClient {
     private final RestClient restClient;
     private final String contentUrl;
     private final String authUrl;
+    private final String userUrl;
 
     public DownstreamClient(
             RestClient restClient,
             @Value("${app.content-service-url}") String contentUrl,
-            @Value("${app.auth-service-url}") String authUrl
+            @Value("${app.auth-service-url}") String authUrl,
+            @Value("${app.user-service-url}") String userUrl
     ) {
         this.restClient = restClient;
         this.contentUrl = contentUrl;
         this.authUrl = authUrl;
+        this.userUrl = userUrl;
     }
 
     public ResponseEntity<String> content(String method, String path, String body, String userId) {
@@ -28,6 +31,10 @@ public class DownstreamClient {
 
     public ResponseEntity<String> auth(String method, String path, String body, String userId) {
         return call(authUrl + path, method, body, userId);
+    }
+
+    public ResponseEntity<String> users(String method, String path, String body, String userId) {
+        return call(userUrl + path, method, body, userId);
     }
 
     private ResponseEntity<String> call(String url, String method, String body, String userId) {

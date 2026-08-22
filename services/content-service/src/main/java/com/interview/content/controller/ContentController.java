@@ -17,6 +17,7 @@ import com.interview.content.service.QuestionService;
 import com.interview.content.service.QuestionSheetService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,13 +62,21 @@ public class ContentController {
     }
 
     @GetMapping("/questions/{id}")
-    public ApiResponse<QuestionDetail> question(@PathVariable String id) {
-        return ApiResponse.ok(questionService.getPublished(id));
+    public ApiResponse<QuestionDetail> question(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Premium", required = false) String premium,
+            @RequestHeader(value = "X-User-Role", required = false) String role
+    ) {
+        return ApiResponse.ok(questionService.getPublished(id, entitled(role, premium)));
     }
 
     @GetMapping("/questions/{id}/hints")
-    public ApiResponse<Map<String, List<String>>> hints(@PathVariable String id) {
-        return ApiResponse.ok(Map.of("hints", questionService.hints(id)));
+    public ApiResponse<Map<String, List<String>>> hints(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Premium", required = false) String premium,
+            @RequestHeader(value = "X-User-Role", required = false) String role
+    ) {
+        return ApiResponse.ok(Map.of("hints", questionService.hints(id, entitled(role, premium))));
     }
 
     @GetMapping("/assessment-sets")
@@ -113,5 +122,15 @@ public class ContentController {
     @GetMapping("/tags")
     public ApiResponse<List<Tag>> tags() {
         return ApiResponse.ok(catalogService.listTags());
+    }
+
+    private static boolean entitled(String role, String premium) {
+        if (role != null) {
+            String value = role.toUpperCase();
+            if ("ADMIN".equals(value) || "EDITOR".equals(value)) {
+                return true;
+            }
+        }
+        return "true".equalsIgnoreCase(premium);
     }
 }

@@ -3,27 +3,42 @@ package com.interview.user.service;
 import com.interview.user.dto.GoalsRequest;
 import com.interview.user.dto.PreferencesRequest;
 import com.interview.user.dto.ProfileRequest;
+import com.interview.user.dto.UserDirectoryEntry;
 import com.interview.user.model.Goals;
 import com.interview.user.model.Preferences;
 import com.interview.user.model.Profile;
+import com.interview.user.model.Submission;
 import com.interview.user.repository.GoalsRepository;
 import com.interview.user.repository.PreferencesRepository;
 import com.interview.user.repository.ProfileRepository;
+import com.interview.user.repository.SubmissionRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class UserService {
     private final ProfileRepository profiles;
     private final PreferencesRepository preferences;
     private final GoalsRepository goals;
+    private final SubmissionRepository submissions;
 
-    public UserService(ProfileRepository profiles, PreferencesRepository preferences, GoalsRepository goals) {
+    public UserService(
+            ProfileRepository profiles,
+            PreferencesRepository preferences,
+            GoalsRepository goals,
+            SubmissionRepository submissions
+    ) {
         this.profiles = profiles;
         this.preferences = preferences;
         this.goals = goals;
+        this.submissions = submissions;
     }
 
     public void createDefaults(String userId, String name, String email) {
@@ -97,6 +112,35 @@ public class UserService {
                 .targetCompanies(List.of())
                 .dailyGoalMinutes(60)
                 .build()));
+    }
+
+    public List<UserDirectoryEntry> directory() {
+        Map<String, Instant> lastSubmit = new HashMap<>();
+        for (Submission submission : submissions.findAll()) {
+            if (submission.getUserId() == null || submission.getSubmittedAt() == null) {
+                continue;
+            }
+            lastSubmit.merge(submission.getUserId(), submission.getSubmittedAt(),
+                    (a, b) -> a.isAfter(b) ? a : b);
+        }
+        List<UserDirectoryEntry> rows = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (Profile profile : profiles.findAll()) {
+            seen.add(profile.getUserId());
+            rows.add(new UserDirectoryEntry(
+                    profile.getUserId(),
+                    profile.getName(),
+                    profile.isOnboarded(),
+                    lastSubmit.get(profile.getUserId())
+            ));
+        }
+        for (Map.Entry<String, Instant> entry : lastSubmit.entrySet()) {
+            if (seen.contains(entry.getKey())) {
+                continue;
+            }
+            rows.add(new UserDirectoryEntry(entry.getKey(), null, false, entry.getValue()));
+        }
+        return rows;
     }
 
     public Goals saveGoals(String userId, GoalsRequest req) {
