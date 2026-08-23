@@ -6,10 +6,19 @@ import { useAuthStore } from "../stores/authStore";
 import AppMenu from "./AppMenu";
 import Avatar from "./Avatar";
 import Footer from "./Footer";
+import { FooterLockProvider, useFooterLocked } from "./Loader";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
-export default function Layout({ children, publicPage = false, wide = false, fill = false, hideNav = false }) {
+export default function Layout(props) {
+  return (
+    <FooterLockProvider>
+      <LayoutFrame {...props} />
+    </FooterLockProvider>
+  );
+}
+
+function LayoutFrame({ children, publicPage = false, wide = false, fill = false, hideNav = false }) {
   const navigate = useNavigate();
   const { accessToken, refreshToken, clear } = useAuthStore();
   const authed = Boolean(accessToken) && !publicPage;
@@ -37,7 +46,8 @@ export default function Layout({ children, publicPage = false, wide = false, fil
     navigate("/");
   }
 
-  const showFooter = !fill && !hideNav;
+  const footerLocked = useFooterLocked();
+  const showFooter = !fill && !hideNav && !footerLocked;
 
   return (
     <div className="flex min-h-screen flex-col">

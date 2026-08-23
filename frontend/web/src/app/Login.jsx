@@ -1,88 +1,10 @@
-import { useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
 import SocialAuth from "../components/SocialAuth";
-import { authApi, userApi } from "../services/api";
-import { useAuthStore } from "../stores/authStore";
-import { isValidEmail } from "../utils/email";
+import { useLogin } from "../hooks/useLogin";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const setTokens = useAuthStore((s) => s.setTokens);
-  const [email, setEmail] = useState("demo@tyyari.dev");
-  const [password, setPassword] = useState("Demo@12345");
-  const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  async function finish(tokens) {
-    setTokens(tokens.accessToken, tokens.refreshToken, remember);
-    const profile = await userApi.profile();
-    navigate(profile.data?.onboarded ? "/dashboard" : "/onboarding");
-  }
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setNotice("");
-    if (!isValidEmail(email)) {
-      setError("Enter a valid email address");
-      return;
-    }
-    try {
-      const res = await authApi.login({ email, password });
-      await finish(res.data);
-    } catch (err) {
-      setError(err.message);
-      if (err.code === "AUTH_EMAIL_UNVERIFIED") {
-        setNotice("Need a new link? Use Resend verification below.");
-      }
-      if (err.code === "AUTH_ACCOUNT_DISABLED") {
-        setNotice("An admin disabled this account. Ask them to enable it if you should still have access.");
-      }
-    }
-  }
-
-  const onGoogle = useCallback(async (idToken) => {
-    setError("");
-    try {
-      const res = await authApi.google({ idToken });
-      await finish(res.data);
-    } catch (err) {
-      setError(err.message);
-    }
-  }, [remember]);
-
-  async function emailLink() {
-    setError("");
-    setNotice("");
-    if (!isValidEmail(email)) {
-      setError("Enter a valid email address");
-      return;
-    }
-    try {
-      await authApi.forgotPassword({ email });
-      setNotice("If that email exists, we sent a link to continue.");
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
-  async function resendVerification() {
-    setError("");
-    setNotice("");
-    if (!isValidEmail(email)) {
-      setError("Enter a valid email address");
-      return;
-    }
-    try {
-      await authApi.resendVerification({ email });
-      setNotice("If that email exists, we sent a verification message.");
-    } catch (err) {
-      setError(err.message);
-    }
-  }
+  const l = useLogin();
 
   return (
     <AuthShell
@@ -90,51 +12,51 @@ export default function Login() {
       subtitle="Sign in to continue to Tyyari."
       aside={<LoginAside />}
     >
-      <SocialAuth onGoogle={onGoogle} />
+      <SocialAuth onGoogle={l.onGoogle} />
       <div className="my-6 flex items-center gap-3 text-xs text-mute">
         <span className="h-px flex-1 bg-line" /> or continue with email <span className="h-px flex-1 bg-line" />
       </div>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={l.onSubmit} className="space-y-4">
         <label className="block text-sm font-medium">
           Email
-          <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@company.com" />
+          <input className="field" type="email" value={l.email} onChange={(e) => l.setEmail(e.target.value)} autoComplete="email" placeholder="you@company.com" />
         </label>
         <label className="block text-sm font-medium">
           Password
           <span className="relative mt-1.5 block">
             <input
               className="field mt-0 pr-14"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type={l.showPassword ? "text" : "password"}
+              value={l.password}
+              onChange={(e) => l.setPassword(e.target.value)}
               autoComplete="current-password"
             />
             <button
               type="button"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-brand"
-              onClick={() => setShowPassword((v) => !v)}
+              onClick={() => l.setShowPassword((v) => !v)}
             >
-              {showPassword ? "Hide" : "Show"}
+              {l.showPassword ? "Hide" : "Show"}
             </button>
           </span>
         </label>
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2 text-mute">
-            <input type="checkbox" className="h-4 w-4 accent-brand" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <input type="checkbox" className="h-4 w-4 accent-brand" checked={l.remember} onChange={(e) => l.setRemember(e.target.checked)} />
             Remember me
           </label>
           <Link to="/forgot-password" className="font-medium text-brand">Forgot password?</Link>
         </div>
-        {error && <p className="text-sm text-hard">{error}</p>}
-        {notice && <p className="text-sm text-easy">{notice}</p>}
+        {l.error && <p className="text-sm text-hard">{l.error}</p>}
+        {l.notice && <p className="text-sm text-easy">{l.notice}</p>}
         <button className="btn-black mt-2 w-full !py-3.5 text-[15px] font-semibold">Login</button>
       </form>
-      <button type="button" onClick={emailLink} className="mt-4 w-full text-center text-sm font-medium text-brand">
+      <button type="button" onClick={l.emailLink} className="mt-4 w-full text-center text-sm font-medium text-brand">
         Email me a sign-in link
       </button>
       <p className="mt-8 text-center text-sm text-mute">
         Need a verification email?{" "}
-        <button type="button" onClick={resendVerification} className="font-medium text-brand">Resend verification</button>
+        <button type="button" onClick={l.resendVerification} className="font-medium text-brand">Resend verification</button>
       </p>
       <p className="mt-3 text-center text-sm text-mute">
         Don&apos;t have an account? <Link to="/register" className="font-medium text-brand">Register</Link>

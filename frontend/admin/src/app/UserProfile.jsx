@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import Loader from "../components/Loader";
 import { HBarList } from "../components/Charts";
 import {
   difficultyLabel,
@@ -13,6 +14,7 @@ import {
   typeLabel,
   viewLabel,
 } from "../data/labels";
+import { AccountRole, AccountStatus } from "../data/enums";
 import ThemeCard from "../components/ThemeCard";
 import { DAILY, EXPERIENCES, ROLES, formatWhen } from "../data/profile";
 import { useAdminUserProfile } from "../hooks/useAdminUserProfile";
@@ -61,10 +63,11 @@ export default function UserProfile() {
     setPremium,
   } = useAdminUserProfile(id);
 
+  if (loading) return <Loader fill />;
+
   return (
     <div className="space-y-4">
-      {loading && <p className="text-sm text-mute">Loading this profile…</p>}
-      {error && <p className="text-sm text-hard">{error.message || "Could not load this profile."}</p>}
+      {error && <p className="text-sm text-hard">{error?.message || "Could not load this profile."}</p>}
 
       <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
@@ -93,9 +96,9 @@ export default function UserProfile() {
                 )}
                 {account?.status && (
                   <span className={`rounded-full px-3 py-1 text-xs font-bold tracking-wide ${
-                    account.status === "ACTIVE"
+                    account.status === AccountStatus.ACTIVE
                       ? "bg-brand/15 text-brand"
-                      : account.status === "DELETING"
+                      : account.status === AccountStatus.DELETING
                         ? "bg-amber-400/15 text-amber-400"
                         : "bg-rose-500/15 text-hard"
                   }`}>
@@ -107,7 +110,7 @@ export default function UserProfile() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/users" className="btn-ghost">Back to users</Link>
-            {account && account.role !== "ADMIN" && account.status !== "DELETING" && (
+            {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING && (
               <>
                 <button
                   type="button"
@@ -119,10 +122,10 @@ export default function UserProfile() {
                 </button>
                 <button
                   type="button"
-                  className={account.status === "ACTIVE" ? "btn-ghost !text-hard" : "btn-brand"}
+                  className={account.status === AccountStatus.ACTIVE ? "btn-ghost !text-hard" : "btn-brand"}
                   onClick={toggleStatus}
                 >
-                  {account.status === "ACTIVE" ? "Disable" : "Enable"}
+                  {account.status === AccountStatus.ACTIVE ? "Disable" : "Enable"}
                 </button>
               </>
             )}
@@ -130,7 +133,7 @@ export default function UserProfile() {
         </div>
       </section>
 
-      {account && account.role !== "ADMIN" && (
+      {account && account.role !== AccountRole.ADMIN && (
         <ThemeCard>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Support</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Help this inbox</h2>
@@ -152,14 +155,14 @@ export default function UserProfile() {
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder={account.email}
                   autoComplete="off"
-                  disabled={Boolean(busy) || account.status === "DELETING"}
+                  disabled={Boolean(busy) || account.status === AccountStatus.DELETING}
                 />
               </label>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   className="btn-ghost"
-                  disabled={Boolean(busy) || account.status === "DELETING" || !newEmail.trim()}
+                  disabled={Boolean(busy) || account.status === AccountStatus.DELETING || !newEmail.trim()}
                   onClick={changeEmail}
                 >
                   {busy === "email" ? "Saving…" : "Change email"}
@@ -168,27 +171,27 @@ export default function UserProfile() {
             </>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => support("reset")}>
+            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={() => support("reset")}>
               {busy === "reset" ? "Sending…" : "Reset password"}
             </button>
             <button
               type="button"
               className="btn-ghost"
-              disabled={Boolean(busy) || account.emailVerified || account.status === "DELETING"}
+              disabled={Boolean(busy) || account.emailVerified || account.status === AccountStatus.DELETING}
               onClick={() => support("verify")}
             >
               {busy === "verify" ? "Sending…" : account.emailVerified ? "Email already verified" : "Resend verification"}
             </button>
             {!account.emailVerified && (
-              <button type="button" className="btn-ghost" disabled={Boolean(busy) || account.status === "DELETING"} onClick={forceVerify}>
+              <button type="button" className="btn-ghost" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={forceVerify}>
                 {busy === "force-verify" ? "Saving…" : "Mark email verified"}
               </button>
             )}
-            <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === "DELETING"} onClick={revokeSessions}>
+            <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={revokeSessions}>
               {busy === "revoke" ? "Signing out…" : "Sign out everywhere"}
             </button>
           </div>
-          {account.status === "DELETING" && (
+          {account.status === AccountStatus.DELETING && (
             <p className="mt-4 text-sm text-amber-400">Wipe is queued. Support actions are locked until the account is gone.</p>
           )}
           {supportNote && (
@@ -211,7 +214,7 @@ export default function UserProfile() {
         </ThemeCard>
       )}
 
-      {account && account.role !== "ADMIN" && (
+      {account && account.role !== AccountRole.ADMIN && (
         <ThemeCard tone="danger">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Danger</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Delete account</h2>
@@ -238,7 +241,7 @@ export default function UserProfile() {
             >
               {busy === "delete"
                 ? "Queueing…"
-                : account.status === "DELETING"
+                : account.status === AccountStatus.DELETING
                   ? "Retry wipe"
                   : "Delete account"}
             </button>
@@ -247,14 +250,17 @@ export default function UserProfile() {
       )}
 
       <ThemeCard>
+        {submissionsQuery.isLoading ? (
+          <Loader compact />
+        ) : (
+        <>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Last submission</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Read-only workspace</h2>
         <p className="mt-1 text-sm text-mute">
           Impersonate-read of what they last saved — code, canvas notes, or quiz answers. Counts stay in Practice below.
         </p>
-        {submissionsQuery.isLoading && <p className="mt-4 text-sm text-mute">Loading submissions…</p>}
-        {submissionsQuery.isError && <p className="mt-4 text-sm text-hard">{submissionsQuery.error.message}</p>}
-        {!submissionsQuery.isLoading && !rows.length && (
+        {submissionsQuery.isError && <p className="mt-4 text-sm text-hard">{submissionsQuery.error?.message}</p>}
+        {!rows.length && (
           <p className="mt-4 rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-mute">
             No submissions yet. They appear after the candidate hits Submit.
           </p>
@@ -286,9 +292,11 @@ export default function UserProfile() {
             <SubmissionRead submission={submission} loading={detailLoading} fileIndex={fileIndex} onFile={setFileIndex} />
           </div>
         )}
+        </>
+        )}
       </ThemeCard>
 
-      {account && account.role !== "ADMIN" && (
+      {account && account.role !== AccountRole.ADMIN && (
         <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Billing</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Premium access</h2>
@@ -309,11 +317,11 @@ export default function UserProfile() {
             </label>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => setPremium(true)}>
+            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={() => setPremium(true)}>
               {busy === "grant" ? "Saving…" : account.premium ? "Update Premium" : "Grant Premium"}
             </button>
             {account.premium && (
-              <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => setPremium(false)}>
+              <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={() => setPremium(false)}>
                 {busy === "revoke" ? "Saving…" : "Revoke Premium"}
               </button>
             )}
@@ -462,17 +470,17 @@ export default function UserProfile() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Account</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Access and prefs</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {account && account.role !== "ADMIN" ? (
+            {account && account.role !== AccountRole.ADMIN ? (
               <label>
                 <p className="text-xs font-semibold uppercase tracking-wide text-mute">Role</p>
                 <select
                   className="field mt-2"
                   value={account.role}
-                  disabled={busy === "role" || account.status === "DELETING"}
+                  disabled={busy === "role" || account.status === AccountStatus.DELETING}
                   onChange={(e) => setRole(e.target.value)}
                 >
-                  <option value="USER">{roleLabel("USER")}</option>
-                  <option value="EDITOR">{roleLabel("EDITOR")}</option>
+                  <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
+                  <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
                 </select>
               </label>
             ) : (
@@ -504,7 +512,7 @@ function Field({ label, value }) {
 }
 
 function SubmissionRead({ submission, loading, fileIndex, onFile }) {
-  if (loading) return <p className="text-sm text-mute">Opening the snapshot…</p>;
+  if (loading) return <Loader compact />;
   if (!submission) return <p className="text-sm text-mute">Pick a submission.</p>;
   const files = (submission.files || []).filter((file) => file && file.type !== "folder");
   const file = files[fileIndex] || files[0];

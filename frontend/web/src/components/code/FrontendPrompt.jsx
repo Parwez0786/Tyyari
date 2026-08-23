@@ -4,9 +4,9 @@ import { CompanyTags } from "../QuestionMeta";
 
 export default function FrontendPrompt({ data, submitted = false }) {
   const [tab, setTab] = useState("problem");
-  const features = data.functionalRequirements || [];
-  const constraints = [...(data.constraints || []), ...(data.nonFunctionalRequirements || [])];
-  const tip = (data.hints && data.hints[0]) || "Focus on functionality first, then polish the styling.";
+  const features = data?.functionalRequirements || [];
+  const constraints = [...(data?.constraints || []), ...(data?.nonFunctionalRequirements || [])];
+  const tip = data?.hints?.[0] || "Focus on functionality first, then polish the styling.";
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-white/10 bg-card">
@@ -27,7 +27,7 @@ export default function FrontendPrompt({ data, submitted = false }) {
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {tab === "problem" && (
           <>
-            {data.companies?.length ? (
+            {data?.companies?.length ? (
               <section className="mb-5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Popular at</p>
                 <div className="mt-2">
@@ -37,7 +37,7 @@ export default function FrontendPrompt({ data, submitted = false }) {
             ) : null}
             <section>
               <h2 className="text-sm font-bold text-ink">Description</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data.description}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data?.description}</p>
             </section>
             <Section title="Features" items={features} />
             <Section title="Constraints" items={constraints} />
@@ -55,7 +55,7 @@ export default function FrontendPrompt({ data, submitted = false }) {
             Official write-ups are not unlocked yet. Build the features in the problem tab, then Submit so this attempt is saved to your account.
           </p>
         )}
-        {tab === "history" && <HistoryTab questionId={data.id} submitted={submitted} />}
+        {tab === "history" && <HistoryTab questionId={data?.id} submitted={submitted} />}
       </div>
     </aside>
   );

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Loader from "./Loader";
 
 export default function QuestionOrderPicker({
   slugs,
@@ -36,6 +37,8 @@ export default function QuestionOrderPicker({
     [copy[index], copy[next]] = [copy[next], copy[index]];
     onChange(copy);
   }
+
+  if (loading) return <Loader />;
 
   return (
     <div className={`grid gap-4 ${readOnly ? "" : "lg:grid-cols-2"}`}>
@@ -82,7 +85,6 @@ export default function QuestionOrderPicker({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search title or slug"
         />
-        {loading && <p className="mt-3 text-sm text-mute">Loading questions…</p>}
         <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
           {available.map((item) => (
             <li
@@ -106,7 +108,7 @@ export default function QuestionOrderPicker({
               </button>
             </li>
           ))}
-          {!loading && !available.length && (
+          {!available.length && (
             <li className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-mute">
               {pool.length ? "Every matching question is already on the list." : "No questions of this type yet. Add them under Questions first."}
             </li>

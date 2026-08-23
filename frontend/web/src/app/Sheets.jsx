@@ -1,63 +1,26 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Code2, LayoutTemplate, ListChecks, Network, Puzzle } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
+import { ListChecks } from "lucide-react";
 import Layout from "../components/Layout";
+import Loader from "../components/Loader";
 import ThemeCard from "../components/ThemeCard";
-import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
+import { countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { typeLabel } from "../data/labels";
-import { contentApi, userApi } from "../services/api";
-
-const TYPES = [
-  { key: "HLD", title: "System Design", Icon: Network, hero: "brand" },
-  { key: "LLD", title: "Low Level Design", Icon: Puzzle, hero: "blue" },
-  { key: "DSA", title: "DSA", Icon: Code2, hero: "mint" },
-  { key: "FRONTEND", title: "Frontend", Icon: LayoutTemplate, hero: "violet" },
-];
-
-const TYPE_META = Object.fromEntries(TYPES.map((item) => [item.key, item]));
+import { useSheets } from "../hooks/useSheets";
 
 export default function Sheets() {
-  const [params, setParams] = useSearchParams();
-  const type = (params.get("type") || "").toUpperCase();
-  const selected = TYPES.some((item) => item.key === type) ? type : "HLD";
-  const track = TYPE_META[selected];
+  const { selected, track, tabs, setTab, sheets, done, isLoading, loneSheet, completed, total } = useSheets();
   const Icon = track.Icon;
-  useEffect(() => {
-    if (type !== selected) {
-      setParams({ type: selected }, { replace: true });
-    }
-  }, [type, selected, setParams]);
-  const query = useQuery({
-    queryKey: ["sheets", selected],
-    queryFn: () => contentApi.sheets(selected),
-  });
-  const progressQuery = useQuery({
-    queryKey: ["practice-progress"],
-    queryFn: userApi.practiceProgress,
-  });
-  const sheets = query.data?.data ?? [];
-  const done = completedSet(progressQuery.data?.data);
 
-  if (query.isLoading) {
+  if (isLoading) {
     return (
       <Layout>
-        <p className="mt-8 text-sm text-mute">Loading {selected} sheets…</p>
+        <Loader fill />
       </Layout>
     );
   }
 
-  if (sheets.length === 1) {
-    const sheet = sheets[0];
-    return <Navigate to={`/sheets/${sheet.slug || sheet.id}`} replace />;
-  }
-
-  const allIds = [...new Set(sheets.flatMap((sheet) => sheet.questionIds || []))];
-  const total = allIds.length;
-  const completed = countCompleted(allIds, done);
-
-  function setTab(key) {
-    setParams({ type: key }, { replace: true });
+  if (loneSheet) {
+    return <Navigate to={`/sheets/${loneSheet.slug || loneSheet.id}`} replace />;
   }
 
   return (
@@ -74,7 +37,7 @@ export default function Sheets() {
       </ThemeCard>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {TYPES.map((item) => (
+        {tabs.map((item) => (
           <button
             key={item.key}
             type="button"

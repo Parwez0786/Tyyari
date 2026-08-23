@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import Loader from "../Loader";
 import ThemeToggle from "../ThemeToggle";
+import { QuestionType, practicePath } from "../../data/enums";
 import { subjectLabel } from "../../data/labels";
 import { DifficultyBadge } from "../QuestionMeta";
 import { loadSubmission, saveSubmission } from "../../services/submissions";
 
-export default function CsQuizWorkspace({ data, backTo = "/practice/CS", backLabel = "Back to CS practice" }) {
+export default function CsQuizWorkspace({ data, backTo = practicePath(QuestionType.CS), backLabel = "Back to CS practice" }) {
   const quiz = Array.isArray(data.quiz) ? data.quiz : [];
   const key = `tyyari.cs.${data.id}`;
   const [picks, setPicks] = useState(() => loadDraft(key, quiz.length));
@@ -62,7 +64,7 @@ export default function CsQuizWorkspace({ data, backTo = "/practice/CS", backLab
     try {
       await saveSubmission({
         questionId: data.id,
-        questionType: "CS",
+        questionType: QuestionType.CS,
         view: "quiz",
         quizScore: nextScore,
         quizTotal: total,
@@ -82,7 +84,7 @@ export default function CsQuizWorkspace({ data, backTo = "/practice/CS", backLab
   }
 
   if (!ready) {
-    return <p className="p-6 text-sm text-mute">Loading quiz…</p>;
+    return <Loader fill />;
   }
 
   return (

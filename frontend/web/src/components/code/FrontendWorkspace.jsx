@@ -16,11 +16,12 @@ import {
   newFileId,
   normalizeFilePath,
 } from "./languages";
+import { Difficulty, QuestionType, practicePath } from "../../data/enums";
 import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
-const DURATION = { EASY: 20, MEDIUM: 30, HARD: 45 };
+const DURATION = { [Difficulty.EASY]: 20, [Difficulty.MEDIUM]: 30, [Difficulty.HARD]: 45 };
 
-export default function FrontendWorkspace({ data, backTo = "/practice/FRONTEND", backLabel = "Back to Frontend practice" }) {
+export default function FrontendWorkspace({ data, backTo = practicePath(QuestionType.FRONTEND), backLabel = "Back to Frontend practice" }) {
   const key = `tyyari.fe.${data.id}`;
   const initial = useMemo(() => loadFrontend(key, data.title, data.starterFiles), [key, data.title, data.starterFiles]);
   const [entries, setEntries] = useState(initial.files);
@@ -35,7 +36,7 @@ export default function FrontendWorkspace({ data, backTo = "/practice/FRONTEND",
 
   const files = entries.filter(isFile);
   const active = files.find((file) => file.id === activeId) || files[0];
-  const minutes = DURATION[(data.difficulty || "MEDIUM").toUpperCase()] || 30;
+  const minutes = DURATION[(data.difficulty || Difficulty.MEDIUM).toUpperCase()] || 30;
 
   useEffect(() => {
     setSrcDoc(buildPreviewSrcDoc(files));
@@ -84,7 +85,7 @@ export default function FrontendWorkspace({ data, backTo = "/practice/FRONTEND",
     try {
       await saveSubmission({
         questionId: data.id,
-        questionType: "FRONTEND",
+        questionType: QuestionType.FRONTEND,
         language: "javascript",
         view: "code",
         activeId,

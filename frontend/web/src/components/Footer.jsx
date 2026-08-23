@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
+import { QuestionType, practicePath } from "../data/enums";
+import { typeLabel } from "../data/labels";
 import Logo from "./Logo";
 
 const PRACTICE = [
-  { to: "/practice/HLD", label: "System Design" },
-  { to: "/practice/LLD", label: "Low Level Design" },
-  { to: "/practice/DSA", label: "DSA" },
-  { to: "/practice/FRONTEND", label: "Frontend" },
-  { to: "/practice/CS", label: "CS Fundamentals" },
-  { to: "/practice/OA", label: "Online Assessment" },
+  { to: practicePath(QuestionType.HLD), label: typeLabel(QuestionType.HLD) },
+  { to: practicePath(QuestionType.LLD), label: typeLabel(QuestionType.LLD) },
+  { to: practicePath(QuestionType.DSA), label: typeLabel(QuestionType.DSA) },
+  { to: practicePath(QuestionType.FRONTEND), label: typeLabel(QuestionType.FRONTEND) },
+  { to: practicePath(QuestionType.CS), label: typeLabel(QuestionType.CS) },
+  { to: practicePath(QuestionType.OA), label: typeLabel(QuestionType.OA) },
 ];
 
 const SHEETS = [

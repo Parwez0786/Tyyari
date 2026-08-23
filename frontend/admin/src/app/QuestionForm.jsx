@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useMatch, useNavigate, useParams } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
-import { subjectLabel } from "../data/labels";
+import { DIFFICULTY_LIST, Difficulty, QuestionType, Subject } from "../data/enums";
+import { difficultyLabel, subjectLabel } from "../data/labels";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
@@ -14,10 +16,10 @@ const emptyFile = () => ({ name: "", content: "" });
 function blank(type) {
   return {
     type,
-    subType: type === "CS" ? "OS" : "",
+    subType: type === QuestionType.CS ? Subject.OS : "",
     title: "",
     description: "",
-    difficulty: "EASY",
+    difficulty: Difficulty.EASY,
     constraints: "",
     functionalRequirements: "",
     nonFunctionalRequirements: "",
@@ -40,7 +42,7 @@ export default function QuestionForm() {
   const readOnly = Boolean(useMatch("/questions/:id/view"));
   const createType = typeParam ? String(typeParam).toUpperCase() : "";
   const knownCreate = Boolean(createType && QUESTION_TYPES.some((item) => item.key === createType));
-  const [form, setForm] = useState(() => blank(createType || "DSA"));
+  const [form, setForm] = useState(() => blank(createType || QuestionType.DSA));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const existing = useQuery({
@@ -60,11 +62,11 @@ export default function QuestionForm() {
     const q = existing.data?.data;
     if (!q) return;
     setForm({
-      type: q.type || "DSA",
-      subType: q.subType || (q.type === "CS" ? "OS" : ""),
+      type: q.type || QuestionType.DSA,
+      subType: q.subType || (q.type === QuestionType.CS ? Subject.OS : ""),
       title: q.title || "",
       description: q.description || "",
-      difficulty: q.difficulty || "EASY",
+      difficulty: q.difficulty || Difficulty.EASY,
       constraints: (q.constraints || []).join("\n"),
       functionalRequirements: (q.functionalRequirements || []).join("\n"),
       nonFunctionalRequirements: (q.nonFunctionalRequirements || []).join("\n"),
@@ -91,6 +93,9 @@ export default function QuestionForm() {
 
   if (!id && !knownCreate) {
     return <Navigate to="/questions/new" replace />;
+  }
+  if (id && existing.isLoading) {
+    return <Loader fill />;
   }
 
   const meta = typeMeta(form.type);
@@ -188,7 +193,7 @@ export default function QuestionForm() {
       else await adminApi.createQuestion(body);
       navigate("/questions");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     } finally {
       setSaving(false);
     }
@@ -226,7 +231,7 @@ export default function QuestionForm() {
           <label className="block">
             <FieldLabel>Difficulty</FieldLabel>
             <select className="field" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)} required>
-              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
+              {DIFFICULTY_LIST.map((t) => <option key={t} value={t}>{difficultyLabel(t)}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">

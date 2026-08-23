@@ -1,26 +1,33 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "./services/api";
 import { useAuthStore } from "./stores/authStore";
 import Landing from "./app/Landing";
-import Login from "./app/Login";
-import Register from "./app/Register";
-import ForgotPassword from "./app/ForgotPassword";
-import CheckEmail from "./app/CheckEmail";
-import VerifyEmail from "./app/VerifyEmail";
-import GitHubCallback from "./app/GitHubCallback";
-import ResetPassword from "./app/ResetPassword";
-import Onboarding from "./app/Onboarding";
-import Dashboard from "./app/Dashboard";
-import Learn from "./app/Learn";
-import Practice from "./app/Practice";
-import Question from "./app/Question";
-import Sheets from "./app/Sheets";
-import SheetDetail from "./app/SheetDetail";
-import OaPrecheck from "./app/OaPrecheck";
-import OaExam from "./app/OaExam";
-import Premium from "./app/Premium";
-import Legal from "./app/Legal";
+import Loader from "./components/Loader";
+
+const Login = lazy(() => import("./app/Login"));
+const Register = lazy(() => import("./app/Register"));
+const ForgotPassword = lazy(() => import("./app/ForgotPassword"));
+const CheckEmail = lazy(() => import("./app/CheckEmail"));
+const VerifyEmail = lazy(() => import("./app/VerifyEmail"));
+const GitHubCallback = lazy(() => import("./app/GitHubCallback"));
+const ResetPassword = lazy(() => import("./app/ResetPassword"));
+const Onboarding = lazy(() => import("./app/Onboarding"));
+const Dashboard = lazy(() => import("./app/Dashboard"));
+const Learn = lazy(() => import("./app/Learn"));
+const Practice = lazy(() => import("./app/Practice"));
+const Question = lazy(() => import("./app/Question"));
+const Sheets = lazy(() => import("./app/Sheets"));
+const SheetDetail = lazy(() => import("./app/SheetDetail"));
+const OaPrecheck = lazy(() => import("./app/OaPrecheck"));
+const OaExam = lazy(() => import("./app/OaExam"));
+const Premium = lazy(() => import("./app/Premium"));
+const Legal = lazy(() => import("./app/Legal"));
+
+function Load({ children }) {
+  return <Suspense fallback={<Loader screen />}>{children}</Suspense>;
+}
 
 function Private({ children }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -33,7 +40,7 @@ function Private({ children }) {
   });
   if (!token) return <Navigate to="/login" replace />;
   if (session.isLoading) {
-    return <p className="p-6 text-sm text-mute">Checking your session…</p>;
+    return <Loader screen />;
   }
   if (session.isError) {
     clear();
@@ -46,26 +53,26 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/privacy" element={<Legal kind="privacy" />} />
-      <Route path="/terms" element={<Legal kind="terms" />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/check-email" element={<CheckEmail />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/auth/github" element={<GitHubCallback />} />
-      <Route path="/premium" element={<Premium />} />
-      <Route path="/onboarding" element={<Private><Onboarding /></Private>} />
-      <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
-      <Route path="/learn" element={<Private><Learn /></Private>} />
-      <Route path="/practice" element={<Private><Practice /></Private>} />
-      <Route path="/practice/:type" element={<Private><Practice /></Private>} />
-      <Route path="/sheets" element={<Private><Sheets /></Private>} />
-      <Route path="/sheets/:id" element={<Private><SheetDetail /></Private>} />
-      <Route path="/questions/:id" element={<Private><Question /></Private>} />
-      <Route path="/oa/:id/precheck" element={<Private><OaPrecheck /></Private>} />
-      <Route path="/oa/:id/exam" element={<Private><OaExam /></Private>} />
+      <Route path="/privacy" element={<Load><Legal kind="privacy" /></Load>} />
+      <Route path="/terms" element={<Load><Legal kind="terms" /></Load>} />
+      <Route path="/login" element={<Load><Login /></Load>} />
+      <Route path="/register" element={<Load><Register /></Load>} />
+      <Route path="/forgot-password" element={<Load><ForgotPassword /></Load>} />
+      <Route path="/check-email" element={<Load><CheckEmail /></Load>} />
+      <Route path="/verify-email" element={<Load><VerifyEmail /></Load>} />
+      <Route path="/reset-password" element={<Load><ResetPassword /></Load>} />
+      <Route path="/auth/github" element={<Load><GitHubCallback /></Load>} />
+      <Route path="/premium" element={<Load><Premium /></Load>} />
+      <Route path="/onboarding" element={<Private><Load><Onboarding /></Load></Private>} />
+      <Route path="/dashboard" element={<Private><Load><Dashboard /></Load></Private>} />
+      <Route path="/learn" element={<Private><Load><Learn /></Load></Private>} />
+      <Route path="/practice" element={<Private><Load><Practice /></Load></Private>} />
+      <Route path="/practice/:type" element={<Private><Load><Practice /></Load></Private>} />
+      <Route path="/sheets" element={<Private><Load><Sheets /></Load></Private>} />
+      <Route path="/sheets/:id" element={<Private><Load><SheetDetail /></Load></Private>} />
+      <Route path="/questions/:id" element={<Private><Load><Question /></Load></Private>} />
+      <Route path="/oa/:id/precheck" element={<Private><Load><OaPrecheck /></Load></Private>} />
+      <Route path="/oa/:id/exam" element={<Private><Load><OaExam /></Load></Private>} />
     </Routes>
   );
 }

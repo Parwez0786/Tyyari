@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
+import Loader from "../components/Loader";
 import { authApi, userApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
 
@@ -30,30 +31,26 @@ export default function GitHubCallback() {
     githubLogin
       .then(async (res) => {
         if (!alive) return;
-        setTokens(res.data.accessToken, res.data.refreshToken);
+        setTokens(res?.data?.accessToken, res?.data?.refreshToken);
         const profile = await userApi.profile().catch(() => null);
         if (!alive) return;
         navigate(profile?.data?.onboarded ? "/dashboard" : "/onboarding");
       })
       .catch((err) => {
         githubLogin = null;
-        if (alive) setError(err.message);
+        if (alive) setError(err?.message);
       });
     return () => {
       alive = false;
     };
   }, [code, oauthError, navigate, setTokens]);
 
+  if (!error) return <Loader screen />;
+
   return (
-    <AuthShell title="Signing you in" subtitle="Finishing GitHub sign-in…">
-      {error ? (
-        <div>
-          <p className="text-sm text-hard">{error}</p>
-          <Link to="/login" className="mt-4 inline-block text-sm font-medium text-brand">Back to login</Link>
-        </div>
-      ) : (
-        <p className="text-sm text-mute">GitHub approved the sign-in. We are creating your session and sending you to the dashboard or profile setup.</p>
-      )}
+    <AuthShell title="Signing you in" subtitle="GitHub sign-in did not finish.">
+      <p className="text-sm text-hard">{error}</p>
+      <Link to="/login" className="mt-4 inline-block text-sm font-medium text-brand">Back to login</Link>
     </AuthShell>
   );
 }

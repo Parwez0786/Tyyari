@@ -1,19 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { adminApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
 import AppMenu from "./AppMenu";
 import Avatar from "./Avatar";
+import Loader, { FooterLockProvider, useFooterLocked } from "./Loader";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Shell() {
+  return (
+    <FooterLockProvider>
+      <ShellFrame />
+    </FooterLockProvider>
+  );
+}
+
+function ShellFrame() {
   const navigate = useNavigate();
   const clear = useAuthStore((s) => s.clear);
   const [menuOpen, setMenuOpen] = useState(false);
   const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
   const email = meQuery.data?.data?.email || "";
+
+  const footerLocked = useFooterLocked();
 
   function logout() {
     clear();
@@ -41,8 +52,11 @@ export default function Shell() {
       </header>
       <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} email={email} onLogout={logout} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-        <Outlet />
+        <Suspense fallback={<Loader fill />}>
+          <Outlet />
+        </Suspense>
       </main>
+      {!footerLocked && (
       <footer className="mt-10 border-t border-line bg-card">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 md:grid-cols-[1.4fr_0.8fr_0.8fr]">
           <div>
@@ -82,6 +96,7 @@ export default function Shell() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

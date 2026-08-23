@@ -13,59 +13,60 @@ import {
   Zap,
 } from "lucide-react";
 import Layout from "../components/Layout";
+import { QUESTION_TYPE_LIST, QuestionType, TargetRole, learnPath, practicePath } from "../data/enums";
 import { typeLabel } from "../data/labels";
 import { useAuthStore } from "../stores/authStore";
 
 const TRACKS = [
   {
-    type: "HLD",
+    type: QuestionType.HLD,
     title: "System Design",
     hook: "Blueprint or whiteboard. Submit canvas, math, and trade-offs.",
-    to: "/practice/HLD",
+    to: practicePath(QuestionType.HLD),
     sheet: "/sheets/hld-core-sheet",
     Icon: Network,
     accent: "from-orange-500/20 to-amber-500/5",
   },
   {
-    type: "LLD",
+    type: QuestionType.LLD,
     title: "Low Level Design",
     hook: "OOP and machine-coding in a real multi-file editor.",
-    to: "/practice/LLD",
+    to: practicePath(QuestionType.LLD),
     sheet: "/sheets/lld-machine-coding",
     Icon: Puzzle,
     accent: "from-sky-500/20 to-cyan-500/5",
   },
   {
-    type: "DSA",
+    type: QuestionType.DSA,
     title: "DSA",
     hook: "Run testcases. Chase the next Accepted.",
-    to: "/practice/DSA",
+    to: practicePath(QuestionType.DSA),
     sheet: "/sheets/dsa-sde-sheet",
     Icon: Code2,
     accent: "from-emerald-500/20 to-teal-500/5",
   },
   {
-    type: "FRONTEND",
+    type: QuestionType.FRONTEND,
     title: "Frontend",
     hook: "React UI with live desktop and mobile preview.",
-    to: "/practice/FRONTEND",
+    to: practicePath(QuestionType.FRONTEND),
     sheet: "/sheets/frontend-ui-sheet",
     Icon: LayoutTemplate,
     accent: "from-fuchsia-500/20 to-pink-500/5",
   },
   {
-    type: "CS",
+    type: QuestionType.CS,
     title: "CS Fundamentals",
     hook: "Short OS, DBMS, OOP, and networks quizzes.",
-    to: "/practice/CS",
+    to: practicePath(QuestionType.CS),
     Icon: BookOpen,
     accent: "from-lime-500/20 to-emerald-500/5",
   },
   {
-    type: "OA",
+    type: QuestionType.OA,
     title: "Online Assessment",
     hook: "Timed, camera-gated DSA — like the real OA.",
-    to: "/practice/OA",
+    to: practicePath(QuestionType.OA),
     Icon: Camera,
     accent: "from-blue-500/20 to-indigo-500/5",
   },
@@ -73,28 +74,28 @@ const TRACKS = [
 
 const SHEETS = [
   {
-    tag: "HLD",
+    tag: QuestionType.HLD,
     title: "HLD Core Sheet",
     detail: "URL shorteners, feeds, chat, and streaming — worked in order.",
     to: "/sheets/hld-core-sheet",
     accent: "from-orange-500/15 via-card to-card",
   },
   {
-    tag: "LLD",
+    tag: QuestionType.LLD,
     title: "LLD Machine Coding",
     detail: "Parking lots, caches, and booking systems in a multi-file editor.",
     to: "/sheets/lld-machine-coding",
     accent: "from-sky-500/15 via-card to-card",
   },
   {
-    tag: "DSA",
+    tag: QuestionType.DSA,
     title: "SDE-1 DSA Sheet",
     detail: "Arrays, hashing, search, graphs, and backtracking.",
     to: "/sheets/dsa-sde-sheet",
     accent: "from-emerald-500/15 via-card to-card",
   },
   {
-    tag: "FRONTEND",
+    tag: QuestionType.FRONTEND,
     title: "Frontend UI Sheet",
     detail: "Todo, feeds, and pixel-perfect UI with desktop and mobile preview.",
     to: "/sheets/frontend-ui-sheet",
@@ -103,11 +104,11 @@ const SHEETS = [
 ];
 
 const PATH = [
-  { step: "01", title: "DSA", detail: "Patterns, testcases, and speed.", to: "/learn?role=SDE-1" },
-  { step: "02", title: "LLD", detail: "Classes, ownership, machine coding.", to: "/learn?role=SDE-1" },
-  { step: "03", title: "HLD", detail: "Users, QPS, and trade-offs.", to: "/learn?role=SDE-2" },
-  { step: "04", title: "Frontend + CS", detail: "UI rounds and phone-screen quizzes.", to: "/learn" },
-  { step: "05", title: "OA", detail: "Timed sets with the camera on.", to: "/practice/OA" },
+  { step: "01", title: typeLabel(QuestionType.DSA), detail: "Patterns, testcases, and speed.", to: learnPath(TargetRole.SDE_1) },
+  { step: "02", title: typeLabel(QuestionType.LLD), detail: "Classes, ownership, machine coding.", to: learnPath(TargetRole.SDE_1) },
+  { step: "03", title: typeLabel(QuestionType.HLD), detail: "Users, QPS, and trade-offs.", to: learnPath(TargetRole.SDE_2) },
+  { step: "04", title: "Frontend + CS", detail: "UI rounds and phone-screen quizzes.", to: learnPath() },
+  { step: "05", title: typeLabel(QuestionType.OA), detail: "Timed sets with the camera on.", to: practicePath(QuestionType.OA) },
 ];
 
 const COMPANIES = ["Google", "Meta", "Amazon", "Netflix", "Uber", "Microsoft", "Airbnb"];
@@ -176,10 +177,10 @@ export default function Landing() {
               <p className="mt-1 text-xs text-mute">Submit once. Streak, badges, and the report all start there.</p>
             </div>
             <div className="flex items-center justify-between gap-1 rounded-2xl border border-line bg-white/5 px-3 py-2.5">
-              {["DSA", "HLD", "LLD", "UI", "CS", "OA"].map((label, index) => (
-                <div key={label} className="flex flex-col items-center gap-1">
+              {QUESTION_TYPE_LIST.map((type, index) => (
+                <div key={type} className="flex flex-col items-center gap-1">
                   <span className={`h-2.5 w-2.5 rounded-full ${index < 4 ? "bg-brand shadow-[0_0_10px_rgba(249,115,22,0.8)]" : "bg-white/15"}`} />
-                  <span className="text-[10px] font-semibold text-mute">{label}</span>
+                  <span className="text-[10px] font-semibold text-mute">{type === QuestionType.FRONTEND ? "UI" : typeLabel(type)}</span>
                 </div>
               ))}
             </div>
@@ -307,7 +308,7 @@ export default function Landing() {
           <p className="mt-2 text-sm leading-6 text-mute">
             Timed DSA sets with a camera check before you enter. Closest thing to a company online assessment.
           </p>
-          <Link to="/practice/OA" className="btn-ghost mt-5 inline-flex !px-5 !py-2.5">
+          <Link to={practicePath(QuestionType.OA)} className="btn-ghost mt-5 inline-flex !px-5 !py-2.5">
             Enter OA lobby
           </Link>
         </article>

@@ -29,10 +29,13 @@ export async function api(path, options = {}) {
         body: JSON.stringify({ refreshToken }),
       });
       if (refresh.ok) {
-        const body = await refresh.json();
-        useAuthStore.getState().setTokens(body.data.accessToken, body.data.refreshToken);
-        headers.Authorization = `Bearer ${body.data.accessToken}`;
-        return parse(await fetch(`${API}${path}`, { ...options, headers }));
+        const body = await refresh.json().catch(() => ({}));
+        const accessToken = body?.data?.accessToken;
+        if (accessToken) {
+          useAuthStore.getState().setTokens(accessToken, body?.data?.refreshToken);
+          headers.Authorization = `Bearer ${accessToken}`;
+          return parse(await fetch(`${API}${path}`, { ...options, headers }));
+        }
       }
     }
     useAuthStore.getState().clear();

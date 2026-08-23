@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import { paymentLabel, providerLabel } from "../data/labels";
 import { formatWhen } from "../data/profile";
@@ -34,6 +35,8 @@ export default function Billing() {
     refresh,
     refund,
   } = useAdminBilling();
+
+  if (paymentsQuery.isLoading) return <Loader fill />;
 
   return (
     <div className="space-y-6">
@@ -96,8 +99,7 @@ export default function Billing() {
         </div>
       </div>
 
-      {paymentsQuery.isLoading && <p className="text-sm text-mute">Loading payments…</p>}
-      {paymentsQuery.isError && <p className="text-sm text-hard">{paymentsQuery.error.message || "Could not load payments."}</p>}
+      {paymentsQuery.isError && <p className="text-sm text-hard">{paymentsQuery.error?.message || "Could not load payments."}</p>}
 
       <div className="space-y-3">
         {filtered.map((item) => (

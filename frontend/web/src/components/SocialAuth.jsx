@@ -6,7 +6,7 @@ export default function SocialAuth({ onGoogle }) {
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    authApi.publicConfig().then((res) => setConfig(res.data)).catch(() => setConfig({ githubEnabled: false }));
+    authApi.publicConfig().then((res) => setConfig(res?.data)).catch(() => setConfig({ githubEnabled: false }));
   }, []);
 
   function startGitHub() {

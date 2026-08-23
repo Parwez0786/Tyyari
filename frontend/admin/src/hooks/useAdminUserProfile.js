@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useDialog } from "../components/Dialog";
+import { AccountRole, AccountStatus, QuestionType } from "../data/enums";
 import { typeLabel } from "../data/labels";
 import { roleMeta } from "../data/profile";
 import { adminApi } from "../services/api";
 
 const TYPE_COLORS = {
-  DSA: "#34d399",
-  HLD: "#f97316",
-  LLD: "#38bdf8",
-  FRONTEND: "#e879f9",
-  CS: "#a3e635",
-  OA: "#60a5fa",
+  [QuestionType.DSA]: "#34d399",
+  [QuestionType.HLD]: "#f97316",
+  [QuestionType.LLD]: "#38bdf8",
+  [QuestionType.FRONTEND]: "#e879f9",
+  [QuestionType.CS]: "#a3e635",
+  [QuestionType.OA]: "#60a5fa",
 };
 
 export function useAdminUserProfile(id) {
@@ -38,7 +39,15 @@ export function useAdminUserProfile(id) {
   const prefs = bundle?.preferences || {};
   const progress = bundle?.progress || {};
   const name = profile.name || account?.email || "Candidate";
-  const rows = submissionsQuery.data?.data ?? [];
+  const rows = useMemo(() => submissionsQuery.data?.data ?? [], [submissionsQuery.data]);
+  const byType = useMemo(
+    () => (progress.byType || []).map((row) => ({
+      label: typeLabel(row.type),
+      value: row.completed,
+      color: TYPE_COLORS[row.type],
+    })),
+    [progress.byType],
+  );
   const activeId = selectedId || rows[0]?.id || "";
   const detailQuery = useQuery({
     queryKey: ["admin-submission", id, activeId],
@@ -55,7 +64,7 @@ export function useAdminUserProfile(id) {
   }, [activeId]);
 
   function locked() {
-    return !account || account.role === "ADMIN" || account.status === "DELETING";
+    return !account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING;
   }
 
   async function refreshAccount() {
@@ -72,7 +81,7 @@ export function useAdminUserProfile(id) {
       await adminApi.setUserRole(account.id, role);
       await refreshAccount();
     } catch (err) {
-      await dialog.alert(err.message || "Could not update role.");
+      await dialog.alert(err?.message || "Could not update role.");
     } finally {
       setBusy("");
     }
@@ -80,7 +89,7 @@ export function useAdminUserProfile(id) {
 
   async function toggleStatus() {
     if (locked()) return;
-    const next = account.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
+    const next = account.status === AccountStatus.ACTIVE ? AccountStatus.DISABLED : AccountStatus.ACTIVE;
     await adminApi.setUserStatus(account.id, next);
     await refreshAccount();
   }
@@ -93,10 +102,10 @@ export function useAdminUserProfile(id) {
       const json = kind === "reset"
         ? await adminApi.resetPassword(account.id)
         : await adminApi.resendVerification(account.id);
-      setSupportNote(json.data);
+      setSupportNote(json?.data);
       await client.invalidateQueries({ queryKey: ["admin-user", id] });
     } catch (err) {
-      await dialog.alert(err.message || "Could not send the email.");
+      await dialog.alert(err?.message || "Could not send the email.");
     } finally {
       setBusy("");
     }
@@ -114,7 +123,7 @@ export function useAdminUserProfile(id) {
       await adminApi.revokeSessions(account.id);
       setSupportNote({ message: "All refresh tokens were revoked. They must sign in again." });
     } catch (err) {
-      await dialog.alert(err.message || "Could not revoke sessions.");
+      await dialog.alert(err?.message || "Could not revoke sessions.");
     } finally {
       setBusy("");
     }
@@ -140,11 +149,11 @@ export function useAdminUserProfile(id) {
     setSupportNote(null);
     try {
       const json = await adminApi.changeEmail(account.id, next);
-      setSupportNote(json.data);
+      setSupportNote(json?.data);
       setNewEmail("");
       await refreshAccount();
     } catch (err) {
-      await dialog.alert(err.message || "Could not change this email.");
+      await dialog.alert(err?.message || "Could not change this email.");
     } finally {
       setBusy("");
     }
@@ -164,14 +173,14 @@ export function useAdminUserProfile(id) {
       setSupportNote({ message: "Email marked verified. They can sign in now." });
       await refreshAccount();
     } catch (err) {
-      await dialog.alert(err.message || "Could not verify this inbox.");
+      await dialog.alert(err?.message || "Could not verify this inbox.");
     } finally {
       setBusy("");
     }
   }
 
   async function deleteAccount() {
-    if (!account || account.role === "ADMIN") return;
+    if (!account || account.role === AccountRole.ADMIN) return;
     if (deleteEmail.trim().toLowerCase() !== String(account.email || "").toLowerCase()) {
       await dialog.alert("Type the account email to confirm delete.", { title: "Confirm the email" });
       return;
@@ -194,7 +203,7 @@ export function useAdminUserProfile(id) {
       });
       navigate("/users");
     } catch (err) {
-      await dialog.alert(err.message || "Could not queue the wipe.");
+      await dialog.alert(err?.message || "Could not queue the wipe.");
     } finally {
       setBusy("");
     }
@@ -214,7 +223,7 @@ export function useAdminUserProfile(id) {
         client.invalidateQueries({ queryKey: ["admin-payments"] }),
       ]);
     } catch (err) {
-      await dialog.alert(err.message || "Could not update Premium.");
+      await dialog.alert(err?.message || "Could not update Premium.");
     } finally {
       setBusy("");
     }
@@ -233,11 +242,7 @@ export function useAdminUserProfile(id) {
     companies: goals.targetCompanies || [],
     daily: goals.dailyGoalMinutes,
     role: roleMeta(profile.targetRole || goals.targetRole || ""),
-    byType: (progress.byType || []).map((row) => ({
-      label: typeLabel(row.type),
-      value: row.completed,
-      color: TYPE_COLORS[row.type],
-    })),
+    byType,
     payments: paymentsQuery.data?.data ?? [],
     rows,
     activeId,

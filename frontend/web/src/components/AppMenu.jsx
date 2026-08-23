@@ -12,6 +12,8 @@ import {
   Network,
   Puzzle,
 } from "lucide-react";
+import { QuestionType, practicePath } from "../data/enums";
+import { typeLabel } from "../data/labels";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import Avatar from "./Avatar";
@@ -20,12 +22,12 @@ const groups = [
   {
     label: "Practice",
     items: [
-      { to: "/practice/HLD", title: "System Design (HLD)", detail: "Full HLD question library", Icon: Network },
-      { to: "/practice/LLD", title: "Low Level Design", detail: "Full LLD question library", Icon: Puzzle },
-      { to: "/practice/DSA", title: "DSA", detail: "Full DSA question library", Icon: Code2 },
-      { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "Full frontend question library", Icon: LayoutTemplate },
-      { to: "/practice/CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks", Icon: BookOpen },
-      { to: "/practice/OA", title: "Online Assessment", detail: "Timed DSA sets + camera", Icon: Camera },
+      { to: practicePath(QuestionType.HLD), title: "System Design (HLD)", detail: "Full HLD question library", Icon: Network },
+      { to: practicePath(QuestionType.LLD), title: typeLabel(QuestionType.LLD), detail: "Full LLD question library", Icon: Puzzle },
+      { to: practicePath(QuestionType.DSA), title: typeLabel(QuestionType.DSA), detail: "Full DSA question library", Icon: Code2 },
+      { to: practicePath(QuestionType.FRONTEND), title: "Frontend Coding", detail: "Full frontend question library", Icon: LayoutTemplate },
+      { to: practicePath(QuestionType.CS), title: typeLabel(QuestionType.CS), detail: "OS, DBMS, OOP, networks", Icon: BookOpen },
+      { to: practicePath(QuestionType.OA), title: typeLabel(QuestionType.OA), detail: "Timed DSA sets + camera", Icon: Camera },
     ],
   },
   {

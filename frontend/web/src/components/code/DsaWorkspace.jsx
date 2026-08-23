@@ -7,12 +7,13 @@ import WorkspaceHeader from "./WorkspaceHeader";
 import { formatOutput } from "./formatOutput";
 import { dsaStarterFor, languageById, newFileId } from "./languages";
 import { runWorkspace } from "./piston";
+import { QuestionType, practicePath } from "../../data/enums";
 import { dsaFiles, dsaFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 export default function DsaWorkspace({
   data,
   storageKey,
-  backTo = "/practice/DSA",
+  backTo = practicePath(QuestionType.DSA),
   backLabel = "Back to DSA practice",
   hideBack = false,
   hideHints = false,
@@ -50,7 +51,7 @@ export default function DsaWorkspace({
   function payload() {
     return {
       questionId: data.id,
-      questionType: "DSA",
+      questionType: QuestionType.DSA,
       assessmentSetId,
       language,
       view: "code",
@@ -99,7 +100,7 @@ export default function DsaWorkspace({
       });
       setOutput({ status: "done", expected: current?.expected || "", ...result });
     } catch (err) {
-      setOutput({ status: "error", message: err.message || "Run failed" });
+      setOutput({ status: "error", message: err?.message || "Run failed" });
     } finally {
       setRunning(false);
     }
@@ -114,7 +115,7 @@ export default function DsaWorkspace({
       await saveSubmission(payload());
       setSubmitted(true);
     } catch (err) {
-      setOutput({ status: "error", message: err.message || "Could not save submission." });
+      setOutput({ status: "error", message: err?.message || "Could not save submission." });
       setTab("result");
     } finally {
       setSubmitting(false);

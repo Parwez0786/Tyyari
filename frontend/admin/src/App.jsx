@@ -1,20 +1,22 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 import Login from "./app/Login";
 import Shell from "./components/Shell";
-import Dashboard from "./app/Dashboard";
-import Questions from "./app/Questions";
-import NewQuestion from "./app/NewQuestion";
-import QuestionForm from "./app/QuestionForm";
-import Catalog from "./app/Catalog";
-import Users from "./app/Users";
-import UserProfile from "./app/UserProfile";
-import Audit from "./app/Audit";
-import Billing from "./app/Billing";
-import Sheets from "./app/Sheets";
-import SheetForm from "./app/SheetForm";
-import OaSets from "./app/OaSets";
-import OaForm from "./app/OaForm";
+
+const Dashboard = lazy(() => import("./app/Dashboard"));
+const Questions = lazy(() => import("./app/Questions"));
+const NewQuestion = lazy(() => import("./app/NewQuestion"));
+const QuestionForm = lazy(() => import("./app/QuestionForm"));
+const Catalog = lazy(() => import("./app/Catalog"));
+const Users = lazy(() => import("./app/Users"));
+const UserProfile = lazy(() => import("./app/UserProfile"));
+const Audit = lazy(() => import("./app/Audit"));
+const Billing = lazy(() => import("./app/Billing"));
+const Sheets = lazy(() => import("./app/Sheets"));
+const SheetForm = lazy(() => import("./app/SheetForm"));
+const OaSets = lazy(() => import("./app/OaSets"));
+const OaForm = lazy(() => import("./app/OaForm"));
 
 function Private({ children }) {
   const token = useAuthStore((s) => s.accessToken);

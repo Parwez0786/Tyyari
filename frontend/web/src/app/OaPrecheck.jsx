@@ -1,56 +1,37 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Camera, FileText, Monitor, Shield } from "lucide-react";
 import Layout from "../components/Layout";
+import Loader from "../components/Loader";
 import CameraPreview from "../components/oa/CameraPreview";
-import { useCamera } from "../components/oa/useCamera";
-import { enterFullscreen, isActive, isExpired, loadSession, startSession, submitSession } from "../components/oa/session";
-import { contentApi } from "../services/api";
+import { QuestionType, practicePath } from "../data/enums";
+import { useOaPrecheck } from "../hooks/useOaPrecheck";
 
 export default function OaPrecheck() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const camera = useCamera();
-  const [agreed, setAgreed] = useState(false);
-  const q = useQuery({ queryKey: ["assessment-set", id], queryFn: () => contentApi.assessmentSet(id) });
-  const data = q.data?.data;
-  const session = useMemo(() => loadSession(data?.id || id), [data?.id, id]);
-  const active = isActive(session);
-  const expired = isExpired(session);
-  const submitted = Boolean(session?.submittedAt);
-  const canEnter = camera.ready && agreed;
-  const problemCount = data?.questions?.length || 0;
-  const cta = submitted || expired ? "View result" : active ? "Resume Assessment" : "Start Assessment";
+  const p = useOaPrecheck();
 
-  async function begin() {
-    if (!data || !canEnter) return;
-    if (submitted || expired) {
-      if (expired && !submitted) submitSession(data.id);
-      navigate(`/oa/${data.id}/exam`, { replace: true });
-      return;
-    }
-    if (!active) startSession(data.id, data.durationMinutes);
-    await enterFullscreen();
-    navigate(`/oa/${data.id}/exam`, { replace: true });
+  if (p.isLoading) {
+    return (
+      <Layout>
+        <Loader fill />
+      </Layout>
+    );
   }
 
   return (
     <Layout>
-      {q.isLoading && <p className="text-sm text-mute">Loading assessment rules and problem count…</p>}
-      {q.isError && (
+      {p.isError && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Assessment missing</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">This OA set is not available</h1>
           <p className="mt-3 text-sm text-mute">It may be unpublished. Pick another set from the OA lobby.</p>
-          <Link to="/practice/OA" className="btn-black mt-8">Back to OA lobby</Link>
+          <Link to={practicePath(QuestionType.OA)} className="btn-black mt-8">Back to OA lobby</Link>
         </section>
       )}
-      {data && (
+      {p.data && (
         <div className="mx-auto max-w-xl">
-          <Link to="/practice/OA" className="text-sm font-medium text-blue-600 dark:text-blue-400">← Back</Link>
+          <Link to={practicePath(QuestionType.OA)} className="text-sm font-medium text-blue-600 dark:text-blue-400">← Back</Link>
           <article className="mt-4 rounded-3xl border border-line bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] sm:p-8 dark:bg-card dark:shadow-none">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-ink">{data.title}</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-ink">{p.data?.title}</h1>
             <p className="mt-2 text-[15px] text-slate-500 dark:text-mute">
               Please read the instructions carefully before starting.
             </p>
@@ -70,8 +51,8 @@ export default function OaPrecheck() {
             </InstructionBlock>
 
             <InstructionBlock icon={FileText} title="Assessment Format">
-              <li><strong>Duration:</strong> {data.durationMinutes} minutes.</li>
-              <li><strong>Problems:</strong> {problemCount} coding {problemCount === 1 ? "problem" : "problems"}.</li>
+              <li><strong>Duration:</strong> {p.data?.durationMinutes} minutes.</li>
+              <li><strong>Problems:</strong> {p.problemCount} coding {p.problemCount === 1 ? "problem" : "problems"}.</li>
               <li>You can solve problems in any order.</li>
               <li>Click &apos;Submit Assessment&apos; to finish early.</li>
             </InstructionBlock>
@@ -80,8 +61,8 @@ export default function OaPrecheck() {
               <input
                 type="checkbox"
                 className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 accent-blue-600"
-                checked={agreed}
-                onChange={(event) => setAgreed(event.target.checked)}
+                checked={p.agreed}
+                onChange={(event) => p.setAgreed(event.target.checked)}
               />
               I have read and understood the instructions. I agree to the proctoring terms and environment rules.
             </label>
@@ -92,32 +73,32 @@ export default function OaPrecheck() {
                 System Check
               </h2>
               <div className="mt-4">
-                <CameraPreview videoRef={camera.videoRef} ready={camera.ready} variant="check" />
+                <CameraPreview videoRef={p.camera.videoRef} ready={p.camera.ready} variant="check" />
               </div>
-              {camera.error && <p className="mt-3 text-sm text-rose-500">{camera.error}</p>}
+              {p.camera.error && <p className="mt-3 text-sm text-rose-500">{p.camera.error}</p>}
             </section>
 
             <button
               type="button"
-              onClick={camera.enable}
+              onClick={p.camera.enable}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-blue-600 px-4 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950/40"
             >
               <Camera size={16} />
-              {camera.ready ? "Camera enabled" : "Enable Camera"}
+              {p.camera.ready ? "Camera enabled" : "Enable Camera"}
             </button>
 
             <button
               type="button"
-              onClick={begin}
-              disabled={!canEnter}
+              onClick={p.begin}
+              disabled={!p.canEnter}
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:bg-slate-300 disabled:text-white disabled:hover:bg-slate-300 dark:disabled:bg-white/15 dark:disabled:text-slate-400"
             >
-              {cta}
+              {p.cta}
               <span aria-hidden="true">→</span>
             </button>
-            {!canEnter && (
+            {!p.canEnter && (
               <p className="mt-3 text-center text-sm text-slate-400">
-                {!camera.ready ? "Enable camera to proceed" : "Accept the instructions to proceed"}
+                {!p.camera.ready ? "Enable camera to proceed" : "Accept the instructions to proceed"}
               </p>
             )}
           </article>

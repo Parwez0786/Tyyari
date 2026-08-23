@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import AuthShell from "../components/AuthShell";
+import Loader from "../components/Loader";
 import { authApi } from "../services/api";
 
 export default function VerifyEmail() {
@@ -19,7 +20,7 @@ export default function VerifyEmail() {
       .catch((err) => {
         if (!cancelled) {
           setStatus("error");
-          setError(err.message);
+          setError(err?.message);
         }
       });
     return () => {
@@ -27,12 +28,13 @@ export default function VerifyEmail() {
     };
   }, [token]);
 
+  if (status === "pending") return <Loader screen />;
+
   return (
     <AuthShell
       title={status === "ok" ? "Email verified" : "Verify your email"}
       subtitle={status === "ok" ? "Your inbox is confirmed. You can sign in now." : "Confirming the link from your inbox."}
     >
-      {status === "pending" && <p className="text-sm text-mute">Checking the link from your inbox. This takes a second.</p>}
       {status === "missing" && (
         <p className="text-sm text-hard">
           This link is missing a token. Request a new one from <Link to="/login" className="text-brand">login</Link>.

@@ -1,219 +1,59 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
-  Camera,
-  Code2,
+  CalendarDays,
   Flame,
-  LayoutTemplate,
   ListChecks,
-  BookOpen,
   Map,
-  Network,
-  Puzzle,
   Shuffle,
   Sparkles,
   Target,
   Undo2,
-  Zap,
 } from "lucide-react";
 import Layout from "../components/Layout";
+import Loader from "../components/Loader";
 import Avatar from "../components/Avatar";
 import ThemeCard from "../components/ThemeCard";
-import { DifficultyBadge } from "../components/QuestionMeta";
-import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
-import { contentApi, userApi, authApi } from "../services/api";
-import { ROADMAPS, roleFromProfile } from "../data/roadmaps";
+import { CompanyMark, DifficultyBadge } from "../components/QuestionMeta";
+import { Donut, ProgressBar } from "../components/ProgressCharts";
 import { difficultyLabel, targetRoleLabel, typeLabel, viewLabel } from "../data/labels";
-import { useEntitled } from "../hooks/usePremium";
-
-const TRACKS = [
-  {
-    type: "HLD",
-    title: "System Design",
-    hook: "Design systems interviewers actually ask.",
-    practice: "/practice/HLD",
-    sheet: "/sheets/hld-core-sheet",
-    Icon: Network,
-    accent: "from-orange-500/20 to-amber-500/5",
-    chip: "bg-brand/15 text-brand",
-  },
-  {
-    type: "LLD",
-    title: "Low Level Design",
-    hook: "Ship OOP and machine-coding in a real editor.",
-    practice: "/practice/LLD",
-    sheet: "/sheets/lld-machine-coding",
-    Icon: Puzzle,
-    accent: "from-sky-500/20 to-cyan-500/5",
-    chip: "bg-sky-500/15 text-sky-400",
-  },
-  {
-    type: "DSA",
-    title: "DSA",
-    hook: "Run testcases. Chase the next Accepted.",
-    practice: "/practice/DSA",
-    sheet: "/sheets/dsa-sde-sheet",
-    Icon: Code2,
-    accent: "from-emerald-500/20 to-teal-500/5",
-    chip: "bg-emerald-500/15 text-emerald-400",
-  },
-  {
-    type: "FRONTEND",
-    title: "Frontend",
-    hook: "Build UI with live desktop and mobile preview.",
-    practice: "/practice/FRONTEND",
-    sheet: "/sheets/frontend-ui-sheet",
-    Icon: LayoutTemplate,
-    accent: "from-fuchsia-500/20 to-pink-500/5",
-    chip: "bg-fuchsia-500/15 text-fuchsia-400",
-  },
-  {
-    type: "CS",
-    title: "CS Fundamentals",
-    hook: "Short OS, DBMS, OOP, and networks quizzes.",
-    practice: "/practice/CS",
-    Icon: BookOpen,
-    accent: "from-lime-500/20 to-emerald-500/5",
-    chip: "bg-lime-500/15 text-lime-400",
-  },
-  {
-    type: "OA",
-    title: "Online Assessment",
-    hook: "Timed, camera-gated DSA — like the real OA.",
-    practice: "/practice/OA",
-    Icon: Camera,
-    accent: "from-blue-500/20 to-indigo-500/5",
-    chip: "bg-blue-500/15 text-premium",
-  },
-];
-
-const RANKS = [
-  { name: "Day one", xp: 0 },
-  { name: "Building", xp: 1 },
-  { name: "On a roll", xp: 8 },
-  { name: "Interview ready", xp: 20 },
-];
-
-const QUEST_TYPES = ["DSA", "HLD", "LLD", "FRONTEND", "CS"];
-const DAY_LABELS = ["6d", "5d", "4d", "3d", "2d", "Y", "T"];
-const WEEK_GOAL = 5;
-const TIPS = [
-  "Talk out loud. Interviewers grade the path, not only the final answer.",
-  "For HLD, lock users, QPS, and storage before you draw a single box.",
-  "Write brute force first. Then name the bottleneck in one sentence.",
-  "In LLD, list classes and ownership before you open the editor.",
-  "Dry-run one example on paper. Most bugs show up there.",
-  "Frontend rounds: make the empty, loading, and error states obvious.",
-  "CS quizzes: commit to an answer before you peek. Phone screens love OS and DBMS.",
-  "OA timing: skip a stuck problem after 12 minutes. Come back later.",
-  "End every design with trade-offs. That is the senior signal.",
-];
+import { QuestionType, practicePath } from "../data/enums";
+import { DAY_LABELS, WEEK_GOAL, useDashboard } from "../hooks/useDashboard";
 
 export default function Dashboard() {
-  const questType = QUEST_TYPES[new Date().getDay() % QUEST_TYPES.length];
-  const [shuffle, setShuffle] = useState(0);
-  const profileQuery = useQuery({ queryKey: ["profile"], queryFn: userApi.profile });
-  const meQuery = useQuery({ queryKey: ["me"], queryFn: authApi.me });
-  const goalsQuery = useQuery({ queryKey: ["goals"], queryFn: userApi.goals });
-  const progressQuery = useQuery({ queryKey: ["practice-progress"], queryFn: userApi.practiceProgress });
-  const sheetsQuery = useQuery({ queryKey: ["sheets"], queryFn: () => contentApi.sheets() });
-  const oaQuery = useQuery({ queryKey: ["assessment-sets"], queryFn: contentApi.assessmentSets });
-  const questQuery = useQuery({
-    queryKey: ["quest", questType],
-    queryFn: () => contentApi.questions({ type: questType, limit: 8, page: 1 }),
-  });
-  const continueQuery = useQuery({
-    queryKey: ["continue"],
-    queryFn: () => contentApi.questions({ type: "DSA", limit: 8, page: 1 }),
-  });
-  const libraryQuery = useQuery({
-    queryKey: ["library-totals"],
-    queryFn: async () => {
-      const types = ["HLD", "LLD", "DSA", "FRONTEND", "CS"];
-      const pages = await Promise.all(types.map((type) => contentApi.questions({ type, page: 1, limit: 1 })));
-      return Object.fromEntries(types.map((type, index) => [type, pages[index]?.data?.total || 0]));
-    },
-  });
-  const goals = goalsQuery.data?.data;
-  const progress = progressQuery.data?.data;
-  const company = (goals?.targetCompanies || [])[0];
-  const companyQuery = useQuery({
-    queryKey: ["company-drill", company],
-    queryFn: () => contentApi.questions({ company, limit: 5, page: 1 }),
-    enabled: Boolean(company),
-  });
-  const lastQuery = useQuery({
-    queryKey: ["question", progress?.lastQuestionId],
-    queryFn: () => contentApi.question(progress.lastQuestionId),
-    enabled: Boolean(progress?.lastQuestionId),
-  });
+  const d = useDashboard();
 
-  const profile = profileQuery.data?.data;
-  const email = meQuery.data?.data?.email;
-  const done = completedSet(progress);
-  const sheets = sheetsQuery.data?.data ?? [];
-  const assessments = oaQuery.data?.data ?? [];
-  const questPool = questQuery.data?.data?.items ?? [];
-  const items = continueQuery.data?.data?.items ?? [];
-  const library = libraryQuery.data || {};
-  const companies = (goals?.targetCompanies || []).slice(0, 3);
-
-  const firstName = (profile?.name || "there").split(" ")[0];
-  const byType = Object.fromEntries((progress?.byType || []).map((item) => [item.type, item.completed]));
-  const libraryTotal = ["HLD", "LLD", "DSA", "FRONTEND", "CS"].reduce((sum, type) => sum + (library[type] || 0), 0);
-  const completed = progress?.completed || 0;
-  const sheetIds = [...new Set(sheets.flatMap((sheet) => sheet.questionIds || []))];
-  const sheetDone = countCompleted(sheetIds, done);
-  const oaTotal = assessments.reduce((sum, set) => sum + (set.questionCount || 0), 0);
-  const nextQuest = questPool.filter((item) => !done.has(item.id));
-  const quest = nextQuest[0] || questPool[0];
-  const queue = items.filter((item) => !done.has(item.id)).slice(0, 4);
-  const companyItems = (companyQuery.data?.data?.items ?? []).filter((item) => !done.has(item.id)).slice(0, 3);
-  const lastQuestion = lastQuery.data?.data;
-  const streak = progress?.streakDays || 0;
-  const todayDone = progress?.todayCompleted || 0;
-  const weekDone = progress?.weekCompleted || 0;
-  const week = progress?.weekActive?.length === 7 ? progress.weekActive : Array(7).fill(false);
-  const xp = rankProgress(completed);
-  const nudge = streakNudge(streak, todayDone);
-  const gap = weakestTrack(byType, library);
-  const nextBadge = nextBadgeFor({ completed, streak, hld: byType.HLD || 0, sheetDone });
-  const tip = TIPS[new Date().getDate() % TIPS.length];
-  const surprisePool = useMemo(
-    () => [...questPool, ...items].filter((item, index, list) => !done.has(item.id) && list.findIndex((row) => row.id === item.id) === index),
-    [questPool, items, progress?.questionIds],
-  );
-  const surprise = surprisePool.length ? surprisePool[(daySeed() + shuffle) % surprisePool.length] : null;
-  const oaSet = assessments[0];
-  const pathRole = roleFromProfile(profile?.targetRole);
-  const path = ROADMAPS[pathRole] || ROADMAPS["SDE-1"];
-  const entitled = useEntitled();
+  if (d.isLoading) {
+    return (
+      <Layout>
+        <Loader fill />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <ThemeCard className="sm:p-8" innerClassName="flex flex-wrap items-start gap-5">
-          <Avatar name={profile?.name} email={email} size="lg" square />
+          <Avatar name={d.profile?.name} email={d.email} size="lg" square />
           <div className="min-w-0 flex-1">
-            <p className="font-hand text-2xl text-brand">{greeting()}</p>
-            <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{firstName}</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-mute">{nudge}</p>
-            {profileQuery.isError && (
+            <p className="font-hand text-2xl text-brand">{d.greeting}</p>
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{d.firstName}</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-mute">{d.nudge}</p>
+            {d.profileError && (
               <p className="mt-2 text-sm text-hard">Could not load your profile. Refresh — your streak still lives on the server.</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="tab-chip tab-chip-on !font-bold uppercase tracking-wide">
-                {xp.name}
+                {d.xp.name}
               </span>
-              {profile?.targetRole && (
+              {d.profile?.targetRole && (
                 <Link to="/learn" className="tab-chip">
-                  {targetRoleLabel(profile.targetRole)} path
+                  {targetRoleLabel(d.profile?.targetRole)} path
                 </Link>
               )}
-              {companies.map((name) => (
+              {d.companies.map((name) => (
                 <span key={name} className="tab-chip">{name}</span>
               ))}
-              {entitled ? (
+              {d.entitled ? (
                 <span className="rounded-full border border-premium/30 bg-blue-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-premium">
                   Premium
                 </span>
@@ -225,63 +65,83 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 max-w-md">
               <ProgressBar
-                label={xp.next ? `${xp.toNext} more to ${xp.next}` : "Max rank unlocked"}
-                value={xp.value}
-                total={xp.total}
+                label={d.xp.next ? `${d.xp.toNext} more to ${d.xp.next}` : "Max rank unlocked"}
+                value={d.xp.value}
+                total={d.xp.total}
               />
             </div>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[220px]">
-            <div className={`rounded-2xl border px-4 py-3 ${streak ? "border-brand/40 bg-brand/10" : "border-line bg-field"}`}>
+            <div className={`rounded-2xl border px-4 py-3 ${d.streak ? "border-brand/40 bg-brand/10" : "border-line bg-field"}`}>
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-mute">
-                <Flame size={14} className={streak ? "text-brand" : "text-mute"} />
+                <Flame size={14} className={d.streak ? "text-brand" : "text-mute"} />
                 Streak
               </div>
               <p className="mt-1 text-3xl font-extrabold tracking-tight">
-                {streak}
-                <span className="ml-1 text-sm font-semibold text-mute">day{streak === 1 ? "" : "s"}</span>
+                {d.streak}
+                <span className="ml-1 text-sm font-semibold text-mute">day{d.streak === 1 ? "" : "s"}</span>
               </p>
-              <p className="mt-1 text-xs text-mute">{todayDone ? `${todayDone} submitted today` : "Submit once to keep it"}</p>
+              <p className="mt-1 text-xs text-mute">{d.todayDone ? `${d.todayDone} submitted today` : "Submit once to keep it"}</p>
             </div>
-            <WeekStrip week={week} />
+            <WeekStrip week={d.week} />
             <div className="rounded-2xl border border-line bg-field px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-mute">This week</p>
-              <p className="mt-1 text-lg font-extrabold">{weekDone}/{WEEK_GOAL}</p>
-              <ProgressBar label="Weekly quest" value={Math.min(weekDone, WEEK_GOAL)} total={WEEK_GOAL} />
+              <p className="mt-1 text-lg font-extrabold">{d.weekDone}/{WEEK_GOAL}</p>
+              <ProgressBar label="Weekly quest" value={Math.min(d.weekDone, WEEK_GOAL)} total={WEEK_GOAL} />
             </div>
           </div>
       </ThemeCard>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
-        {quest && (
-          <ThemeCard>
+        {d.potd && (
+          <ThemeCard tone="mint">
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
-              <Zap size={12} />
-              Today&apos;s {questType} quest
+              <CalendarDays size={12} />
+              Problem of the day
             </p>
-            <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{quest.title}</h2>
-            <div className="mt-2">
-              <DifficultyBadge difficulty={quest.difficulty} />
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{d.potd.title}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <DifficultyBadge difficulty={d.potd.difficulty} />
+              {d.potdDone && (
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+                  Done
+                </span>
+              )}
             </div>
-            <p className="mt-3 text-sm text-mute">One focused round. Submit it to protect the streak.</p>
-            <Link to={hrefFor(quest.id, quest.type)} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
-              Solve now
-            </Link>
+            {(d.potd.companies || []).length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {(d.potd.companies || []).slice(0, 5).map((name) => (
+                  <CompanyMark key={name} name={name} />
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-sm text-mute">
+              A new DSA problem each day. Same pick for everyone until midnight.
+            </p>
+            {d.potdLocked ? (
+              <Link to="/premium" className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
+                Upgrade to unlock
+              </Link>
+            ) : (
+              <Link to={d.hrefFor(d.potd.id, d.potd.type)} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
+                {d.potdDone ? "Solve again" : "Solve now"}
+              </Link>
+            )}
           </ThemeCard>
         )}
-        {lastQuestion ? (
+        {d.lastQuestion ? (
           <ThemeCard tone="quiet">
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-mute">
               <Undo2 size={12} />
               Jump back in
             </p>
-            <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{lastQuestion.title}</h2>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{d.lastQuestion.title}</h2>
             <p className="mt-2 text-sm text-mute">
-              Last submit · {typeLabel(lastQuestion.type)}
-              {progress?.lastView ? ` · ${viewLabel(progress.lastView)}` : ""}
+              Last submit · {typeLabel(d.lastQuestion.type)}
+              {d.lastView ? ` · ${viewLabel(d.lastView)}` : ""}
             </p>
             <Link
-              to={hrefFor(lastQuestion.id, lastQuestion.type, progress?.lastView)}
+              to={d.hrefFor(d.lastQuestion.id, d.lastQuestion.type, d.lastView)}
               className="btn-ghost mt-5 inline-flex !px-5 !py-2.5"
             >
               Resume
@@ -301,38 +161,38 @@ export default function Dashboard() {
           <Map size={12} />
           Roadmap
         </p>
-        <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{pathRole} · 8 weeks</h2>
+        <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{d.pathRole} · 8 weeks</h2>
         <p className="mt-2 max-w-2xl text-sm text-mute">
-          Week 1 is {path[0].title}. Each week deep-links into questions and sheets you already have.
+          Week 1 is {d.path[0].title}. Each week deep-links into questions and sheets you already have.
         </p>
-        <Link to={`/learn?role=${pathRole}`} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
+        <Link to={`/learn?role=${d.pathRole}`} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
           Open path
         </Link>
       </ThemeCard>
 
       <section className="mt-6 grid gap-4 md:grid-cols-3">
-        {gap && (
-          <article className={`rounded-[24px] border border-line bg-gradient-to-br p-5 ${gap.accent}`}>
+        {d.gap && (
+          <article className={`rounded-[24px] border border-line bg-gradient-to-br p-5 ${d.gap.accent}`}>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-brand">
               <Target size={12} />
               Weakest track
             </p>
-            <h3 className="mt-2 text-lg font-bold">{gap.title}</h3>
-            <p className="mt-1 text-sm text-mute">{gap.done} of {gap.total} submitted. Close the gap here first.</p>
-            <Link to={gap.practice} className="mt-4 inline-block text-sm font-semibold text-brand">Train {typeLabel(gap.type)} →</Link>
+            <h3 className="mt-2 text-lg font-bold">{d.gap.title}</h3>
+            <p className="mt-1 text-sm text-mute">{d.gap.done} of {d.gap.total} submitted. Close the gap here first.</p>
+            <Link to={d.gap.practice} className="mt-4 inline-block text-sm font-semibold text-brand">Train {typeLabel(d.gap.type)} →</Link>
           </article>
         )}
-        {surprise && (
+        {d.surprise && (
           <ThemeCard tone="violet" compact>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-fuchsia-400">
               <Shuffle size={12} />
               Surprise round
             </p>
-            <h3 className="mt-2 line-clamp-2 text-lg font-bold">{surprise.title}</h3>
-            <p className="mt-1 text-sm text-mute">{typeLabel(surprise.type)} · A random unpublished-for-you problem.</p>
+            <h3 className="mt-2 line-clamp-2 text-lg font-bold">{d.surprise.title}</h3>
+            <p className="mt-1 text-sm text-mute">{typeLabel(d.surprise.type)} · A random unpublished-for-you problem.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link to={hrefFor(surprise.id, surprise.type)} className="text-sm font-semibold text-brand">Open →</Link>
-              <button type="button" onClick={() => setShuffle((n) => n + 1)} className="text-sm font-semibold text-mute hover:text-ink">
+              <Link to={d.hrefFor(d.surprise.id, d.surprise.type)} className="text-sm font-semibold text-brand">Open →</Link>
+              <button type="button" onClick={d.shuffle} className="text-sm font-semibold text-mute hover:text-ink">
                 Shuffle
               </button>
             </div>
@@ -344,7 +204,7 @@ export default function Dashboard() {
             Coach note
           </p>
           <h3 className="mt-2 text-lg font-bold">Tip of the day</h3>
-          <p className="mt-2 text-sm leading-6 text-mute">{tip}</p>
+          <p className="mt-2 text-sm leading-6 text-mute">{d.tip}</p>
         </ThemeCard>
       </section>
 
@@ -359,52 +219,50 @@ export default function Dashboard() {
           </div>
           <div className="mt-5">
             <Donut
-              value={completed}
-              total={libraryTotal}
-              label={`${completed} submitted across the library. Sheets and practice share this count.`}
+              value={d.completed}
+              total={d.libraryTotal}
+              label={`${d.completed} submitted across the library. Sheets and practice share this count.`}
             />
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <Stat label="Sheets" value={`${sheetDone}/${sheetIds.length || 0}`} hint="fixed sets" />
-            <Stat label="OA saved" value={`${progress?.oaCompleted || 0}/${oaTotal || 0}`} hint="timed rounds" />
-            <Stat label="Today" value={`${todayDone}`} hint="unique submits" />
+            <Stat label="Sheets" value={`${d.sheetDone}/${d.sheetTotal}`} hint="fixed sets" />
+            <Stat label="OA saved" value={`${d.oaCompleted}/${d.oaTotal}`} hint="timed rounds" />
+            <Stat label="Today" value={`${d.todayDone}`} hint="unique submits" />
           </div>
         </ThemeCard>
 
         <ThemeCard tone="blue">
           <p className="label-caps">Badges</p>
           <h2 className="mt-1 text-xl font-extrabold tracking-tight">Earn the next one</h2>
-          {nextBadge && (
+          {d.nextBadge && (
             <div className="mt-4 rounded-2xl border border-brand/30 bg-brand/10 p-3">
               <p className="text-xs font-bold uppercase tracking-wide text-brand">Next unlock</p>
-              <p className="mt-1 font-semibold">{nextBadge.title}</p>
+              <p className="mt-1 font-semibold">{d.nextBadge.title}</p>
               <div className="mt-2">
-                <ProgressBar label={nextBadge.hint} value={nextBadge.value} total={nextBadge.total} />
+                <ProgressBar label={d.nextBadge.hint} value={d.nextBadge.value} total={d.nextBadge.total} />
               </div>
             </div>
           )}
           <div className="mt-4 grid gap-3">
-            <BadgeRow earned={completed >= 1} title="First submit" detail="Log any practice answer" />
-            <BadgeRow earned={streak >= 3} title="On a streak" detail="Show up 3 days in a row" />
-            <BadgeRow earned={completed >= 5} title="Warm-up complete" detail="Submit 5 unique questions" />
-            <BadgeRow earned={(byType.HLD || 0) >= 1} title="System designer" detail="Submit one HLD design" />
-            <BadgeRow earned={sheetDone >= 3} title="Sheet hunter" detail="Finish 3 sheet problems" />
+            {d.badges.map((badge) => (
+              <BadgeRow key={badge.title} earned={badge.earned} title={badge.title} detail={badge.detail} />
+            ))}
           </div>
         </ThemeCard>
       </section>
 
-      {(companyItems.length > 0 || oaSet) && (
+      {(d.companyItems.length > 0 || d.oaSet) && (
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          {companyItems.length > 0 && (
+          {d.companyItems.length > 0 && (
             <ThemeCard tone="quiet">
               <p className="label-caps">Company drill</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">{company} tagged problems</h2>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">{d.company} tagged problems</h2>
               <p className="mt-2 text-sm text-mute">From your target list. Clear these before a loop.</p>
               <div className="mt-4 grid gap-2">
-                {companyItems.map((question) => (
+                {d.companyItems.map((question) => (
                   <Link
                     key={question.id}
-                    to={hrefFor(question.id, question.type)}
+                    to={d.hrefFor(question.id, question.type)}
                     className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-field px-4 py-3 hover:border-brand/40"
                   >
                     <span className="min-w-0 truncate font-semibold">{question.title}</span>
@@ -414,14 +272,14 @@ export default function Dashboard() {
               </div>
             </ThemeCard>
           )}
-          {oaSet && (
+          {d.oaSet && (
             <ThemeCard tone="blue">
               <p className="label-caps">Simulate pressure</p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-tight">{oaSet.title}</h2>
+              <h2 className="mt-1 text-xl font-extrabold tracking-tight">{d.oaSet.title}</h2>
               <p className="mt-2 text-sm text-mute">
-                {oaSet.durationMinutes} min · {oaSet.questionCount} questions · camera on. Closest thing to a company OA.
+                {d.oaSet.durationMinutes} min · {d.oaSet.questionCount} questions · camera on. Closest thing to a company OA.
               </p>
-              <Link to="/practice/OA" className="btn-ghost mt-5 inline-flex !px-5 !py-2.5">
+              <Link to={practicePath(QuestionType.OA)} className="btn-ghost mt-5 inline-flex !px-5 !py-2.5">
                 Enter OA lobby
               </Link>
             </ThemeCard>
@@ -437,10 +295,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {TRACKS.map((track) => {
-            const value = track.type === "OA" ? (progress?.oaCompleted || 0) : (byType[track.type] || 0);
-            const total = track.type === "OA" ? oaTotal : (library[track.type] || 0);
-            const pct = total ? Math.round((100 * value) / total) : 0;
+          {d.playbooks.map((track) => {
             const Icon = track.Icon;
             return (
               <article
@@ -451,12 +306,12 @@ export default function Dashboard() {
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${track.chip}`}>
                     <Icon size={18} />
                   </span>
-                  <span className="text-2xl font-extrabold tabular-nums text-ink">{pct}%</span>
+                  <span className="text-2xl font-extrabold tabular-nums text-ink">{track.pct}%</span>
                 </div>
                 <h3 className="mt-4 text-lg font-bold">{track.title}</h3>
                 <p className="mt-1 text-sm leading-6 text-mute">{track.hook}</p>
                 <div className="mt-4">
-                  <ProgressBar label={`${value}/${total}`} value={value} total={total} />
+                  <ProgressBar label={`${track.value}/${track.total}`} value={track.value} total={track.total} />
                 </div>
                 <div className="mt-auto flex flex-wrap gap-2 pt-5">
                   <Link to={track.practice} className="btn-ghost !px-4 !py-2 text-sm group-hover:border-brand/40">
@@ -475,7 +330,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {queue.length > 0 && (
+      {d.queue.length > 0 && (
         <ThemeCard tone="quiet" className="mt-6">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -485,15 +340,15 @@ export default function Dashboard() {
             <Link to="/practice/DSA" className="text-sm font-semibold text-brand">More DSA</Link>
           </div>
           <div className="mt-4 grid gap-3">
-            {queue.map((question, index) => (
+            {d.queue.map((question, index) => (
               <Link
                 key={question.id}
-                to={hrefFor(question.id, question.type)}
+                to={d.hrefFor(question.id, question.type)}
                 className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-field px-4 py-3.5 transition hover:border-brand/40"
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{index + 1}. {question.title}</p>
-                  <p className="mt-0.5 text-xs text-mute">{question.difficulty ? difficultyLabel(question.difficulty) : typeLabel("DSA")}</p>
+                  <p className="mt-0.5 text-xs text-mute">{question.difficulty ? difficultyLabel(question.difficulty) : typeLabel(QuestionType.DSA)}</p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-brand">Go →</span>
               </Link>
@@ -503,82 +358,6 @@ export default function Dashboard() {
       )}
     </Layout>
   );
-}
-
-function hrefFor(id, type, view) {
-  if (type === "HLD") {
-    return view ? `/questions/${id}?view=${view}` : `/questions/${id}`;
-  }
-  if (type === "CS") return `/questions/${id}`;
-  if (type === "OA") return "/practice/OA";
-  return `/questions/${id}?view=code`;
-}
-
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Morning session";
-  if (hour < 17) return "Afternoon grind";
-  return "Night round";
-}
-
-function rankProgress(completed) {
-  let current = RANKS[0];
-  let next = RANKS[1];
-  for (let i = 0; i < RANKS.length; i += 1) {
-    if (completed >= RANKS[i].xp) {
-      current = RANKS[i];
-      next = RANKS[i + 1] || null;
-    }
-  }
-  if (!next) {
-    return { name: current.name, value: 1, total: 1, next: "", toNext: 0 };
-  }
-  return {
-    name: current.name,
-    value: completed - current.xp,
-    total: next.xp - current.xp,
-    next: next.name,
-    toNext: Math.max(next.xp - completed, 0),
-  };
-}
-
-function weakestTrack(byType, library) {
-  return TRACKS.filter((track) => track.type !== "OA")
-    .map((track) => {
-      const total = library[track.type] || 0;
-      const done = byType[track.type] || 0;
-      return { ...track, total, done, pct: total ? done / total : 1 };
-    })
-    .sort((a, b) => a.pct - b.pct || a.total - b.total)[0];
-}
-
-function nextBadgeFor({ completed, streak, hld, sheetDone }) {
-  const badges = [
-    { title: "First submit", value: completed, total: 1, hint: "Submit 1 question" },
-    { title: "On a streak", value: streak, total: 3, hint: "3 days in a row" },
-    { title: "Warm-up complete", value: completed, total: 5, hint: "5 unique submits" },
-    { title: "System designer", value: hld, total: 1, hint: "Submit 1 HLD" },
-    { title: "Sheet hunter", value: sheetDone, total: 3, hint: "3 sheet problems" },
-  ];
-  return badges.find((badge) => badge.value < badge.total) || null;
-}
-
-function streakNudge(streak, todayDone) {
-  if (todayDone > 0 && streak > 1) {
-    return `Streak is safe. ${streak} days live — one more problem makes tomorrow easier.`;
-  }
-  if (todayDone > 0) {
-    return "Logged for today. Come back tomorrow and start a real streak.";
-  }
-  if (streak > 0) {
-    return `You have a ${streak}-day streak. Submit once today so it does not reset.`;
-  }
-  return "Submit one problem today. Streaks, badges, and your report all start from that.";
-}
-
-function daySeed() {
-  const now = new Date();
-  return now.getFullYear() * 1000 + now.getMonth() * 40 + now.getDate();
 }
 
 function WeekStrip({ week }) {

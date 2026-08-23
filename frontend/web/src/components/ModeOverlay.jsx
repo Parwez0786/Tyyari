@@ -1,9 +1,10 @@
 import { useEffect } from "react";
+import { QuestionType, ViewMode } from "../data/enums";
 import { typeLabel } from "../data/labels";
 import { QuestionMeta } from "./QuestionMeta";
 
 export default function ModeOverlay({ question, onPick, onClose }) {
-  const lld = question.type === "LLD";
+  const lld = question?.type === QuestionType.LLD;
 
   useEffect(() => {
     function onKey(event) {
@@ -32,8 +33,8 @@ export default function ModeOverlay({ question, onPick, onClose }) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-amber-400">{typeLabel(question.type)}</p>
-            <h2 id="mode-overlay-title" className="mt-1 text-xl font-bold text-white sm:text-2xl">{question.title}</h2>
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-amber-400">{typeLabel(question?.type)}</p>
+            <h2 id="mode-overlay-title" className="mt-1 text-xl font-bold text-white sm:text-2xl">{question?.title}</h2>
             <div className="mt-3">
               <QuestionMeta data={question} />
             </div>
@@ -60,14 +61,14 @@ export default function ModeOverlay({ question, onPick, onClose }) {
               : "Drag load balancers, stores, and queues onto a graph. Submit the canvas with back-of-envelope math."}
             cta="Open Blueprint"
             icon={<BlueprintIcon />}
-            onClick={() => onPick("blueprint")}
+            onClick={() => onPick(ViewMode.BLUEPRINT)}
           />
           <ModeCard
             title="Whiteboard mode"
             detail="Freehand canvas for sequence diagrams, capacity math, and talking through trade-offs."
             cta="Open Whiteboard"
             icon={<WhiteboardIcon />}
-            onClick={() => onPick("whiteboard")}
+            onClick={() => onPick(ViewMode.WHITEBOARD)}
           />
         </div>
       </div>

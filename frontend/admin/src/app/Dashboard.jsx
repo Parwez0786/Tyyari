@@ -2,18 +2,20 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { BarChart, Donut, HBarList, countByDay, lastDays } from "../components/Charts";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import ThemeCard from "../components/ThemeCard";
+import { AccountRole, AccountStatus, QuestionType } from "../data/enums";
 import { providerLabel, targetRoleLabel, typeLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
 const TYPE_COLORS = {
-  DSA: "#34d399",
-  HLD: "#f97316",
-  LLD: "#38bdf8",
-  FRONTEND: "#e879f9",
-  CS: "#a3e635",
-  OA: "#60a5fa",
+  [QuestionType.DSA]: "#34d399",
+  [QuestionType.HLD]: "#f97316",
+  [QuestionType.LLD]: "#38bdf8",
+  [QuestionType.FRONTEND]: "#e879f9",
+  [QuestionType.CS]: "#a3e635",
+  [QuestionType.OA]: "#60a5fa",
 };
 
 export default function Dashboard() {
@@ -26,12 +28,12 @@ export default function Dashboard() {
   const metrics = metricsQuery.data?.data ?? {};
   const days = useMemo(() => lastDays(14), []);
 
-  const candidates = users.filter((u) => u.role !== "ADMIN");
+  const candidates = users.filter((u) => u.role !== AccountRole.ADMIN);
   const premium = candidates.filter((u) => u.premium).length;
-  const active = candidates.filter((u) => u.status === "ACTIVE").length;
-  const disabled = candidates.filter((u) => u.status === "DISABLED").length;
-  const premiumActive = candidates.filter((u) => u.premium && u.status === "ACTIVE").length;
-  const freeActive = candidates.filter((u) => !u.premium && u.status === "ACTIVE").length;
+  const active = candidates.filter((u) => u.status === AccountStatus.ACTIVE).length;
+  const disabled = candidates.filter((u) => u.status === AccountStatus.DISABLED).length;
+  const premiumActive = candidates.filter((u) => u.premium && u.status === AccountStatus.ACTIVE).length;
+  const freeActive = candidates.filter((u) => !u.premium && u.status === AccountStatus.ACTIVE).length;
   const verified = candidates.filter((u) => u.emailVerified).length;
   const signups = countByDay(candidates, (u) => (u.createdAt || "").slice(0, 10), days);
   const providers = tally(candidates.map((u) => providerLabel(u.provider)));
@@ -56,6 +58,8 @@ export default function Dashboard() {
   const loading = usersQuery.isLoading || statsQuery.isLoading || metricsQuery.isLoading;
   const error = usersQuery.error || statsQuery.error || metricsQuery.error;
 
+  if (loading) return <Loader fill />;
+
   return (
     <div className="space-y-6">
       <PageHero
@@ -65,8 +69,7 @@ export default function Dashboard() {
         action={<Link to="/users" className="btn-ghost">Open users</Link>}
       />
 
-      {loading && <p className="text-sm text-mute">Loading metrics…</p>}
-      {error && <p className="text-sm text-hard">{error.message || "Could not load metrics."}</p>}
+      {error && <p className="text-sm text-hard">{error?.message || "Could not load metrics."}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Candidates" value={candidates.length} hint={`${active} active · ${disabled} disabled`} />

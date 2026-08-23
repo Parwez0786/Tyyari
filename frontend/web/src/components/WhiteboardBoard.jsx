@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Loader from "./Loader";
 import { useThemeStore } from "../stores/themeStore";
 
 const Excalidraw = lazy(async () => {
@@ -136,7 +137,7 @@ export default function WhiteboardBoard({ storageKey, onApi }) {
     <section className="h-full min-h-0 overflow-hidden bg-canvas">
       <div className="tyyari-board h-full min-h-0 w-full">
         {ready ? (
-          <Suspense fallback={<p className="p-6 text-sm text-mute">Loading whiteboard…</p>}>
+          <Suspense fallback={<Loader compact className="h-full" />}>
             <Excalidraw
               key={`${storageKey}-${theme}`}
               theme={theme}
@@ -157,7 +158,7 @@ export default function WhiteboardBoard({ storageKey, onApi }) {
             />
           </Suspense>
         ) : (
-          <p className="p-6 text-sm text-mute">Loading whiteboard…</p>
+          <Loader compact className="h-full" />
         )}
       </div>
     </section>

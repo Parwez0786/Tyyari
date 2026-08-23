@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import QuestionOrderPicker from "../components/QuestionOrderPicker";
+import { DIFFICULTY_LIST, Difficulty, QuestionType, SHEET_TYPES as SHEET_TYPE_KEYS } from "../data/enums";
+import { difficultyLabel } from "../data/labels";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
-const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONTEND"].includes(type.key));
+const SHEET_TYPES = QUESTION_TYPES.filter((type) => SHEET_TYPE_KEYS.includes(type.key));
 
 function blank(type) {
   return {
@@ -14,7 +17,7 @@ function blank(type) {
     slug: "",
     description: "",
     type,
-    difficulty: "MEDIUM",
+    difficulty: Difficulty.MEDIUM,
     companies: "",
     questionSlugs: [],
     published: false,
@@ -25,8 +28,8 @@ export default function SheetForm() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const initialType = String(params.get("type") || "DSA").toUpperCase();
-  const [form, setForm] = useState(() => blank(SHEET_TYPES.some((t) => t.key === initialType) ? initialType : "DSA"));
+  const initialType = String(params.get("type") || QuestionType.DSA).toUpperCase();
+  const [form, setForm] = useState(() => blank(SHEET_TYPES.some((t) => t.key === initialType) ? initialType : QuestionType.DSA));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -48,8 +51,8 @@ export default function SheetForm() {
       title: sheet.title || "",
       slug: sheet.slug || "",
       description: sheet.description || "",
-      type: String(sheet.type || "DSA").toUpperCase(),
-      difficulty: sheet.difficulty || "MEDIUM",
+      type: String(sheet.type || QuestionType.DSA).toUpperCase(),
+      difficulty: sheet.difficulty || Difficulty.MEDIUM,
       companies: (sheet.companies || []).join(", "),
       questionSlugs: sheet.questionSlugs || [],
       published: Boolean(sheet.published),
@@ -94,10 +97,14 @@ export default function SheetForm() {
       else await adminApi.createSheet(body);
       navigate("/sheets");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  if (id && existing.isLoading) {
+    return <Loader fill />;
   }
 
   return (
@@ -109,8 +116,7 @@ export default function SheetForm() {
         action={<Link to="/sheets" className="btn-ghost">Cancel</Link>}
       />
 
-      {existing.isLoading && id && <p className="text-sm text-mute">Loading sheet…</p>}
-      {existing.isError && <p className="text-sm text-hard">{existing.error.message || "Could not load this sheet."}</p>}
+      {existing.isError && <p className="text-sm text-hard">{existing.error?.message || "Could not load this sheet."}</p>}
 
       <article className={`rounded-[28px] border border-line bg-gradient-to-br p-6 ${meta.accent}`}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Sheet</p>
@@ -134,7 +140,7 @@ export default function SheetForm() {
           <label className="block">
             <FieldLabel>Difficulty</FieldLabel>
             <select className="field" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)} required>
-              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
+              {DIFFICULTY_LIST.map((t) => <option key={t} value={t}>{difficultyLabel(t)}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">

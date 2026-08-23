@@ -1,39 +1,50 @@
+import {
+  AccountRole,
+  Difficulty,
+  QuestionType,
+  Subject,
+  TargetRole,
+  ViewMode,
+} from "./enums";
+
 const TYPE = {
-  DSA: "DSA",
-  HLD: "System Design",
-  LLD: "Low Level Design",
-  FRONTEND: "Frontend",
-  CS: "CS Fundamentals",
-  OA: "Online Assessment",
+  [QuestionType.DSA]: "DSA",
+  [QuestionType.HLD]: "System Design",
+  [QuestionType.LLD]: "Low Level Design",
+  [QuestionType.FRONTEND]: "Frontend",
+  [QuestionType.CS]: "CS Fundamentals",
+  [QuestionType.OA]: "Online Assessment",
 };
 
 const DIFFICULTY = {
-  EASY: "Easy",
-  MEDIUM: "Medium",
-  HARD: "Hard",
+  [Difficulty.EASY]: "Easy",
+  [Difficulty.MEDIUM]: "Medium",
+  [Difficulty.HARD]: "Hard",
 };
 
 const VIEW = {
-  code: "Code",
-  canvas: "Canvas",
-  quiz: "Quiz",
-  design: "Design",
+  [ViewMode.CODE]: "Code",
+  [ViewMode.CANVAS]: "Canvas",
+  [ViewMode.QUIZ]: "Quiz",
+  [ViewMode.DESIGN]: "Design",
+  [ViewMode.BLUEPRINT]: "Blueprint",
+  [ViewMode.WHITEBOARD]: "Whiteboard",
 };
 
 const SUBJECT = {
-  OS: "Operating Systems",
-  DBMS: "Databases",
-  OOP: "OOP",
-  Networks: "Networks",
+  [Subject.OS]: "Operating Systems",
+  [Subject.DBMS]: "Databases",
+  [Subject.OOP]: "OOP",
+  [Subject.NETWORKS]: "Networks",
 };
 
 const ROLE = {
-  SDE1: "SDE-1",
-  SDE2: "SDE-2",
-  "SDE-1": "SDE-1",
-  "SDE-2": "SDE-2",
-  Frontend: "Frontend",
-  Backend: "Backend",
+  [TargetRole.SDE1]: "SDE-1",
+  [TargetRole.SDE2]: "SDE-2",
+  [TargetRole.SDE_1]: "SDE-1",
+  [TargetRole.SDE_2]: "SDE-2",
+  [TargetRole.FRONTEND]: "Frontend",
+  [TargetRole.BACKEND]: "Backend",
 };
 
 function pick(map, value, fallback = "—") {
@@ -69,3 +80,5 @@ export function targetRoleLabel(value) {
 export function subjectLabel(value) {
   return pick(SUBJECT, value);
 }
+
+export { AccountRole };

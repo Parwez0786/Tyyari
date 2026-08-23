@@ -60,7 +60,7 @@ ${safeJs}
       root.render(React.createElement(App));
       parent.postMessage({ type: "tyyari-preview", level: "ok", message: "" }, "*");
     } catch (error) {
-      parent.postMessage({ type: "tyyari-preview", level: "error", message: error.message || String(error) }, "*");
+      parent.postMessage({ type: "tyyari-preview", level: "error", message: error?.message || String(error) }, "*");
     }
   <\/script>
 </body>

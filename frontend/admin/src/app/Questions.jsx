@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import { useAdminQuestions } from "../hooks/useAdminQuestions";
 
@@ -24,6 +25,8 @@ export default function Questions() {
     remove,
   } = useAdminQuestions();
   const { type, items: rows } = selected;
+
+  if (isLoading) return <Loader fill />;
 
   return (
     <div className="space-y-6">
@@ -57,8 +60,7 @@ export default function Questions() {
         />
       </div>
 
-      {isLoading && <p className="text-sm text-mute">Loading the catalog…</p>}
-      {isError && <p className="text-sm text-hard">{error.message || "Could not load questions."}</p>}
+      {isError && <p className="text-sm text-hard">{error?.message || "Could not load questions."}</p>}
 
       <section className={`rounded-[28px] border border-line bg-gradient-to-br p-5 sm:p-6 ${type.accent}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">

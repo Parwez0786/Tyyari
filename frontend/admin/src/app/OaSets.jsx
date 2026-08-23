@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import { useAdminOaSets } from "../hooks/useAdminOaSets";
 
@@ -10,6 +11,8 @@ const DIFFICULTY = {
 
 export default function OaSets() {
   const { isLoading, isError, error, items, search, setSearch, filtered, togglePublish, remove } = useAdminOaSets();
+
+  if (isLoading) return <Loader fill />;
 
   return (
     <div className="space-y-6">
@@ -30,8 +33,7 @@ export default function OaSets() {
         />
       </div>
 
-      {isLoading && <p className="text-sm text-mute">Loading OA sets…</p>}
-      {isError && <p className="text-sm text-hard">{error.message || "Could not load OA sets."}</p>}
+      {isError && <p className="text-sm text-hard">{error?.message || "Could not load OA sets."}</p>}
 
       <section className="rounded-[28px] border border-line bg-gradient-to-br from-blue-500/20 to-indigo-500/5 p-5 sm:p-6">
         <div className="space-y-2">

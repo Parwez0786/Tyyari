@@ -1,86 +1,76 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { lazy, Suspense, useState } from "react";
+import { Link } from "react-router-dom";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { ChevronLeft, Columns2, Download } from "lucide-react";
-import BlueprintBoard from "../components/BlueprintBoard";
-import CodeWorkspace from "../components/code/CodeWorkspace";
-import DsaWorkspace from "../components/code/DsaWorkspace";
-import FrontendWorkspace from "../components/code/FrontendWorkspace";
-import CsQuizWorkspace from "../components/cs/CsQuizWorkspace";
 import Layout from "../components/Layout";
+import Loader from "../components/Loader";
 import ModeOverlay from "../components/ModeOverlay";
 import NotesPanel from "../components/NotesPanel";
 import Palette from "../components/blueprint/Palette";
 import PromptCard, { RequirementsBlock } from "../components/PromptCard";
 import { QuestionMeta } from "../components/QuestionMeta";
 import ThemeToggle from "../components/ThemeToggle";
-import WhiteboardBoard from "../components/WhiteboardBoard";
 import { PremiumGate } from "./Premium";
+import { QuestionType, ViewMode, practicePath } from "../data/enums";
 import { typeLabel } from "../data/labels";
-import { contentApi } from "../services/api";
-import { loadSubmission, saveSubmission } from "../services/submissions";
+import { useDesignWorkspace } from "../hooks/useDesignWorkspace";
+import { useQuestion } from "../hooks/useQuestion";
+
+const BlueprintBoard = lazy(() => import("../components/BlueprintBoard"));
+const CodeWorkspace = lazy(() => import("../components/code/CodeWorkspace"));
+const DsaWorkspace = lazy(() => import("../components/code/DsaWorkspace"));
+const FrontendWorkspace = lazy(() => import("../components/code/FrontendWorkspace"));
+const CsQuizWorkspace = lazy(() => import("../components/cs/CsQuizWorkspace"));
+const WhiteboardBoard = lazy(() => import("../components/WhiteboardBoard"));
+
+function WorkspaceFallback() {
+  return <Loader fill />;
+}
 
 export default function Question() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const q = useQuery({ queryKey: ["question", id], queryFn: () => contentApi.question(id) });
-  const data = q.data?.data;
-  const view = params.get("view");
-  const sheet = params.get("sheet");
-  const hld = data?.type === "HLD";
-  const lld = data?.type === "LLD";
-  const dsa = data?.type === "DSA";
-  const frontend = data?.type === "FRONTEND";
-  const cs = data?.type === "CS";
-  const canvas = view === "blueprint" || view === "whiteboard";
-  const lldCode = lld && (view === "code" || !view);
-  const dsaCode = dsa && (view === "code" || !view);
-  const feCode = frontend && (view === "code" || !view);
-  const needPick = hld && !canvas;
-  const workspace = !data?.locked && ((hld && canvas) || lldCode || dsaCode || feCode || cs);
-  const backTo = sheet ? `/sheets/${sheet}` : `/practice/${data?.type || "DSA"}`;
-  const backLabel = sheet ? "Back to sheet" : `Back to ${data?.type || "practice"}`;
+  const q = useQuestion();
 
-  function setView(next) {
-    const nextParams = new URLSearchParams(params);
-    nextParams.set("view", next);
-    setParams(nextParams, { replace: true });
+  if (q.isLoading) {
+    return (
+      <Layout>
+        <Loader fill />
+      </Layout>
+    );
   }
 
   return (
-    <Layout wide={workspace} fill={workspace} hideNav={workspace}>
-      {q.isLoading && <p className="p-6 text-sm text-mute">Loading the problem prompt…</p>}
+    <Layout wide={q.workspace} fill={q.workspace} hideNav={q.workspace}>
       {q.isError && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Problem unavailable</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight">We could not open this question</h1>
           <p className="mt-3 text-sm text-mute">It may be unpublished, or the link is wrong. Go back to practice and pick another one.</p>
-          <Link to={backTo} className="btn-black mt-8">{backLabel}</Link>
+          <Link to={q.backTo} className="btn-black mt-8">{q.backLabel}</Link>
         </section>
       )}
-      {data?.locked && <PremiumGate question={data} backTo={backTo} />}
-      {data && !data.locked && !hld && !lld && !dsa && !frontend && !cs && (
+      {q.data?.locked && <PremiumGate question={q.data} backTo={q.backTo} />}
+      {q.unknownType && (
         <section className="mx-auto max-w-lg py-16 text-center">
           <p className="label-caps">Coming soon</p>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{data.title}</h1>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{q.data?.title}</h1>
           <p className="mt-3 text-sm text-mute">HLD, LLD, DSA, OA, Frontend, and CS quizzes are open right now.</p>
-          <Link to={backTo} className="btn-black mt-8">{sheet ? "Back to sheet" : "Open HLD practice"}</Link>
+          <Link to={q.backTo} className="btn-black mt-8">{q.sheet ? "Back to sheet" : "Open HLD practice"}</Link>
         </section>
       )}
-      {data && !data.locked && hld && needPick && <ProblemPreview data={data} backTo={backTo} sheet={sheet} />}
-      {data && !data.locked && hld && view === "blueprint" && <BlueprintMode data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && hld && view === "whiteboard" && <WhiteboardMode data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && lldCode && <CodeWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && dsaCode && <DsaWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && feCode && <FrontendWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && cs && <CsQuizWorkspace key={data.id} data={data} backTo={backTo} backLabel={backLabel} />}
-      {data && !data.locked && hld && needPick && (
+      {q.data && !q.data.locked && q.hld && q.needPick && <ProblemPreview data={q.data} backTo={q.backTo} sheet={q.sheet} />}
+      <Suspense fallback={<WorkspaceFallback />}>
+        {q.data && !q.data.locked && q.hld && q.view === ViewMode.BLUEPRINT && <BlueprintMode data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+        {q.data && !q.data.locked && q.hld && q.view === ViewMode.WHITEBOARD && <WhiteboardMode data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+        {q.data && !q.data.locked && q.lldCode && <CodeWorkspace key={q.data.id} data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+        {q.data && !q.data.locked && q.dsaCode && <DsaWorkspace key={q.data.id} data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+        {q.data && !q.data.locked && q.feCode && <FrontendWorkspace key={q.data.id} data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+        {q.data && !q.data.locked && q.cs && <CsQuizWorkspace key={q.data.id} data={q.data} backTo={q.backTo} backLabel={q.backLabel} />}
+      </Suspense>
+      {q.data && !q.data.locked && q.hld && q.needPick && (
         <ModeOverlay
-          question={data}
-          onPick={setView}
-          onClose={() => navigate(backTo)}
+          question={q.data}
+          onPick={q.setView}
+          onClose={q.closeOverlay}
         />
       )}
     </Layout>
@@ -98,64 +88,15 @@ function ProblemPreview({ data, backTo, sheet }) {
         </div>
         <p className="mt-3 text-[15px] text-mute">{data.description}</p>
       </section>
-      {data.type === "HLD" && <RequirementsBlock data={data} />}
+      {data.type === QuestionType.HLD && <RequirementsBlock data={data} />}
     </div>
   );
 }
 
 function BlueprintMode({ data, backTo, backLabel }) {
-  const apiRef = useRef(null);
-  const notesRef = useRef(null);
-  const key = `tyyari.blueprint.${data.id}`;
-  const [ready, setReady] = useState(() => Boolean(localStorage.getItem(key)));
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadSubmission(data.id).then((saved) => {
-      if (cancelled) return;
-      if (saved) setSubmitted(true);
-      if (!localStorage.getItem(key) && saved?.canvas) {
-        localStorage.setItem(key, JSON.stringify(saved.canvas));
-      }
-      hydrateNotes(data.id, saved);
-      setReady(true);
-    }).catch(() => setReady(true));
-    return () => {
-      cancelled = true;
-    };
-  }, [data.id, key]);
-
-  async function submit() {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      let canvas = apiRef.current?.getState?.();
-      if (!canvas) {
-        try {
-          canvas = JSON.parse(localStorage.getItem(key) || "{}");
-        } catch {
-          canvas = {};
-        }
-      }
-      const notes = readNotes(notesRef.current, data.id);
-      await saveSubmission({
-        questionId: data.id,
-        questionType: "HLD",
-        view: "blueprint",
-        canvas,
-        math: notes.math,
-        explanation: notes.explanation,
-      });
-      setSubmitted(true);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (!ready) {
-    return <p className="p-6 text-sm text-mute">Loading workspace…</p>;
+  const w = useDesignWorkspace(data, ViewMode.BLUEPRINT);
+  if (!w.ready) {
+    return <Loader fill />;
   }
 
   return (
@@ -163,23 +104,23 @@ function BlueprintMode({ data, backTo, backLabel }) {
       data={data}
       backTo={backTo}
       backLabel={backLabel}
-      onDownload={() => apiRef.current?.download()}
-      onSubmit={submit}
-      submitting={submitting}
-      submitted={submitted}
-      notesRef={notesRef}
+      onDownload={w.download}
+      onSubmit={w.submit}
+      submitting={w.submitting}
+      submitted={w.submitted}
+      notesRef={w.notesRef}
     >
       <BlueprintBoard
-        storageKey={key}
+        storageKey={w.key}
         lld={false}
         palette={(
           <Palette
             lld={false}
-            onAddCustom={() => apiRef.current?.addNode("custom", "Custom")}
+            onAddCustom={() => w.apiRef.current?.addNode("custom", "Custom")}
           />
         )}
         onApi={(api) => {
-          apiRef.current = api;
+          w.apiRef.current = api;
         }}
       />
     </DesignWorkspace>
@@ -187,58 +128,9 @@ function BlueprintMode({ data, backTo, backLabel }) {
 }
 
 function WhiteboardMode({ data, backTo, backLabel }) {
-  const apiRef = useRef(null);
-  const notesRef = useRef(null);
-  const key = `tyyari.whiteboard.${data.id}`;
-  const [ready, setReady] = useState(() => Boolean(localStorage.getItem(key)));
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadSubmission(data.id).then((saved) => {
-      if (cancelled) return;
-      if (saved) setSubmitted(true);
-      if (!localStorage.getItem(key) && saved?.canvas) {
-        localStorage.setItem(key, JSON.stringify(saved.canvas));
-      }
-      hydrateNotes(data.id, saved);
-      setReady(true);
-    }).catch(() => setReady(true));
-    return () => {
-      cancelled = true;
-    };
-  }, [data.id, key]);
-
-  async function submit() {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      let canvas = apiRef.current?.getState?.();
-      if (!canvas) {
-        try {
-          canvas = JSON.parse(localStorage.getItem(key) || "{}");
-        } catch {
-          canvas = {};
-        }
-      }
-      const notes = readNotes(notesRef.current, data.id);
-      await saveSubmission({
-        questionId: data.id,
-        questionType: "HLD",
-        view: "whiteboard",
-        canvas,
-        math: notes.math,
-        explanation: notes.explanation,
-      });
-      setSubmitted(true);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (!ready) {
-    return <p className="p-6 text-sm text-mute">Loading workspace…</p>;
+  const w = useDesignWorkspace(data, ViewMode.WHITEBOARD);
+  if (!w.ready) {
+    return <Loader fill />;
   }
 
   return (
@@ -246,53 +138,23 @@ function WhiteboardMode({ data, backTo, backLabel }) {
       data={data}
       backTo={backTo}
       backLabel={backLabel}
-      onDownload={() => apiRef.current?.download()}
-      onSubmit={submit}
-      submitting={submitting}
-      submitted={submitted}
-      notesRef={notesRef}
+      onDownload={w.download}
+      onSubmit={w.submit}
+      submitting={w.submitting}
+      submitted={w.submitted}
+      notesRef={w.notesRef}
     >
       <WhiteboardBoard
-        storageKey={key}
+        storageKey={w.key}
         onApi={(api) => {
-          apiRef.current = api;
+          w.apiRef.current = api;
         }}
       />
     </DesignWorkspace>
   );
 }
 
-function notesKey(questionId) {
-  return `tyyari.notes.${questionId}`;
-}
-
-function readNotes(api, questionId) {
-  const live = api?.getState?.();
-  if (live) {
-    return { math: live.math || "", explanation: live.explanation || "" };
-  }
-  try {
-    const saved = JSON.parse(localStorage.getItem(notesKey(questionId)) || "{}");
-    return { math: saved.math || "", explanation: saved.explanation || "" };
-  } catch {
-    return { math: "", explanation: "" };
-  }
-}
-
-function hydrateNotes(questionId, saved) {
-  const math = saved?.math || "";
-  const explanation = saved?.explanation || "";
-  if (!math && !explanation) return;
-  try {
-    const current = JSON.parse(localStorage.getItem(notesKey(questionId)) || "{}");
-    if (current.math || current.explanation) return;
-  } catch {
-    // seed from the saved submission
-  }
-  localStorage.setItem(notesKey(questionId), JSON.stringify({ math, explanation }));
-}
-
-function DesignWorkspace({ data, backTo = "/practice/HLD", backLabel = "Back to HLD practice", onDownload, onSubmit, submitting = false, submitted = false, notesRef, children }) {
+function DesignWorkspace({ data, backTo = practicePath(QuestionType.HLD), backLabel = "Back to HLD practice", onDownload, onSubmit, submitting = false, submitted = false, notesRef, children }) {
   const [focus, setFocus] = useState(false);
 
   return (

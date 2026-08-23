@@ -81,9 +81,9 @@ export function usePreviewLogs() {
   useEffect(() => {
     function onMessage(event) {
       if (event.data?.type !== "tyyari-preview") return;
-      const text = String(event.data.message || "").trim();
-      if (event.data.level === "ok" || !text) return;
-      setLogs((prev) => [...prev.slice(-80), { level: event.data.level || "error", text, at: Date.now() }]);
+      const text = String(event.data?.message || "").trim();
+      if (event.data?.level === "ok" || !text) return;
+      setLogs((prev) => [...prev.slice(-80), { level: event.data?.level || "error", text, at: Date.now() }]);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);

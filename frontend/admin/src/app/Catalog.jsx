@@ -1,6 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
+import { QUESTION_TYPE_LIST, QuestionType } from "../data/enums";
+import { typeLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
 export default function Catalog() {
@@ -10,8 +13,12 @@ export default function Catalog() {
   const tags = useQuery({ queryKey: ["admin-tags"], queryFn: adminApi.tags });
   const [company, setCompany] = useState("");
   const [topic, setTopic] = useState("");
-  const [category, setCategory] = useState("DSA");
+  const [category, setCategory] = useState(QuestionType.DSA);
   const [tag, setTag] = useState("");
+
+  if (companies.isLoading || topics.isLoading || tags.isLoading) {
+    return <Loader fill />;
+  }
 
   return (
     <div className="space-y-6">
@@ -79,7 +86,7 @@ export default function Catalog() {
           >
             <input className="field mt-0" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Graphs" />
             <select className="field mt-0" value={category} onChange={(e) => setCategory(e.target.value)}>
-              {["DSA", "HLD", "LLD", "CS", "FRONTEND", "OA"].map((c) => <option key={c}>{c}</option>)}
+              {QUESTION_TYPE_LIST.map((c) => <option key={c} value={c}>{typeLabel(c)}</option>)}
             </select>
             <button className="btn-brand w-full">Add</button>
           </form>
