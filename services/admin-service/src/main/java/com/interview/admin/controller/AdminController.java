@@ -249,6 +249,15 @@ public class AdminController {
         return json(downstream.auth("POST", "/internal/v1/users/" + id + "/resend-verification", "{}", userId));
     }
 
+    @PatchMapping("/users/{id}/verify")
+    public ResponseEntity<String> forceVerify(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        auditService.record(userId, "USER_FORCE_VERIFY", id);
+        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/verify", "{}", userId));
+    }
+
     @GetMapping("/users/{id}/submissions")
     public ResponseEntity<String> userSubmissions(
             @PathVariable String id,

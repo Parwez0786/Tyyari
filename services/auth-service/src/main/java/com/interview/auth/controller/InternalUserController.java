@@ -66,4 +66,9 @@ public class InternalUserController {
     public ApiResponse<SupportMailResult> resendVerification(@PathVariable String id) {
         return ApiResponse.ok(authService.resendVerificationForUser(id));
     }
+
+    @PatchMapping("/{id}/verify")
+    public ApiResponse<User> verify(@PathVariable String id) {
+        return ApiResponse.ok(authService.forceVerifyEmail(id));
+    }
 }

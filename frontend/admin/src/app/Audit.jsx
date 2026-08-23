@@ -120,6 +120,12 @@ const ACTIONS = {
     pill: "bg-sky-500/15 text-sky-400",
     href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },
+  USER_FORCE_VERIFY: {
+    title: "Marked email verified",
+    detail: "Admin verified this inbox without the email link.",
+    pill: "bg-emerald-500/15 text-emerald-400",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
+  },
 };
 
 export default function Audit() {

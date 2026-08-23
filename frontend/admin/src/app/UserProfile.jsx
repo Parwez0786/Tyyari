@@ -118,6 +118,25 @@ export default function UserProfile() {
     }
   }
 
+  async function forceVerify() {
+    if (!account || account.role === "ADMIN" || account.emailVerified) return;
+    if (!window.confirm("Mark this email verified? They can sign in without clicking the mail link.")) return;
+    setBusy("force-verify");
+    setSupportNote(null);
+    try {
+      await adminApi.forceVerify(account.id);
+      setSupportNote({ message: "Email marked verified. They can sign in now." });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-user", id] }),
+        client.invalidateQueries({ queryKey: ["admin-users"] }),
+      ]);
+    } catch (err) {
+      window.alert(err.message || "Could not verify this inbox.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function setPremium(premium) {
     if (!account || account.role === "ADMIN") return;
     setBusy(premium ? "grant" : "revoke");
@@ -204,7 +223,7 @@ export default function UserProfile() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Support</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Help this inbox</h2>
           <p className="mt-1 text-sm text-mute">
-            Send a reset or verification email. You get the link if Mailpit or SMTP fails.
+            Send a reset or verification email, or mark the inbox verified when mail cannot reach them.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" className="btn-brand" disabled={Boolean(busy)} onClick={() => support("reset")}>
@@ -218,6 +237,11 @@ export default function UserProfile() {
             >
               {busy === "verify" ? "Sending…" : account.emailVerified ? "Email already verified" : "Resend verification"}
             </button>
+            {!account.emailVerified && (
+              <button type="button" className="btn-ghost" disabled={Boolean(busy)} onClick={forceVerify}>
+                {busy === "force-verify" ? "Saving…" : "Mark email verified"}
+              </button>
+            )}
           </div>
           {supportNote && (
             <div className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3.5">
