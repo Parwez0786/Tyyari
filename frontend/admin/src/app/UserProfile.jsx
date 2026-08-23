@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { HBarList } from "../components/Charts";
 import {
@@ -15,211 +13,49 @@ import {
   typeLabel,
   viewLabel,
 } from "../data/labels";
-import { DAILY, EXPERIENCES, ROLES, formatWhen, roleMeta } from "../data/profile";
-import { useDialog } from "../components/Dialog";
-import { adminApi } from "../services/api";
-
-const TYPE_COLORS = {
-  DSA: "#34d399",
-  HLD: "#f97316",
-  LLD: "#38bdf8",
-  FRONTEND: "#e879f9",
-  CS: "#a3e635",
-  OA: "#60a5fa",
-};
+import { DAILY, EXPERIENCES, ROLES, formatWhen } from "../data/profile";
+import { useAdminUserProfile } from "../hooks/useAdminUserProfile";
 
 export default function UserProfile() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const client = useQueryClient();
-  const dialog = useDialog();
-  const accountQuery = useQuery({ queryKey: ["admin-user", id], queryFn: () => adminApi.user(id) });
-  const profileQuery = useQuery({ queryKey: ["admin-user-profile", id], queryFn: () => adminApi.userProfile(id) });
-  const paymentsQuery = useQuery({ queryKey: ["admin-payments", id], queryFn: () => adminApi.payments({ userId: id }) });
-  const submissionsQuery = useQuery({ queryKey: ["admin-submissions", id], queryFn: () => adminApi.userSubmissions(id) });
-  const [until, setUntil] = useState("");
-  const [busy, setBusy] = useState("");
-  const [supportNote, setSupportNote] = useState(null);
-  const [deleteEmail, setDeleteEmail] = useState("");
-  const [selectedId, setSelectedId] = useState("");
-  const [fileIndex, setFileIndex] = useState(0);
-
-  const account = accountQuery.data?.data;
-  const bundle = profileQuery.data?.data;
-  const profile = bundle?.profile || {};
-  const goals = bundle?.goals || {};
-  const prefs = bundle?.preferences || {};
-  const progress = bundle?.progress || {};
-  const loading = accountQuery.isLoading || profileQuery.isLoading;
-  const error = accountQuery.error || profileQuery.error;
-
-  const name = profile.name || account?.email || "Candidate";
-  const firstName = String(name).split(" ")[0];
-  const targetRole = profile.targetRole || goals.targetRole || "";
-  const experience = profile.experience || "";
-  const companies = goals.targetCompanies || [];
-  const daily = goals.dailyGoalMinutes;
-  const role = roleMeta(targetRole);
-  const byType = (progress.byType || []).map((row) => ({
-    label: typeLabel(row.type),
-    value: row.completed,
-    color: TYPE_COLORS[row.type],
-  }));
-
-  const rows = submissionsQuery.data?.data ?? [];
-  const activeId = selectedId || rows[0]?.id || "";
-  const detailQuery = useQuery({
-    queryKey: ["admin-submission", id, activeId],
-    queryFn: () => adminApi.userSubmission(id, activeId),
-    enabled: Boolean(activeId),
-  });
-  const submission = detailQuery.data?.data;
-
-  useEffect(() => {
-    setUntil(toLocalInput(account?.premiumUntil));
-  }, [account?.premiumUntil]);
-
-  useEffect(() => {
-    setFileIndex(0);
-  }, [activeId]);
-
-  async function setRole(role) {
-    if (!account || account.role === "ADMIN" || account.role === role || account.status === "DELETING") return;
-    setBusy("role");
-    try {
-      await adminApi.setUserRole(account.id, role);
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["admin-user", id] }),
-        client.invalidateQueries({ queryKey: ["admin-users"] }),
-      ]);
-    } catch (err) {
-      await dialog.alert(err.message || "Could not update role.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function toggleStatus() {
-    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
-    const next = account.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
-    await adminApi.setUserStatus(account.id, next);
-    await Promise.all([
-      client.invalidateQueries({ queryKey: ["admin-user", id] }),
-      client.invalidateQueries({ queryKey: ["admin-users"] }),
-    ]);
-  }
-
-  async function refreshPayments() {
-    await Promise.all([
-      client.invalidateQueries({ queryKey: ["admin-user", id] }),
-      client.invalidateQueries({ queryKey: ["admin-users"] }),
-      client.invalidateQueries({ queryKey: ["admin-payments"] }),
-    ]);
-  }
-
-  async function support(kind) {
-    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
-    setBusy(kind);
-    setSupportNote(null);
-    try {
-      const json = kind === "reset"
-        ? await adminApi.resetPassword(account.id)
-        : await adminApi.resendVerification(account.id);
-      setSupportNote(json.data);
-      await client.invalidateQueries({ queryKey: ["admin-user", id] });
-    } catch (err) {
-      await dialog.alert(err.message || "Could not send the email.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function revokeSessions() {
-    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
-    if (!await dialog.confirm("Sign this person out on every device? They will need to log in again.", {
-      title: "Sign out everywhere",
-      confirmLabel: "Sign out",
-    })) return;
-    setBusy("revoke");
-    setSupportNote(null);
-    try {
-      await adminApi.revokeSessions(account.id);
-      setSupportNote({ message: "All refresh tokens were revoked. They must sign in again." });
-    } catch (err) {
-      await dialog.alert(err.message || "Could not revoke sessions.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function forceVerify() {
-    if (!account || account.role === "ADMIN" || account.emailVerified || account.status === "DELETING") return;
-    if (!await dialog.confirm("Mark this email verified? They can sign in without clicking the mail link.", {
-      title: "Mark email verified",
-      confirmLabel: "Verify",
-      tone: "warning",
-    })) return;
-    setBusy("force-verify");
-    setSupportNote(null);
-    try {
-      await adminApi.forceVerify(account.id);
-      setSupportNote({ message: "Email marked verified. They can sign in now." });
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["admin-user", id] }),
-        client.invalidateQueries({ queryKey: ["admin-users"] }),
-      ]);
-    } catch (err) {
-      await dialog.alert(err.message || "Could not verify this inbox.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function deleteAccount() {
-    if (!account || account.role === "ADMIN") return;
-    if (deleteEmail.trim().toLowerCase() !== String(account.email || "").toLowerCase()) {
-      await dialog.alert("Type the account email to confirm delete.", { title: "Confirm the email" });
-      return;
-    }
-    if (!await dialog.confirm("Queue a wipe of this login, profile, submissions, and payment rows? This cannot be undone.", {
-      title: "Delete account",
-      confirmLabel: "Delete",
-    })) return;
-    setBusy("delete");
-    setSupportNote(null);
-    try {
-      const json = await adminApi.deleteAccount(account.id);
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["admin-users"] }),
-        client.invalidateQueries({ queryKey: ["admin-audit"] }),
-      ]);
-      await dialog.alert(json.message || "Deletion queued. They are signed out.", {
-        title: "Deletion queued",
-        tone: "ok",
-      });
-      navigate("/users");
-    } catch (err) {
-      await dialog.alert(err.message || "Could not queue the wipe.");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function setPremium(premium) {
-    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
-    setBusy(premium ? "grant" : "revoke");
-    try {
-      await adminApi.setPremium(account.id, {
-        premium,
-        premiumUntil: premium && until ? new Date(until).toISOString() : null,
-      });
-      await refreshPayments();
-    } catch (err) {
-      await dialog.alert(err.message || "Could not update Premium.");
-    } finally {
-      setBusy("");
-    }
-  }
+  const {
+    account,
+    profile,
+    prefs,
+    progress,
+    name,
+    firstName,
+    targetRole,
+    experience,
+    companies,
+    daily,
+    role,
+    byType,
+    payments,
+    rows,
+    activeId,
+    submission,
+    detailLoading,
+    submissionsQuery,
+    loading,
+    error,
+    until,
+    setUntil,
+    busy,
+    supportNote,
+    deleteEmail,
+    setDeleteEmail,
+    fileIndex,
+    setFileIndex,
+    setSelectedId,
+    setRole,
+    toggleStatus,
+    support,
+    revokeSessions,
+    forceVerify,
+    deleteAccount,
+    setPremium,
+  } = useAdminUserProfile(id);
 
   return (
     <div className="space-y-4">
@@ -407,7 +243,7 @@ export default function UserProfile() {
                 </li>
               ))}
             </ul>
-            <SubmissionRead submission={submission} loading={detailQuery.isLoading} fileIndex={fileIndex} onFile={setFileIndex} />
+            <SubmissionRead submission={submission} loading={detailLoading} fileIndex={fileIndex} onFile={setFileIndex} />
           </div>
         )}
       </article>
@@ -444,14 +280,14 @@ export default function UserProfile() {
             <Link to={`/billing?user=${account.id}`} className="btn-ghost">All payments</Link>
           </div>
           <div className="mt-5 space-y-2">
-            {(paymentsQuery.data?.data ?? []).slice(0, 5).map((item) => (
+            {payments.slice(0, 5).map((item) => (
               <div key={item.id || item.providerRef} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
                 <span className="font-semibold">{paymentLabel(item.status)}</span>
                 <span className="text-mute">{item.displayAmount} · {providerLabel(item.provider)}</span>
                 <span className="text-xs text-mute">{formatWhen(item.createdAt)}</span>
               </div>
             ))}
-            {!paymentsQuery.data?.data?.length && (
+            {!payments.length && (
               <p className="text-sm text-mute">No checkout or grant rows yet.</p>
             )}
           </div>
@@ -625,14 +461,6 @@ function Field({ label, value }) {
       <p className="mt-2 rounded-2xl bg-field px-4 py-3.5 text-sm">{value}</p>
     </div>
   );
-}
-
-function toLocalInput(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function SubmissionRead({ submission, loading, fileIndex, onFile }) {

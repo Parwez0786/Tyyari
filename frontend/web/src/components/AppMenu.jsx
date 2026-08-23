@@ -1,5 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import {
+  BookOpen,
+  Camera,
+  Code2,
+  Crown,
+  LayoutTemplate,
+  ListChecks,
+  Map,
+  Mic,
+  Network,
+  Puzzle,
+} from "lucide-react";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import Avatar from "./Avatar";
@@ -8,34 +20,34 @@ const groups = [
   {
     label: "Practice",
     items: [
-      { to: "/practice/HLD", title: "System Design (HLD)", detail: "Full HLD question library" },
-      { to: "/practice/LLD", title: "Low Level Design", detail: "Full LLD question library" },
-      { to: "/practice/DSA", title: "DSA", detail: "Full DSA question library" },
-      { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "Full frontend question library" },
-      { to: "/practice/CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks" },
-      { to: "/practice/OA", title: "Online Assessment", detail: "Timed DSA sets + camera" },
+      { to: "/practice/HLD", title: "System Design (HLD)", detail: "Full HLD question library", Icon: Network },
+      { to: "/practice/LLD", title: "Low Level Design", detail: "Full LLD question library", Icon: Puzzle },
+      { to: "/practice/DSA", title: "DSA", detail: "Full DSA question library", Icon: Code2 },
+      { to: "/practice/FRONTEND", title: "Frontend Coding", detail: "Full frontend question library", Icon: LayoutTemplate },
+      { to: "/practice/CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks", Icon: BookOpen },
+      { to: "/practice/OA", title: "Online Assessment", detail: "Timed DSA sets + camera", Icon: Camera },
     ],
   },
   {
     label: "Learn",
     items: [
-      { to: "/learn", title: "Roadmap", detail: "Week-by-week SDE-1 and SDE-2" },
+      { to: "/learn", title: "Roadmap", detail: "Week-by-week SDE-1 and SDE-2", Icon: Map },
     ],
   },
   {
     label: "Sheets",
     items: [
-      { to: "/sheets/hld-core-sheet", title: "HLD sheets", detail: "System design sets" },
-      { to: "/sheets/lld-machine-coding", title: "LLD sheets", detail: "Machine-coding sets" },
-      { to: "/sheets/dsa-sde-sheet", title: "DSA sheets", detail: "Ordered problem sets" },
-      { to: "/sheets/frontend-ui-sheet", title: "Frontend sheets", detail: "UI challenge sets" },
+      { to: "/sheets/hld-core-sheet", title: "HLD sheets", detail: "System design sets", Icon: Network },
+      { to: "/sheets/lld-machine-coding", title: "LLD sheets", detail: "Machine-coding sets", Icon: Puzzle },
+      { to: "/sheets/dsa-sde-sheet", title: "DSA sheets", detail: "Ordered problem sets", Icon: ListChecks },
+      { to: "/sheets/frontend-ui-sheet", title: "Frontend sheets", detail: "UI challenge sets", Icon: LayoutTemplate },
     ],
   },
   {
     label: "Platform",
     items: [
-      { title: "Mock Interview", detail: "Guided practice rounds", soon: true },
-      { to: "/premium", title: "Upgrade to Premium", detail: "Unlock locked problems", gold: true },
+      { title: "Mock Interview", detail: "Guided practice rounds", soon: true, Icon: Mic },
+      { to: "/premium", title: "Upgrade to Premium", detail: "Unlock locked problems", gold: true, Icon: Crown },
     ],
   },
 ];
@@ -115,11 +127,16 @@ export default function AppMenu({ open, onClose, authed, name, email, onLogout }
 }
 
 function MenuItem({ item, onClose }) {
+  const Icon = item.Icon;
   const body = (
     <>
-      <span className="mt-0.5 text-mute">
-        <DotIcon />
-      </span>
+      {Icon && (
+        <Icon
+          size={16}
+          strokeWidth={1.8}
+          className={`mt-0.5 shrink-0 ${item.gold ? "text-amber-400" : "text-mute"}`}
+        />
+      )}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className={`block text-sm font-semibold ${item.gold ? "text-amber-400" : ""} ${item.soon ? "text-mute" : ""}`}>
@@ -155,14 +172,6 @@ function CloseIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  );
-}
-
-function DotIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="4" width="16" height="16" rx="4" />
     </svg>
   );
 }

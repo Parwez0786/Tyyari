@@ -1,9 +1,6 @@
-import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
-import { useDialog } from "../components/Dialog";
-import { adminApi } from "../services/api";
+import { useAdminOaSets } from "../hooks/useAdminOaSets";
 
 const DIFFICULTY = {
   EASY: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
@@ -12,39 +9,7 @@ const DIFFICULTY = {
 };
 
 export default function OaSets() {
-  const client = useQueryClient();
-  const dialog = useDialog();
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["admin-oa"],
-    queryFn: adminApi.assessmentSets,
-  });
-  const items = data?.data ?? [];
-  const [search, setSearch] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) =>
-      [item.title, item.slug, item.difficulty, ...(item.companies || [])]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [items, search]);
-
-  async function togglePublish(set) {
-    await adminApi.publishAssessmentSet(set.id, !set.published);
-    client.invalidateQueries({ queryKey: ["admin-oa"] });
-  }
-
-  async function remove(set) {
-    if (!await dialog.confirm(`Delete “${set.title}”? This timed camera round will disappear for candidates.`, {
-      title: "Delete OA set",
-      confirmLabel: "Delete",
-    })) return;
-    await adminApi.deleteAssessmentSet(set.id);
-    client.invalidateQueries({ queryKey: ["admin-oa"] });
-  }
+  const { isLoading, isError, error, items, search, setSearch, filtered, togglePublish, remove } = useAdminOaSets();
 
   return (
     <div className="space-y-6">

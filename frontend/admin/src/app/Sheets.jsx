@@ -1,12 +1,6 @@
-import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
-import { QUESTION_TYPES } from "../data/questionTypes";
-import { useDialog } from "../components/Dialog";
-import { adminApi } from "../services/api";
-
-const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONTEND"].includes(type.key));
+import { useAdminSheets } from "../hooks/useAdminSheets";
 
 const DIFFICULTY = {
   EASY: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
@@ -15,47 +9,7 @@ const DIFFICULTY = {
 };
 
 export default function Sheets() {
-  const client = useQueryClient();
-  const dialog = useDialog();
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["admin-sheets"],
-    queryFn: adminApi.sheets,
-  });
-  const items = data?.data ?? [];
-  const [search, setSearch] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) =>
-      [item.title, item.slug, item.type, item.difficulty, ...(item.companies || [])]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [items, search]);
-
-  const grouped = useMemo(
-    () => SHEET_TYPES.map((type) => ({
-      type,
-      items: filtered.filter((item) => String(item.type || "").toUpperCase() === type.key),
-    })),
-    [filtered],
-  );
-
-  async function togglePublish(sheet) {
-    await adminApi.publishSheet(sheet.id, !sheet.published);
-    client.invalidateQueries({ queryKey: ["admin-sheets"] });
-  }
-
-  async function remove(sheet) {
-    if (!await dialog.confirm(`Delete “${sheet.title}”? Candidates will lose this grind list.`, {
-      title: "Delete sheet",
-      confirmLabel: "Delete",
-    })) return;
-    await adminApi.deleteSheet(sheet.id);
-    client.invalidateQueries({ queryKey: ["admin-sheets"] });
-  }
+  const { isLoading, isError, error, items, search, setSearch, filtered, grouped, togglePublish, remove } = useAdminSheets();
 
   return (
     <div className="space-y-6">
