@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDialog } from "../components/Dialog";
+import { AccountRole, AccountStatus } from "../data/enums";
 import { providerLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
@@ -13,7 +14,7 @@ const EMPTY_FILTERS = {
   onboarded: "",
 };
 
-const EMPTY_INVITE = { email: "", name: "", role: "USER" };
+const EMPTY_INVITE = { email: "", name: "", role: AccountRole.USER };
 
 export function useAdminUsers() {
   const client = useQueryClient();
@@ -61,21 +62,21 @@ export function useAdminUsers() {
   }, [rows, search, filters]);
 
   async function toggleStatus(user) {
-    if (user.status === "DELETING") return;
-    const next = user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
+    if (user.status === AccountStatus.DELETING) return;
+    const next = user.status === AccountStatus.ACTIVE ? AccountStatus.DISABLED : AccountStatus.ACTIVE;
     setBusy(`status-${user.id}`);
     try {
       await adminApi.setUserStatus(user.id, next);
       await client.invalidateQueries({ queryKey: ["admin-users"] });
     } catch (err) {
-      await dialog.alert(err.message || "Could not update status.");
+      await dialog.alert(err?.message || "Could not update status.");
     } finally {
       setBusy("");
     }
   }
 
   async function setRole(user, role) {
-    if (user.role === role || user.status === "DELETING") return;
+    if (user.role === role || user.status === AccountStatus.DELETING) return;
     setBusy(`role-${user.id}`);
     try {
       await adminApi.setUserRole(user.id, role);
@@ -84,7 +85,7 @@ export function useAdminUsers() {
         client.invalidateQueries({ queryKey: ["admin-user", user.id] }),
       ]);
     } catch (err) {
-      await dialog.alert(err.message || "Could not update role.");
+      await dialog.alert(err?.message || "Could not update role.");
     } finally {
       setBusy("");
     }
@@ -96,14 +97,14 @@ export function useAdminUsers() {
     setInviteNote(null);
     try {
       const json = await adminApi.inviteUser(invite);
-      setInviteNote(json.data);
+      setInviteNote(json?.data);
       setInvite(EMPTY_INVITE);
       await Promise.all([
         client.invalidateQueries({ queryKey: ["admin-users"] }),
         client.invalidateQueries({ queryKey: ["admin-directory"] }),
       ]);
     } catch (err) {
-      await dialog.alert(err.message || "Could not create this account.");
+      await dialog.alert(err?.message || "Could not create this account.");
     } finally {
       setBusy("");
     }

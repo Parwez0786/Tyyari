@@ -1,8 +1,10 @@
+import { TargetRole } from "./enums";
+
 export const ROLES = [
-  { key: "SDE1", title: "SDE-1", hook: "DSA, LLD, and CS fundamentals.", accent: "from-emerald-500/20 to-teal-500/5" },
-  { key: "SDE2", title: "SDE-2", hook: "System design plus deeper LLD.", accent: "from-orange-500/20 to-amber-500/5" },
-  { key: "Frontend", title: "Frontend", hook: "UI machine-coding and React rounds.", accent: "from-fuchsia-500/20 to-pink-500/5" },
-  { key: "Backend", title: "Backend", hook: "APIs, data, and service design.", accent: "from-sky-500/20 to-cyan-500/5" },
+  { key: TargetRole.SDE1, title: "SDE-1", hook: "DSA, LLD, and CS fundamentals.", accent: "from-emerald-500/20 to-teal-500/5" },
+  { key: TargetRole.SDE2, title: "SDE-2", hook: "System design plus deeper LLD.", accent: "from-orange-500/20 to-amber-500/5" },
+  { key: TargetRole.FRONTEND, title: "Frontend", hook: "UI machine-coding and React rounds.", accent: "from-fuchsia-500/20 to-pink-500/5" },
+  { key: TargetRole.BACKEND, title: "Backend", hook: "APIs, data, and service design.", accent: "from-sky-500/20 to-cyan-500/5" },
 ];
 
 export const EXPERIENCES = [

@@ -23,7 +23,7 @@ export default function GoogleButton({ onCredential }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    authApi.publicConfig().then((res) => setConfig(res.data)).catch(() => setConfig({ googleEnabled: false }));
+    authApi.publicConfig().then((res) => setConfig(res?.data)).catch(() => setConfig({ googleEnabled: false }));
   }, []);
 
   useEffect(() => {
@@ -32,13 +32,13 @@ export default function GoogleButton({ onCredential }) {
     loadGis()
       .then(() => {
         if (cancelled || !slot.current) return;
-        window.google.accounts.id.initialize({
+        window.google?.accounts?.id?.initialize({
           client_id: config.googleClientId,
-          callback: (response) => onCredential(response.credential),
+          callback: (response) => onCredential(response?.credential),
           ux_mode: "popup",
         });
         slot.current.innerHTML = "";
-        window.google.accounts.id.renderButton(slot.current, {
+        window.google?.accounts?.id?.renderButton(slot.current, {
           theme: "outline",
           size: "large",
           width: 380,
@@ -46,7 +46,7 @@ export default function GoogleButton({ onCredential }) {
           shape: "rectangular",
         });
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => setError(err?.message));
     return () => {
       cancelled = true;
     };

@@ -23,7 +23,7 @@ export default function CheckEmail() {
       await authApi.resendVerification({ email });
       setNotice("If that inbox exists, we sent another verification link.");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     } finally {
       setSending(false);
     }

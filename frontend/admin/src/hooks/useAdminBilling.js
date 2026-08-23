@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useDialog } from "../components/Dialog";
+import { AccountRole } from "../data/enums";
 import { adminApi } from "../services/api";
 
 export function useAdminBilling() {
@@ -43,9 +44,9 @@ export function useAdminBilling() {
     setLookup(null);
     try {
       const json = await adminApi.billingSession(id);
-      setLookup(json.data);
+      setLookup(json?.data);
     } catch (err) {
-      setLookupError(err.message || "Session not found.");
+      setLookupError(err?.message || "Session not found.");
     }
   }
 
@@ -55,7 +56,7 @@ export function useAdminBilling() {
       await adminApi.refreshPayment(item.id);
       await client.invalidateQueries({ queryKey: ["admin-payments"] });
     } catch (err) {
-      await dialog.alert(err.message || "Could not refresh Stripe status.");
+      await dialog.alert(err?.message || "Could not refresh Stripe status.");
     } finally {
       setBusy("");
     }
@@ -75,7 +76,7 @@ export function useAdminBilling() {
         client.invalidateQueries({ queryKey: ["admin-user"] }),
       ]);
     } catch (err) {
-      await dialog.alert(err.message || "Could not refund this payment.");
+      await dialog.alert(err?.message || "Could not refund this payment.");
     } finally {
       setBusy("");
     }
@@ -96,7 +97,7 @@ export function useAdminBilling() {
     lookup,
     lookupError,
     busy,
-    premiumUsers: users.filter((user) => user.premium && user.role !== "ADMIN").length,
+    premiumUsers: users.filter((user) => user.premium && user.role !== AccountRole.ADMIN).length,
     counts: {
       paid: items.filter((item) => item.status === "paid").length,
       open: items.filter((item) => item.status === "open").length,

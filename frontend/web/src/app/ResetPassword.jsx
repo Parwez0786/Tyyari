@@ -22,7 +22,7 @@ export default function ResetPassword() {
       await authApi.resetPassword({ token, password });
       navigate("/login");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     }
   }
 

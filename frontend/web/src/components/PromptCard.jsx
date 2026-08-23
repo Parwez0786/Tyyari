@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ChevronRight, FileText, Lightbulb } from "lucide-react";
+import { QuestionType } from "../data/enums";
 import { QuestionMeta } from "./QuestionMeta";
 
 export default function PromptCard({ data, hideHints = false }) {
-  const dsa = data.type === "DSA" || data.type === "OA";
+  const dsa = data?.type === QuestionType.DSA || data?.type === QuestionType.OA;
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-white/10 bg-card">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/10 px-4">
@@ -12,8 +13,8 @@ export default function PromptCard({ data, hideHints = false }) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <QuestionMeta data={data} compact />
-        <h2 className="mt-4 text-lg font-bold leading-snug text-ink">{data.title}</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data.description}</p>
+        <h2 className="mt-4 text-lg font-bold leading-snug text-ink">{data?.title}</h2>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data?.description}</p>
         {dsa ? <DsaDetails data={data} hideHints={hideHints} /> : <RequirementsLists data={data} />}
       </div>
     </aside>
@@ -23,8 +24,8 @@ export default function PromptCard({ data, hideHints = false }) {
 export function RequirementsBlock({ data }) {
   return (
     <div className="mt-8 grid gap-4 md:grid-cols-2">
-      <RequirementCard title="Functional requirements" items={data.functionalRequirements} tone="func" />
-      <RequirementCard title="Non-functional requirements" items={data.nonFunctionalRequirements} tone="nfr" />
+      <RequirementCard title="Functional requirements" items={data?.functionalRequirements} tone="func" />
+      <RequirementCard title="Non-functional requirements" items={data?.nonFunctionalRequirements} tone="nfr" />
     </div>
   );
 }
@@ -32,16 +33,16 @@ export function RequirementsBlock({ data }) {
 function DsaDetails({ data, hideHints = false }) {
   return (
     <div className="mt-5 space-y-4">
-      {(data.examples || []).map((example, index) => (
-        <section key={`${example.input}-${index}`} className="rounded-xl border border-white/10 bg-white/5 p-3">
+      {(data?.examples || []).map((example, index) => (
+        <section key={`${example?.input}-${index}`} className="rounded-xl border border-white/10 bg-white/5 p-3">
           <h3 className="text-sm font-semibold text-ink">Example {index + 1}</h3>
-          {example.input ? (
+          {example?.input ? (
             <ExampleField label="Input" value={example.input} />
           ) : null}
-          {example.output ? (
+          {example?.output ? (
             <ExampleField label="Output" value={example.output} />
           ) : null}
-          {example.explanation ? (
+          {example?.explanation ? (
             <p className="mt-2 text-sm leading-6 text-mute">
               <span className="font-semibold text-ink">Explanation: </span>
               {example.explanation}
@@ -49,9 +50,9 @@ function DsaDetails({ data, hideHints = false }) {
           ) : null}
         </section>
       ))}
-      <RequirementCard title="Constraints" items={data.constraints} tone="nfr" />
-      {!hideHints && <HintList items={data.hints} />}
-      <TopicPills items={data.topics} />
+      <RequirementCard title="Constraints" items={data?.constraints} tone="nfr" />
+      {!hideHints && <HintList items={data?.hints} />}
+      <TopicPills items={data?.topics} />
     </div>
   );
 }
@@ -120,19 +121,19 @@ function TopicPills({ items }) {
 function RequirementsLists({ data }) {
   return (
     <div className="mt-5 space-y-3">
-      <RequirementCard title="Functional requirements" items={data.functionalRequirements} tone="func" />
-      <RequirementCard title="Non-functional requirements" items={data.nonFunctionalRequirements} tone="nfr" />
-      <RequirementCard title="Constraints" items={data.constraints} tone="nfr" />
-      {data.estimates && (
+      <RequirementCard title="Functional requirements" items={data?.functionalRequirements} tone="func" />
+      <RequirementCard title="Non-functional requirements" items={data?.nonFunctionalRequirements} tone="nfr" />
+      <RequirementCard title="Constraints" items={data?.constraints} tone="nfr" />
+      {data?.estimates && (
         <section>
           <h3 className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
             <span className="h-2 w-2 rounded-full bg-amber-400" />
             Estimates
           </h3>
-          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs leading-5 text-ink">{data.estimates}</pre>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs leading-5 text-ink">{data?.estimates}</pre>
         </section>
       )}
-      <RequirementCard title="Hints" items={data.hints} tone="hint" />
+      <RequirementCard title="Hints" items={data?.hints} tone="hint" />
     </div>
   );
 }

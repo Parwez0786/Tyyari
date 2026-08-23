@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useDialog } from "../components/Dialog";
+import { SHEET_TYPES as SHEET_TYPE_KEYS } from "../data/enums";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
-const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONTEND"].includes(type.key));
+const SHEET_TYPES = QUESTION_TYPES.filter((type) => SHEET_TYPE_KEYS.includes(type.key));
 
 export function useAdminSheets() {
   const client = useQueryClient();

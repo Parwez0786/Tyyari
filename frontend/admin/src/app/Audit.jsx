@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import { formatWhen } from "../data/profile";
 import { adminApi } from "../services/api";
@@ -174,6 +175,8 @@ export default function Audit() {
     return [item.action, item.detail, actor, meta.title].join(" ").toLowerCase().includes(q);
   });
 
+  if (auditQuery.isLoading) return <Loader fill />;
+
   return (
     <div className="space-y-6">
       <PageHero
@@ -202,8 +205,7 @@ export default function Audit() {
         />
       </div>
 
-      {auditQuery.isLoading && <p className="text-sm text-mute">Loading the log…</p>}
-      {auditQuery.isError && <p className="text-sm text-hard">{auditQuery.error.message || "Could not load audit events."}</p>}
+      {auditQuery.isError && <p className="text-sm text-hard">{auditQuery.error?.message || "Could not load audit events."}</p>}
 
       <div className="space-y-3">
         {filtered.map((item) => {

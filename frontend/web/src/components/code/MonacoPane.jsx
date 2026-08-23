@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import Editor, { loader } from "@monaco-editor/react";
+import Loader from "../Loader";
 import { useThemeStore } from "../../stores/themeStore";
 import { languageFromName } from "./languages";
 
@@ -78,7 +79,7 @@ export default function MonacoPane({ file, onChange, onRun }) {
         theme={theme === "dark" ? "tyyari-dark" : "tyyari-light"}
         beforeMount={defineThemes}
         onMount={handleMount}
-        loading={<p className="p-4 text-sm text-mute">Loading editor…</p>}
+        loading={<Loader compact className="h-full" />}
         options={{
           fontSize: 14,
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",

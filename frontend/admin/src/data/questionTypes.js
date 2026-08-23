@@ -1,6 +1,8 @@
+import { QuestionType, Subject } from "./enums";
+
 export const QUESTION_TYPES = [
   {
-    key: "DSA",
+    key: QuestionType.DSA,
     title: "DSA",
     hook: "Title, prompt, constraints, and at least one input/output example.",
     add: "Add DSA",
@@ -15,7 +17,7 @@ export const QUESTION_TYPES = [
     },
   },
   {
-    key: "HLD",
+    key: QuestionType.HLD,
     title: "System Design",
     hook: "Title, prompt, functional requirements, and NFRs.",
     add: "Add HLD",
@@ -31,7 +33,7 @@ export const QUESTION_TYPES = [
     },
   },
   {
-    key: "LLD",
+    key: QuestionType.LLD,
     title: "Low Level Design",
     hook: "Title, prompt, and the objects or APIs the candidate must model.",
     add: "Add LLD",
@@ -47,7 +49,7 @@ export const QUESTION_TYPES = [
     },
   },
   {
-    key: "FRONTEND",
+    key: QuestionType.FRONTEND,
     title: "Frontend",
     hook: "Title, prompt, features to build, and UI constraints.",
     add: "Add frontend",
@@ -63,20 +65,20 @@ export const QUESTION_TYPES = [
     },
   },
   {
-    key: "CS",
+    key: QuestionType.CS,
     title: "CS Fundamentals",
     hook: "Title, subject, and at least one multiple-choice item.",
     add: "Add quiz",
     accent: "from-lime-500/20 to-emerald-500/5",
     fields: { quiz: true, subType: true },
-    subTypes: ["OS", "DBMS", "OOP", "Networks"],
+    subTypes: [Subject.OS, Subject.DBMS, Subject.OOP, Subject.NETWORKS],
     placeholders: {
       title: "Processes vs threads",
       description: "Five questions on address spaces, context switches, and deadlock.",
     },
   },
   {
-    key: "OA",
+    key: QuestionType.OA,
     title: "Online Assessment",
     hook: "Same as DSA: prompt, constraints, and a scored example.",
     add: "Add OA",

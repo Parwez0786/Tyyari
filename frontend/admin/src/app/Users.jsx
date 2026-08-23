@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import Avatar from "../components/Avatar";
+import { AccountRole, AccountStatus } from "../data/enums";
 import { roleLabel, statusLabel } from "../data/labels";
 import { formatPremiumUntil, formatWhen } from "../data/profile";
 import { useAdminUsers } from "../hooks/useAdminUsers";
@@ -24,6 +26,8 @@ export default function Users() {
     setRole,
     submitInvite,
   } = useAdminUsers();
+
+  if (usersQuery.isLoading) return <Loader fill />;
 
   return (
     <div className="space-y-6">
@@ -62,8 +66,8 @@ export default function Users() {
             value={invite.role}
             onChange={(e) => setInvite((prev) => ({ ...prev, role: e.target.value }))}
           >
-            <option value="USER">{roleLabel("USER")}</option>
-            <option value="EDITOR">{roleLabel("EDITOR")}</option>
+            <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
+            <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
           </select>
           <button className="btn-brand" type="submit" disabled={busy === "invite"}>
             {busy === "invite" ? "Creating…" : "Invite"}
@@ -119,9 +123,9 @@ export default function Users() {
             onChange={(role) => setFilters((prev) => ({ ...prev, role }))}
             options={[
               { key: "", label: "All roles" },
-              { key: "USER", label: roleLabel("USER") },
-              { key: "EDITOR", label: roleLabel("EDITOR") },
-              { key: "ADMIN", label: roleLabel("ADMIN") },
+              { key: AccountRole.USER, label: roleLabel(AccountRole.USER) },
+              { key: AccountRole.EDITOR, label: roleLabel(AccountRole.EDITOR) },
+              { key: AccountRole.ADMIN, label: roleLabel(AccountRole.ADMIN) },
             ]}
           />
           <FilterSelect
@@ -130,9 +134,9 @@ export default function Users() {
             onChange={(status) => setFilters((prev) => ({ ...prev, status }))}
             options={[
               { key: "", label: "All statuses" },
-              { key: "ACTIVE", label: statusLabel("ACTIVE") },
-              { key: "DISABLED", label: statusLabel("DISABLED") },
-              { key: "DELETING", label: statusLabel("DELETING") },
+              { key: AccountStatus.ACTIVE, label: statusLabel(AccountStatus.ACTIVE) },
+              { key: AccountStatus.DISABLED, label: statusLabel(AccountStatus.DISABLED) },
+              { key: AccountStatus.DELETING, label: statusLabel(AccountStatus.DELETING) },
             ]}
           />
           <FilterSelect
@@ -180,8 +184,7 @@ export default function Users() {
         </div>
       </article>
 
-      {usersQuery.isLoading && <p className="text-sm text-mute">Loading accounts…</p>}
-      {usersQuery.isError && <p className="text-sm text-hard">{usersQuery.error.message || "Could not load users."}</p>}
+      {usersQuery.isError && <p className="text-sm text-hard">{usersQuery.error?.message || "Could not load users."}</p>}
 
       <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-5 sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
@@ -202,9 +205,9 @@ export default function Users() {
                     {roleLabel(u.role)}
                   </span>
                   <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide ${
-                    u.status === "ACTIVE"
+                    u.status === AccountStatus.ACTIVE
                       ? "bg-brand/15 text-brand"
-                      : u.status === "DELETING"
+                      : u.status === AccountStatus.DELETING
                         ? "bg-amber-400/15 text-amber-400"
                         : "bg-rose-500/15 text-hard"
                   }`}>
@@ -231,34 +234,34 @@ export default function Users() {
                 </div>
                 <p className="mt-2 text-xs text-mute">
                   Last submit {formatWhen(u.lastSubmittedAt)}
-                  {u.role !== "ADMIN" && ` · Premium ${formatPremiumUntil(u.premium, u.premiumUntil)}`}
+                  {u.role !== AccountRole.ADMIN && ` · Premium ${formatPremiumUntil(u.premium, u.premiumUntil)}`}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {u.role !== "ADMIN" && u.status !== "DELETING" && (
+              {u.role !== AccountRole.ADMIN && u.status !== AccountStatus.DELETING && (
                 <select
                   className="field mt-0 !w-auto !py-1.5 text-sm"
                   value={u.role}
                   disabled={busy === `role-${u.id}`}
                   onChange={(e) => setRole(u, e.target.value)}
                 >
-                  <option value="USER">{roleLabel("USER")}</option>
-                  <option value="EDITOR">{roleLabel("EDITOR")}</option>
+                  <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
+                  <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
                 </select>
               )}
               <Link to={`/users/${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">View profile</Link>
-              {u.role !== "ADMIN" && (
+              {u.role !== AccountRole.ADMIN && (
                 <Link to={`/billing?user=${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Billing</Link>
               )}
-              {u.role !== "ADMIN" && u.status !== "DELETING" && (
+              {u.role !== AccountRole.ADMIN && u.status !== AccountStatus.DELETING && (
                 <button
                   type="button"
-                  className={u.status === "ACTIVE" ? "btn-ghost !px-4 !py-1.5 !text-hard text-sm" : "btn-brand !px-4 !py-1.5 text-sm"}
+                  className={u.status === AccountStatus.ACTIVE ? "btn-ghost !px-4 !py-1.5 !text-hard text-sm" : "btn-brand !px-4 !py-1.5 text-sm"}
                   disabled={busy === `status-${u.id}`}
                   onClick={() => toggleStatus(u)}
                 >
-                  {u.status === "ACTIVE" ? "Disable" : "Enable"}
+                  {u.status === AccountStatus.ACTIVE ? "Disable" : "Enable"}
                 </button>
               )}
             </div>

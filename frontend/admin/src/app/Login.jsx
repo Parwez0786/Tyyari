@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo, { Mark } from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import { AccountRole } from "../data/enums";
 import { adminApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
 
@@ -18,16 +19,16 @@ export default function Login() {
     setError("");
     try {
       const res = await adminApi.login({ email, password });
-      setTokens(res.data.accessToken, res.data.refreshToken);
+      setTokens(res?.data?.accessToken, res?.data?.refreshToken);
       const me = await adminApi.me();
-      if (me.data.role !== "ADMIN") {
+      if (me?.data?.role !== AccountRole.ADMIN) {
         useAuthStore.getState().clear();
         setError("This console is for admin accounts only.");
         return;
       }
       navigate("/");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     }
   }
 

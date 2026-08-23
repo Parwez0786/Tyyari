@@ -1,50 +1,52 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
+import { QuestionType, ThemeTone } from "../data/enums";
 import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
 import { CompanyMark, DifficultyBadge } from "./QuestionMeta";
 import ThemeCard from "./ThemeCard";
 
 const ctaByType = {
-  HLD: "Start Design",
-  LLD: "Start Coding",
-  DSA: "Start Solving",
-  FRONTEND: "Start Challenge",
-  CS: "Start Quiz",
-  OA: "Start Assessment",
+  [QuestionType.HLD]: "Start Design",
+  [QuestionType.LLD]: "Start Coding",
+  [QuestionType.DSA]: "Start Solving",
+  [QuestionType.FRONTEND]: "Start Challenge",
+  [QuestionType.CS]: "Start Quiz",
+  [QuestionType.OA]: "Start Assessment",
 };
 
 const TONE_BY_TYPE = {
-  HLD: "brand",
-  LLD: "blue",
-  DSA: "mint",
-  FRONTEND: "violet",
-  CS: "lime",
-  OA: "blue",
+  [QuestionType.HLD]: ThemeTone.BRAND,
+  [QuestionType.LLD]: ThemeTone.BLUE,
+  [QuestionType.DSA]: ThemeTone.MINT,
+  [QuestionType.FRONTEND]: ThemeTone.VIOLET,
+  [QuestionType.CS]: ThemeTone.LIME,
+  [QuestionType.OA]: ThemeTone.BLUE,
 };
 
-export default function ProblemCard({ question, onStart, completed = false }) {
+function ProblemCard({ question, onStart, completed = false }) {
   const q = question;
   const entitled = useEntitled();
   const locked = isPremiumLocked(q, entitled);
-  const cta = completed ? "Solve again" : (ctaByType[q.type] || "Start");
-  const tone = completed ? "mint" : TONE_BY_TYPE[q.type] || "brand";
+  const cta = completed ? "Solve again" : (ctaByType[q?.type] || "Start");
+  const tone = completed ? "mint" : TONE_BY_TYPE[q?.type] || "brand";
 
   return (
     <ThemeCard tone={tone} className="h-full !rounded-[24px] !p-5" innerClassName="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3">
-        <DifficultyBadge difficulty={q.difficulty} />
+        <DifficultyBadge difficulty={q?.difficulty} />
         <span className="flex h-6 items-center gap-2">
           {completed && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400">Done</span>}
           {locked && <LockIcon />}
         </span>
       </div>
 
-      <h3 className="mt-4 text-lg font-bold leading-snug">{q.title}</h3>
+      <h3 className="mt-4 text-lg font-bold leading-snug">{q?.title}</h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-mute">
-        {q.description || "Open this problem to read the full prompt, constraints, and hints before you start."}
+        {q?.description || "Open this problem to read the full prompt, constraints, and hints before you start."}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
-        {(q.companies || []).slice(0, 5).map((name) => (
+        {(q?.companies || []).slice(0, 5).map((name) => (
           <CompanyMark key={name} name={name} />
         ))}
       </div>
@@ -69,7 +71,7 @@ export default function ProblemCard({ question, onStart, completed = false }) {
           </button>
         ) : (
           <Link
-            to={`/questions/${q.id}`}
+            to={`/questions/${q?.id}`}
             className="flex w-full items-center justify-between rounded-xl border border-line bg-field/80 px-4 py-3 text-sm font-semibold hover:border-brand/40"
           >
             {cta}
@@ -88,3 +90,5 @@ function LockIcon() {
     </svg>
   );
 }
+
+export default memo(ProblemCard);

@@ -34,9 +34,10 @@ import {
   starterFor,
 } from "./languages";
 import { runWorkspace } from "./piston";
+import { QuestionType, practicePath } from "../../data/enums";
 import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
-export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabel = "Back to LLD practice" }) {
+export default function CodeWorkspace({ data, backTo = practicePath(QuestionType.LLD), backLabel = "Back to LLD practice" }) {
   const key = `tyyari.lld.${data.id}`;
   const initial = useMemo(() => loadWorkspace(key, data.title, data.starterFiles), [key, data.title, data.starterFiles]);
   const [entries, setEntries] = useState(initial.files);
@@ -108,7 +109,7 @@ export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabe
       const result = await runWorkspace({ files, activeId, stdin, language });
       setOutput({ status: "done", ...result });
     } catch (err) {
-      setOutput({ status: "error", message: err.message || "Run failed" });
+      setOutput({ status: "error", message: err?.message || "Run failed" });
     } finally {
       setRunning(false);
     }
@@ -122,7 +123,7 @@ export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabe
     try {
       await saveSubmission({
         questionId: data.id,
-        questionType: "LLD",
+        questionType: QuestionType.LLD,
         language,
         view: "code",
         activeId,
@@ -131,7 +132,7 @@ export default function CodeWorkspace({ data, backTo = "/practice/LLD", backLabe
       });
       setSubmitted(true);
     } catch (err) {
-      setOutput({ status: "error", message: err.message || "Could not save submission." });
+      setOutput({ status: "error", message: err?.message || "Could not save submission." });
     } finally {
       setSubmitting(false);
     }

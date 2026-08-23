@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
+import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import QuestionOrderPicker from "../components/QuestionOrderPicker";
+import { DIFFICULTY_LIST, Difficulty, QuestionType } from "../data/enums";
+import { difficultyLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
 function blank() {
@@ -11,7 +14,7 @@ function blank() {
     slug: "",
     description: "",
     durationMinutes: 90,
-    difficulty: "MEDIUM",
+    difficulty: Difficulty.MEDIUM,
     companies: "",
     questionSlugs: [],
     published: false,
@@ -33,8 +36,8 @@ export default function OaForm() {
   });
 
   const poolQuery = useQuery({
-    queryKey: ["admin-questions", "DSA", 200],
-    queryFn: () => adminApi.questions({ type: "DSA", limit: 200 }),
+    queryKey: ["admin-questions", QuestionType.DSA, 200],
+    queryFn: () => adminApi.questions({ type: QuestionType.DSA, limit: 200 }),
   });
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function OaForm() {
       slug: set.slug || "",
       description: set.description || "",
       durationMinutes: set.durationMinutes || 90,
-      difficulty: set.difficulty || "MEDIUM",
+      difficulty: set.difficulty || Difficulty.MEDIUM,
       companies: (set.companies || []).join(", "),
       questionSlugs: set.questionSlugs || [],
       published: Boolean(set.published),
@@ -92,10 +95,14 @@ export default function OaForm() {
       else await adminApi.createAssessmentSet(body);
       navigate("/oa");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  if (id && existing.isLoading) {
+    return <Loader fill />;
   }
 
   return (
@@ -113,8 +120,7 @@ export default function OaForm() {
 
       <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">
 
-      {existing.isLoading && id && <p className="text-sm text-mute">Loading OA set…</p>}
-      {existing.isError && <p className="text-sm text-hard">{existing.error.message || "Could not load this OA set."}</p>}
+      {existing.isError && <p className="text-sm text-hard">{existing.error?.message || "Could not load this OA set."}</p>}
 
       <article className="rounded-[28px] border border-line bg-gradient-to-br from-blue-500/20 to-indigo-500/5 p-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Timed round</p>
@@ -140,7 +146,7 @@ export default function OaForm() {
           <label className="block">
             <FieldLabel>Difficulty</FieldLabel>
             <select className="field" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)} required>
-              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
+              {DIFFICULTY_LIST.map((t) => <option key={t} value={t}>{difficultyLabel(t)}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">

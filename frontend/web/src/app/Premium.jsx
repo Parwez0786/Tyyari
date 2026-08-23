@@ -1,11 +1,8 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Check, Crown, Lock, Sparkles } from "lucide-react";
 import Layout from "../components/Layout";
-import { billingApi } from "../services/api";
-import { useAuthStore } from "../stores/authStore";
-import { useEntitled } from "../hooks/usePremium";
+import Loader from "../components/Loader";
+import { usePremiumPage } from "../hooks/usePremium";
 
 const PERKS = [
   "Unlock every premium HLD, LLD, DSA, and frontend problem",
@@ -15,69 +12,15 @@ const PERKS = [
 ];
 
 export default function Premium() {
-  const queryClient = useQueryClient();
-  const [params] = useSearchParams();
-  const token = useAuthStore((s) => s.accessToken);
-  const entitled = useEntitled();
-  const configQuery = useQuery({ queryKey: ["billing-config"], queryFn: billingApi.publicConfig });
-  const config = configQuery.data?.data;
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [note, setNote] = useState("");
-  const status = params.get("status");
-  const sessionId = params.get("session_id");
+  const p = usePremiumPage();
 
-  useEffect(() => {
-    if (!token || !sessionId || status !== "success") return undefined;
-    let cancelled = false;
-    setBusy(true);
-    billingApi.confirm(sessionId)
-      .then(async (json) => {
-        if (cancelled) return;
-        applyTokens(json.data);
-        await refreshEntitlement(queryClient);
-        setNote("Premium is on. Locked problems will open.");
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, sessionId, status, queryClient]);
-
-  async function checkout() {
-    setError("");
-    setBusy(true);
-    try {
-      const json = await billingApi.checkout();
-      window.location.assign(json.data.checkoutUrl);
-    } catch (err) {
-      setError(err.message);
-      setBusy(false);
-    }
+  if (p.isLoading || p.busy) {
+    return (
+      <Layout>
+        <Loader fill />
+      </Layout>
+    );
   }
-
-  async function activateDev() {
-    setError("");
-    setBusy(true);
-    try {
-      const json = await billingApi.activateDev();
-      applyTokens(json.data);
-      await refreshEntitlement(queryClient);
-      setNote("Premium is on. Locked problems will open.");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const price = config?.displayPrice || "₹499";
-  const provider = config?.provider || "dev";
 
   return (
     <Layout>
@@ -117,23 +60,23 @@ export default function Premium() {
             <Sparkles size={12} />
             Lifetime
           </p>
-          <p className="mt-3 text-4xl font-extrabold tracking-tight">{price}</p>
+          <p className="mt-3 text-4xl font-extrabold tracking-tight">{p.price}</p>
           <p className="mt-1 text-sm text-mute">One payment. No subscription.</p>
-          {entitled ? (
+          {p.entitled ? (
             <p className="mt-6 rounded-2xl border border-brand/30 bg-brand/10 px-4 py-3 text-sm font-semibold">
               You already have Premium. Locked cards will open.
             </p>
-          ) : token ? (
+          ) : p.token ? (
             <div className="mt-6 grid gap-3">
-              <button type="button" className="btn-premium !px-5 !py-3" onClick={checkout} disabled={busy}>
-                {busy ? "Working…" : `Upgrade · ${price}`}
+              <button type="button" className="btn-premium !px-5 !py-3" onClick={p.checkout} disabled={p.busy}>
+                {p.busy ? "Working…" : `Upgrade · ${p.price}`}
               </button>
-              {provider === "dev" && (
-                <button type="button" className="btn-ghost !px-5 !py-2.5" onClick={activateDev} disabled={busy}>
+              {p.provider === "dev" && (
+                <button type="button" className="btn-ghost !px-5 !py-2.5" onClick={p.activateDev} disabled={p.busy}>
                   Unlock locally (no Stripe key)
                 </button>
               )}
-              {status === "cancel" && (
+              {p.status === "cancel" && (
                 <p className="text-sm text-mute">Checkout was cancelled. Nothing was charged.</p>
               )}
             </div>
@@ -143,9 +86,9 @@ export default function Premium() {
               <Link to="/login" className="btn-ghost !px-5 !py-2.5">Sign in</Link>
             </div>
           )}
-          {note && <p className="mt-4 text-sm font-semibold text-brand">{note}</p>}
-          {error && <p className="mt-4 text-sm text-hard">{error}</p>}
-          {provider === "dev" && !entitled && (
+          {p.note && <p className="mt-4 text-sm font-semibold text-brand">{p.note}</p>}
+          {p.error && <p className="mt-4 text-sm text-hard">{p.error}</p>}
+          {p.provider === "dev" && !p.entitled && (
             <p className="mt-4 text-xs leading-5 text-mute">
               Stripe keys are not set, so checkout stays on this machine. Add <code>STRIPE_SECRET_KEY</code> to <code>.env</code> for a real card page.
             </p>
@@ -173,18 +116,4 @@ export function PremiumGate({ question, backTo }) {
       </div>
     </section>
   );
-}
-
-function applyTokens(data) {
-  if (!data?.accessToken) return;
-  useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
-}
-
-function refreshEntitlement(queryClient) {
-  return Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["me"] }),
-    queryClient.invalidateQueries({ queryKey: ["question"] }),
-    queryClient.invalidateQueries({ queryKey: ["questions"] }),
-    queryClient.invalidateQueries({ queryKey: ["sheets"] }),
-  ]);
 }

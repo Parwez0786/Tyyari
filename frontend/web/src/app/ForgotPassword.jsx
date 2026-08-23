@@ -20,7 +20,7 @@ export default function ForgotPassword() {
       await authApi.forgotPassword({ email });
       setSent(true);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message);
     }
   }
 

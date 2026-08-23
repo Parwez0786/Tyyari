@@ -1,28 +1,42 @@
+import {
+  AccountRole,
+  AccountStatus,
+  AuthProvider,
+  Difficulty,
+  PaymentStatus,
+  QuestionType,
+  Scope,
+  Subject,
+  TargetRole,
+  ThemeMode,
+  ViewMode,
+} from "./enums";
+
 const ROLE = {
-  USER: "Candidate",
-  EDITOR: "Editor",
-  ADMIN: "Admin",
+  [AccountRole.USER]: "Candidate",
+  [AccountRole.EDITOR]: "Editor",
+  [AccountRole.ADMIN]: "Admin",
 };
 
 const STATUS = {
-  ACTIVE: "Active",
-  DISABLED: "Disabled",
-  DELETING: "Deleting",
+  [AccountStatus.ACTIVE]: "Active",
+  [AccountStatus.DISABLED]: "Disabled",
+  [AccountStatus.DELETING]: "Deleting",
 };
 
 const TYPE = {
-  DSA: "DSA",
-  HLD: "System Design",
-  LLD: "Low Level Design",
-  FRONTEND: "Frontend",
-  CS: "CS Fundamentals",
-  OA: "Online Assessment",
+  [QuestionType.DSA]: "DSA",
+  [QuestionType.HLD]: "System Design",
+  [QuestionType.LLD]: "Low Level Design",
+  [QuestionType.FRONTEND]: "Frontend",
+  [QuestionType.CS]: "CS Fundamentals",
+  [QuestionType.OA]: "Online Assessment",
 };
 
 const DIFFICULTY = {
-  EASY: "Easy",
-  MEDIUM: "Medium",
-  HARD: "Hard",
+  [Difficulty.EASY]: "Easy",
+  [Difficulty.MEDIUM]: "Medium",
+  [Difficulty.HARD]: "Hard",
 };
 
 const LANGUAGE = {
@@ -42,51 +56,53 @@ const LANGUAGE = {
 };
 
 const THEME = {
-  light: "Light",
-  dark: "Dark",
+  [ThemeMode.LIGHT]: "Light",
+  [ThemeMode.DARK]: "Dark",
 };
 
 const PROVIDER = {
-  LOCAL: "Password",
-  GOOGLE: "Google",
-  GITHUB: "GitHub",
+  [AuthProvider.LOCAL]: "Password",
+  [AuthProvider.GOOGLE]: "Google",
+  [AuthProvider.GITHUB]: "GitHub",
 };
 
 const PAYMENT = {
-  paid: "Paid",
-  granted: "Granted",
-  open: "Open",
-  expired: "Expired",
-  refunded: "Refunded",
+  [PaymentStatus.PAID]: "Paid",
+  [PaymentStatus.GRANTED]: "Granted",
+  [PaymentStatus.OPEN]: "Open",
+  [PaymentStatus.EXPIRED]: "Expired",
+  [PaymentStatus.REFUNDED]: "Refunded",
 };
 
 const SCOPE = {
-  PRACTICE: "Practice",
-  OA: "Online Assessment",
-  SHEET: "Sheet",
+  [Scope.PRACTICE]: "Practice",
+  [Scope.OA]: "Online Assessment",
+  [Scope.SHEET]: "Sheet",
 };
 
 const VIEW = {
-  code: "Code",
-  canvas: "Canvas",
-  quiz: "Quiz",
-  design: "Design",
+  [ViewMode.CODE]: "Code",
+  [ViewMode.CANVAS]: "Canvas",
+  [ViewMode.QUIZ]: "Quiz",
+  [ViewMode.DESIGN]: "Design",
+  [ViewMode.BLUEPRINT]: "Blueprint",
+  [ViewMode.WHITEBOARD]: "Whiteboard",
 };
 
 const TARGET_ROLE = {
-  SDE1: "SDE-1",
-  SDE2: "SDE-2",
-  "SDE-1": "SDE-1",
-  "SDE-2": "SDE-2",
-  Frontend: "Frontend",
-  Backend: "Backend",
+  [TargetRole.SDE1]: "SDE-1",
+  [TargetRole.SDE2]: "SDE-2",
+  [TargetRole.SDE_1]: "SDE-1",
+  [TargetRole.SDE_2]: "SDE-2",
+  [TargetRole.FRONTEND]: "Frontend",
+  [TargetRole.BACKEND]: "Backend",
 };
 
 const SUBJECT = {
-  OS: "Operating Systems",
-  DBMS: "Databases",
-  OOP: "OOP",
-  Networks: "Networks",
+  [Subject.OS]: "Operating Systems",
+  [Subject.DBMS]: "Databases",
+  [Subject.OOP]: "OOP",
+  [Subject.NETWORKS]: "Networks",
 };
 
 function pick(map, value, fallback = "—") {
@@ -128,7 +144,7 @@ export function themeLabel(value) {
 }
 
 export function providerLabel(value) {
-  return pick(PROVIDER, value || "LOCAL");
+  return pick(PROVIDER, value || AuthProvider.LOCAL);
 }
 
 export function paymentLabel(value) {

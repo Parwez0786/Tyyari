@@ -128,3 +128,25 @@ html.dark .btn-ghost:hover {
   border-color: rgba(249, 115, 22, 0.55);
   color: #f97316;
 }
+
+.tyyari-loader {
+  position: absolute;
+  inset: -9px;
+  border-radius: 999px;
+  border: 2.5px solid rgba(249, 115, 22, 0.16);
+  border-top-color: #f97316;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.2);
+  animation: tyyari-spin 0.75s linear infinite;
+}
+.tyyari-loader-sm {
+  inset: -7px;
+  border-width: 2px;
+}
+html.dark .tyyari-loader {
+  border-color: rgba(249, 115, 22, 0.22);
+  border-top-color: #fb923c;
+  box-shadow: 0 0 26px rgba(249, 115, 22, 0.28);
+}
+@keyframes tyyari-spin {
+  to { transform: rotate(360deg); }
+}

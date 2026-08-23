@@ -25,8 +25,12 @@ async function refreshAccess() {
     useAuthStore.getState().clear();
     return null;
   }
-  const json = await res.json();
-  const data = json.data;
+  const json = await res.json().catch(() => ({}));
+  const data = json?.data;
+  if (!data?.accessToken) {
+    useAuthStore.getState().clear();
+    return null;
+  }
   useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
   return data.accessToken;
 }
