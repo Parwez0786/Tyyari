@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../components/Logo";
+import Logo, { Mark } from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import { adminApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
@@ -83,7 +83,7 @@ export default function Login() {
             “Same library the candidate app reads. Publish a problem and it shows up on practice.”
           </blockquote>
           <div className="mt-6 flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">A</span>
+            <Mark className="h-11 w-11" />
             <div>
               <p className="font-semibold">Admin console</p>
               <p className="text-sm text-mute">Publish · Premium · Users</p>

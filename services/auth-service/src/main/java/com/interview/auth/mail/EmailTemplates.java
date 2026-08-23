@@ -4,6 +4,8 @@ public final class EmailTemplates {
 
     private EmailTemplates() {}
 
+    public static final String MARK_CID = "tyyari-mark";
+
     public static String page(
             String kicker,
             String title,
@@ -11,6 +13,18 @@ public final class EmailTemplates {
             String ctaLabel,
             String ctaUrl,
             String footnote
+    ) {
+        return page(kicker, title, body, ctaLabel, ctaUrl, footnote, null);
+    }
+
+    public static String page(
+            String kicker,
+            String title,
+            String body,
+            String ctaLabel,
+            String ctaUrl,
+            String footnote,
+            String homeUrl
     ) {
         String button = isBlank(ctaLabel) || isBlank(ctaUrl)
                 ? ""
@@ -62,6 +76,7 @@ public final class EmailTemplates {
                           </tr>
                           <tr>
                             <td style="padding:20px 8px 0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:18px;color:#94a3b8">
+                              <img src="cid:tyyari-mark" width="18" height="18" alt="" style="display:inline-block;border:0;width:18px;height:18px;border-radius:5px;vertical-align:middle;margin-right:6px">
                               Tyyari · SDE interview prep<br>
                               Same library. Same orange.
                             </td>
@@ -75,7 +90,7 @@ public final class EmailTemplates {
                 """.formatted(
                 escape(title),
                 escape(isBlank(body) ? title : body),
-                logo(),
+                logo(homeUrl),
                 escape(kicker),
                 escape(title),
                 escape(body),
@@ -88,15 +103,22 @@ public final class EmailTemplates {
         return isBlank(name) ? "" : "Hi " + name.trim() + ". ";
     }
 
-    private static String logo() {
-        return """
+    private static String logo(String homeUrl) {
+        String mark = """
+                <img src="cid:%s" width="32" height="32" alt="Tyyari" style="display:block;border:0;width:32px;height:32px;border-radius:9px;outline:none">
+                """.formatted(MARK_CID);
+        String wordmark = """
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="width:32px;height:32px;border-radius:9px;background:#f97316;color:#ffffff;font-family:Inter,Arial,sans-serif;font-size:18px;font-weight:800;text-align:center;vertical-align:middle;line-height:32px">T</td>
-                    <td style="padding-left:8px;font-family:Inter,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.03em;color:#0f172a">Tyyari</td>
+                    <td style="vertical-align:middle">%s</td>
+                    <td style="padding-left:8px;font-family:Inter,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.03em;color:#0f172a;vertical-align:middle">Tyyari</td>
                   </tr>
                 </table>
-                """;
+                """.formatted(mark);
+        if (isBlank(homeUrl)) {
+            return wordmark;
+        }
+        return "<a href=\"%s\" style=\"text-decoration:none\">%s</a>".formatted(escapeAttr(homeUrl), wordmark);
     }
 
     private static boolean isBlank(String value) {

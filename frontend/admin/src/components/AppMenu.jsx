@@ -1,20 +1,45 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
+import {
+  BookOpen,
+  Camera,
+  CirclePlus,
+  Code2,
+  CreditCard,
+  LayoutDashboard,
+  LayoutTemplate,
+  Library,
+  ListChecks,
+  Network,
+  Puzzle,
+  ScrollText,
+  Tags,
+  Users,
+} from "lucide-react";
 import { QUESTION_TYPES } from "../data/questionTypes";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import Avatar from "./Avatar";
 
+const TYPE_ICONS = {
+  DSA: Code2,
+  HLD: Network,
+  LLD: Puzzle,
+  FRONTEND: LayoutTemplate,
+  CS: BookOpen,
+  OA: Camera,
+};
+
 const groups = [
   {
     label: "Catalog",
     items: [
-      { to: "/", title: "Dashboard", detail: "Signups, Premium, and practice charts" },
-      { to: "/questions", title: "Questions", detail: "Publish, lock Premium, and edit prompts" },
-      { to: "/questions/new", title: "New question", detail: "Pick a track, then fill its fields" },
-      { to: "/catalog", title: "Companies, topics, tags", detail: "Labels used by candidate filters" },
-      { to: "/sheets", title: "Sheets", detail: "Create grind lists and pick question order" },
-      { to: "/oa", title: "OA sets", detail: "Timed camera rounds: title, duration, DSA list" },
+      { to: "/", title: "Dashboard", detail: "Signups, Premium, and practice charts", Icon: LayoutDashboard },
+      { to: "/questions", title: "Questions", detail: "Publish, lock Premium, and edit prompts", Icon: Library },
+      { to: "/questions/new", title: "New question", detail: "Pick a track, then fill its fields", Icon: CirclePlus },
+      { to: "/catalog", title: "Companies, topics, tags", detail: "Labels used by candidate filters", Icon: Tags },
+      { to: "/sheets", title: "Sheets", detail: "Create grind lists and pick question order", Icon: ListChecks },
+      { to: "/oa", title: "OA sets", detail: "Timed camera rounds: title, duration, DSA list", Icon: Camera },
     ],
   },
   {
@@ -23,14 +48,15 @@ const groups = [
       to: `/questions/new/${type.key}`,
       title: type.add,
       detail: type.hook,
+      Icon: TYPE_ICONS[type.key] || CirclePlus,
     })),
   },
   {
     label: "Access",
     items: [
-      { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts" },
-      { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium" },
-      { to: "/audit", title: "Audit log", detail: "Who published, deleted, or disabled what" },
+      { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts", Icon: Users },
+      { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium", Icon: CreditCard },
+      { to: "/audit", title: "Audit log", detail: "Who published, deleted, or disabled what", Icon: ScrollText },
     ],
   },
 ];
@@ -72,20 +98,23 @@ export default function AppMenu({ open, onClose, email, onLogout }) {
           {groups.map((group) => (
             <section key={group.label} className="rounded-2xl border border-line bg-surface p-2">
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">{group.label}</p>
-              {group.items.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={onClose}
-                  className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-field"
-                >
-                  <span className="mt-0.5 text-mute"><DotIcon /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{item.title}</span>
-                    <span className="block text-xs text-mute">{item.detail}</span>
-                  </span>
-                </Link>
-              ))}
+              {group.items.map((item) => {
+                const Icon = item.Icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={onClose}
+                    className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-field"
+                  >
+                    {Icon && <Icon size={16} strokeWidth={1.8} className="mt-0.5 shrink-0 text-mute" />}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">{item.title}</span>
+                      <span className="block text-xs text-mute">{item.detail}</span>
+                    </span>
+                  </Link>
+                );
+              })}
             </section>
           ))}
         </div>
@@ -110,14 +139,6 @@ function CloseIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  );
-}
-
-function DotIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="4" width="16" height="16" rx="4" />
     </svg>
   );
 }

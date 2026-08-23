@@ -5,6 +5,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,8 @@ public class MailService {
                 EmailTemplates.greeting(name) + "An admin created this account. Set a password to sign in.",
                 "Set your password",
                 link,
-                "This link expires in 1 hour. After that, ask an admin to send another invite."
+                "This link expires in 1 hour. After that, ask an admin to send another invite.",
+                frontendUrl
         ));
     }
 
@@ -48,7 +50,8 @@ public class MailService {
                     "We received a request to reset the password for this Tyyari account.",
                     "Choose a new password",
                     link,
-                    "This link expires in 1 hour. If you did not ask for it, ignore this email."
+                    "This link expires in 1 hour. If you did not ask for it, ignore this email.",
+                    frontendUrl
             ));
         } catch (RuntimeException e) {
             log.warn("Password reset email was not delivered to {}", to);
@@ -63,7 +66,8 @@ public class MailService {
                 EmailTemplates.greeting(name) + "Use this inbox to finish creating your Tyyari account.",
                 "Verify my email",
                 link,
-                "This link expires in 2 days. If you did not create an account, ignore this email."
+                "This link expires in 2 days. If you did not create an account, ignore this email.",
+                frontendUrl
         ));
     }
 
@@ -75,7 +79,8 @@ public class MailService {
                     EmailTemplates.greeting(name) + "Your interview prep workspace is ready. Pick a track and start with a question today.",
                     "Open dashboard",
                     frontendUrl + "/dashboard",
-                    "Same editors. Same orange."
+                    "Same editors. Same orange.",
+                    frontendUrl
             ));
         } catch (RuntimeException e) {
             log.warn("Welcome email was not delivered to {}", to);
@@ -85,11 +90,16 @@ public class MailService {
     private void send(String to, String subject, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(from);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);
+            helper.addInline(
+                    EmailTemplates.MARK_CID,
+                    new ClassPathResource("mail/tyyari-mark.png"),
+                    "image/png"
+            );
             mailSender.send(message);
             log.info("Sent '{}' to {}", subject, to);
         } catch (Exception e) {
