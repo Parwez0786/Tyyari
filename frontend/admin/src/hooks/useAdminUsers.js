@@ -122,6 +122,10 @@ export function useAdminUsers() {
     rows,
     filtered,
     filteredOn: Object.values(filters).some(Boolean) || Boolean(search.trim()),
+    clearFilters() {
+      setSearch("");
+      setFilters(EMPTY_FILTERS);
+    },
     toggleStatus,
     setRole,
     submitInvite,

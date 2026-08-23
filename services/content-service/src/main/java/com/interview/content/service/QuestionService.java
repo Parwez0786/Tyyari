@@ -21,7 +21,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -145,6 +147,30 @@ public class QuestionService {
     public Question getRaw(String id) {
         return questions.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.QUESTION_NOT_FOUND, "Question not found", HttpStatus.NOT_FOUND));
+    }
+
+    public Map<String, String> titles(Collection<String> ids) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (ids == null || ids.isEmpty()) {
+            return out;
+        }
+        List<String> wanted = ids.stream().filter(StringUtils::hasText).map(String::trim).distinct().toList();
+        for (Question question : questions.findAllById(wanted)) {
+            if (StringUtils.hasText(question.getTitle())) {
+                out.put(question.getId(), question.getTitle());
+            }
+        }
+        for (String id : wanted) {
+            if (out.containsKey(id)) {
+                continue;
+            }
+            questions.findBySlug(id).ifPresent(question -> {
+                if (StringUtils.hasText(question.getTitle())) {
+                    out.put(id, question.getTitle());
+                }
+            });
+        }
+        return out;
     }
 
     public Question create(QuestionWriteRequest req, String actorId) {

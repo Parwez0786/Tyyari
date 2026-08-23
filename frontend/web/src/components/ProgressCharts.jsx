@@ -6,7 +6,7 @@ export function countCompleted(ids, done) {
   return (ids || []).filter((id) => done.has(id)).length;
 }
 
-export function Donut({ value, total, label }) {
+export function Donut({ value, total, label, className = "" }) {
   const safeTotal = Math.max(total, 0);
   const safeValue = Math.min(Math.max(value, 0), safeTotal || value);
   const pct = safeTotal ? safeValue / safeTotal : 0;
@@ -14,7 +14,7 @@ export function Donut({ value, total, label }) {
   const c = 2 * Math.PI * r;
   const dash = c * pct;
   return (
-    <div className="flex items-center gap-4">
+    <div className={`flex items-center gap-4 ${className}`}>
       <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0 text-ink">
         <circle cx="60" cy="60" r={r} fill="none" stroke="currentColor" className="text-white/10" strokeWidth="12" />
         <circle

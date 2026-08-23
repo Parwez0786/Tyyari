@@ -2,6 +2,8 @@ package com.interview.content.controller;
 
 import com.interview.content.dto.ApiResponse;
 import com.interview.content.dto.AssessmentWriteRequest;
+import com.interview.content.dto.CatalogTitleRequest;
+import com.interview.content.dto.CatalogTitleResponse;
 import com.interview.content.dto.CompanyRequest;
 import com.interview.content.dto.ContentStats;
 import com.interview.content.dto.PageResponse;
@@ -116,6 +118,16 @@ public class InternalContentController {
     @PatchMapping("/assessment-sets/{id}/publish")
     public ApiResponse<AssessmentSet> publishAssessment(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
         return ApiResponse.ok(assessmentSetService.publish(id, body.getOrDefault("published", true)));
+    }
+
+    @PostMapping("/catalog/titles")
+    public ApiResponse<CatalogTitleResponse> catalogTitles(@RequestBody(required = false) CatalogTitleRequest request) {
+        List<String> questionIds = request == null ? List.of() : request.questionIds();
+        List<String> setIds = request == null ? List.of() : request.assessmentSetIds();
+        return ApiResponse.ok(new CatalogTitleResponse(
+                questionService.titles(questionIds == null ? List.of() : questionIds),
+                assessmentSetService.titles(setIds == null ? List.of() : setIds)
+        ));
     }
 
     @GetMapping("/questions")

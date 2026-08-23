@@ -61,7 +61,7 @@ export function CompanyTags({ companies, compact = false }) {
       {companies.map((name) => (
         <span
           key={name}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-neutral-200"
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-field px-2 py-0.5 text-xs font-medium text-ink"
         >
           <CompanyMark name={name} size="sm" />
           {name}

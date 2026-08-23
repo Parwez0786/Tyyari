@@ -6,6 +6,7 @@ import com.interview.admin.client.DownstreamClient;
 import com.interview.admin.model.AuditLog;
 import com.interview.admin.repository.AuditLogRepository;
 import com.interview.admin.service.AuditService;
+import com.interview.admin.service.SubmissionCatalogService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,17 +31,20 @@ public class AdminController {
     private final AuditService auditService;
     private final AuditLogRepository auditLogs;
     private final ObjectMapper mapper;
+    private final SubmissionCatalogService catalogTitles;
 
     public AdminController(
             DownstreamClient downstream,
             AuditService auditService,
             AuditLogRepository auditLogs,
-            ObjectMapper mapper
+            ObjectMapper mapper,
+            SubmissionCatalogService catalogTitles
     ) {
         this.downstream = downstream;
         this.auditService = auditService;
         this.auditLogs = auditLogs;
         this.mapper = mapper;
+        this.catalogTitles = catalogTitles;
     }
 
     @GetMapping("/questions")
@@ -249,6 +253,16 @@ public class AdminController {
         return json(downstream.auth("POST", "/internal/v1/users/" + id + "/resend-verification", "{}", userId));
     }
 
+    @PatchMapping("/users/{id}/email")
+    public ResponseEntity<String> changeEmail(
+            @PathVariable String id,
+            @RequestBody String body,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        auditService.record(userId, "USER_CHANGE_EMAIL", id);
+        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/email", body, userId));
+    }
+
     @PatchMapping("/users/{id}/verify")
     public ResponseEntity<String> forceVerify(
             @PathVariable String id,
@@ -281,7 +295,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        return json(downstream.users("GET", "/internal/v1/users/" + id + "/submissions", null, userId));
+        return catalogTitles.enrich(downstream.users("GET", "/internal/v1/users/" + id + "/submissions", null, userId), userId);
     }
 
     @GetMapping("/users/{id}/submissions/{submissionId}")
@@ -290,7 +304,7 @@ public class AdminController {
             @PathVariable String submissionId,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        return json(downstream.users("GET", "/internal/v1/users/" + id + "/submissions/" + submissionId, null, userId));
+        return catalogTitles.enrich(downstream.users("GET", "/internal/v1/users/" + id + "/submissions/" + submissionId, null, userId), userId);
     }
 
     @GetMapping("/payments")

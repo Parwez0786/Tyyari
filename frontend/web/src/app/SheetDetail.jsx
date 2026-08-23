@@ -4,10 +4,17 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout";
 import ModeOverlay from "../components/ModeOverlay";
 import ProblemCard from "../components/ProblemCard";
+import ThemeCard from "../components/ThemeCard";
 import { completedSet, countCompleted, Donut } from "../components/ProgressCharts";
-import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
 import { typeLabel } from "../data/labels";
 import { contentApi, userApi } from "../services/api";
+
+const HERO_BY_TYPE = {
+  HLD: "brand",
+  LLD: "blue",
+  DSA: "mint",
+  FRONTEND: "violet",
+};
 
 export default function SheetDetail() {
   const { id } = useParams();
@@ -49,36 +56,31 @@ export default function SheetDetail() {
       <Link to={backTo} className="text-sm font-medium text-brand">{backLabel}</Link>
       {query.isLoading && <p className="mt-8 text-sm text-mute">Loading sheet…</p>}
       {query.isError && (
-        <section className="mx-auto mt-16 max-w-lg text-center">
+        <ThemeCard className="mx-auto mt-8 max-w-lg text-center sm:p-8">
           <h1 className="text-3xl font-extrabold tracking-tight">Sheet not found</h1>
           <p className="mt-3 text-sm text-mute">This set is unpublished or the link is wrong.</p>
-          <Link to="/practice/HLD" className="btn-black mt-8">Open practice</Link>
-        </section>
+          <Link to="/practice/HLD" className="btn-brand mt-8 inline-flex">Open practice</Link>
+        </ThemeCard>
       )}
       {sheet && (
         <>
-          <section className="mx-auto mt-6 max-w-3xl text-center">
-            <div className="flex items-center justify-center gap-2">
-              <DifficultyBadge difficulty={sheet.difficulty} />
-              <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+          <ThemeCard tone={HERO_BY_TYPE[sheet.type] || "brand"} className="mt-4 sm:p-8" innerClassName="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="tab-chip tab-chip-on !inline-flex !px-2.5 !py-0.5 !text-[10px] !font-bold uppercase tracking-wide">
                 {typeLabel(sheet.type)}
-              </span>
+              </p>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">{sheet.title}</h1>
+              <p className="mt-3 max-w-xl text-[15px] text-mute">{sheet.description}</p>
+              <p className="mt-3 text-sm text-mute">Same question list for every user on Tyyari.</p>
             </div>
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">{sheet.title}</h1>
-            <p className="mt-3 text-[15px] text-mute">{sheet.description}</p>
-            <p className="mt-3 text-sm text-mute">Same question list for every user on Tyyari.</p>
-            <div className="mt-4 flex justify-center">
-              <CompanyTags companies={sheet.companies} />
-            </div>
-          </section>
-          <section className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/10 bg-card p-5">
             <Donut
               value={completed}
               total={questions.length}
-              label={`You have completed ${completed} of ${questions.length} questions on this sheet.`}
+              label={`${completed} of ${questions.length} completed`}
+              className="shrink-0 justify-center lg:w-40 lg:flex-col lg:text-center"
             />
-          </section>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          </ThemeCard>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
             {questions.map((question) => (
               <ProblemCard
                 key={question.id}

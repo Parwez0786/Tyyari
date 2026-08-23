@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Layout from "../components/Layout";
 import Avatar from "../components/Avatar";
+import ThemeCard from "../components/ThemeCard";
 import { DifficultyBadge } from "../components/QuestionMeta";
 import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { contentApi, userApi, authApi } from "../services/api";
@@ -35,6 +36,7 @@ const TRACKS = [
     sheet: "/sheets/hld-core-sheet",
     Icon: Network,
     accent: "from-orange-500/20 to-amber-500/5",
+    chip: "bg-brand/15 text-brand",
   },
   {
     type: "LLD",
@@ -44,6 +46,7 @@ const TRACKS = [
     sheet: "/sheets/lld-machine-coding",
     Icon: Puzzle,
     accent: "from-sky-500/20 to-cyan-500/5",
+    chip: "bg-sky-500/15 text-sky-400",
   },
   {
     type: "DSA",
@@ -53,6 +56,7 @@ const TRACKS = [
     sheet: "/sheets/dsa-sde-sheet",
     Icon: Code2,
     accent: "from-emerald-500/20 to-teal-500/5",
+    chip: "bg-emerald-500/15 text-emerald-400",
   },
   {
     type: "FRONTEND",
@@ -62,6 +66,7 @@ const TRACKS = [
     sheet: "/sheets/frontend-ui-sheet",
     Icon: LayoutTemplate,
     accent: "from-fuchsia-500/20 to-pink-500/5",
+    chip: "bg-fuchsia-500/15 text-fuchsia-400",
   },
   {
     type: "CS",
@@ -70,6 +75,7 @@ const TRACKS = [
     practice: "/practice/CS",
     Icon: BookOpen,
     accent: "from-lime-500/20 to-emerald-500/5",
+    chip: "bg-lime-500/15 text-lime-400",
   },
   {
     type: "OA",
@@ -78,6 +84,7 @@ const TRACKS = [
     practice: "/practice/OA",
     Icon: Camera,
     accent: "from-blue-500/20 to-indigo-500/5",
+    chip: "bg-blue-500/15 text-premium",
   },
 ];
 
@@ -185,10 +192,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-card p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="relative flex flex-wrap items-start gap-5">
+      <ThemeCard className="sm:p-8" innerClassName="flex flex-wrap items-start gap-5">
           <Avatar name={profile?.name} email={email} size="lg" square />
           <div className="min-w-0 flex-1">
             <p className="font-hand text-2xl text-brand">{greeting()}</p>
@@ -198,23 +202,23 @@ export default function Dashboard() {
               <p className="mt-2 text-sm text-hard">Could not load your profile. Refresh — your streak still lives on the server.</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-brand/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand">
+              <span className="tab-chip tab-chip-on !font-bold uppercase tracking-wide">
                 {xp.name}
               </span>
               {profile?.targetRole && (
-                <Link to="/learn" className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-ink hover:bg-white/10">
+                <Link to="/learn" className="tab-chip">
                   {targetRoleLabel(profile.targetRole)} path
                 </Link>
               )}
               {companies.map((name) => (
-                <span key={name} className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-mute">{name}</span>
+                <span key={name} className="tab-chip">{name}</span>
               ))}
               {entitled ? (
-                <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-premium">
+                <span className="rounded-full border border-premium/30 bg-blue-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-premium">
                   Premium
                 </span>
               ) : (
-                <Link to="/premium" className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-premium hover:bg-blue-500/25">
+                <Link to="/premium" className="rounded-full border border-premium/30 bg-blue-500/15 px-3 py-1.5 text-xs font-semibold text-premium hover:bg-blue-500/25">
                   Upgrade
                 </Link>
               )}
@@ -228,7 +232,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[220px]">
-            <div className={`rounded-2xl border px-4 py-3 ${streak ? "border-brand/40 bg-brand/10" : "border-line bg-white/5"}`}>
+            <div className={`rounded-2xl border px-4 py-3 ${streak ? "border-brand/40 bg-brand/10" : "border-line bg-field"}`}>
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-mute">
                 <Flame size={14} className={streak ? "text-brand" : "text-mute"} />
                 Streak
@@ -240,18 +244,17 @@ export default function Dashboard() {
               <p className="mt-1 text-xs text-mute">{todayDone ? `${todayDone} submitted today` : "Submit once to keep it"}</p>
             </div>
             <WeekStrip week={week} />
-            <div className="rounded-2xl border border-line bg-white/5 px-4 py-3">
+            <div className="rounded-2xl border border-line bg-field px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-mute">This week</p>
               <p className="mt-1 text-lg font-extrabold">{weekDone}/{WEEK_GOAL}</p>
               <ProgressBar label="Weekly quest" value={Math.min(weekDone, WEEK_GOAL)} total={WEEK_GOAL} />
             </div>
           </div>
-        </div>
-      </section>
+      </ThemeCard>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         {quest && (
-          <article className="overflow-hidden rounded-[28px] border border-line bg-gradient-to-br from-brand/15 via-card to-card p-6">
+          <ThemeCard>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
               <Zap size={12} />
               Today&apos;s {questType} quest
@@ -264,10 +267,10 @@ export default function Dashboard() {
             <Link to={hrefFor(quest.id, quest.type)} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
               Solve now
             </Link>
-          </article>
+          </ThemeCard>
         )}
         {lastQuestion ? (
-          <article className="rounded-[28px] border border-line bg-card p-6">
+          <ThemeCard tone="quiet">
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-mute">
               <Undo2 size={12} />
               Jump back in
@@ -283,18 +286,18 @@ export default function Dashboard() {
             >
               Resume
             </Link>
-          </article>
+          </ThemeCard>
         ) : (
-          <article className="rounded-[28px] border border-dashed border-line bg-card p-6">
+          <ThemeCard tone="quiet" className="border-dashed">
             <p className="label-caps">Jump back in</p>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight">No save yet</h2>
             <p className="mt-2 text-sm text-mute">Submit any problem and this tile becomes your resume button.</p>
-          </article>
+          </ThemeCard>
         )}
       </section>
 
-      <section className="mt-6 overflow-hidden rounded-[28px] border border-line bg-gradient-to-br from-brand/15 via-card to-card p-6">
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+      <ThemeCard tone="blue" className="mt-6">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-premium">
           <Map size={12} />
           Roadmap
         </p>
@@ -305,11 +308,11 @@ export default function Dashboard() {
         <Link to={`/learn?role=${pathRole}`} className="btn-brand mt-5 inline-flex !px-5 !py-2.5">
           Open path
         </Link>
-      </section>
+      </ThemeCard>
 
       <section className="mt-6 grid gap-4 md:grid-cols-3">
         {gap && (
-          <article className="rounded-[24px] border border-line bg-card p-5">
+          <article className={`rounded-[24px] border border-line bg-gradient-to-br p-5 ${gap.accent}`}>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-brand">
               <Target size={12} />
               Weakest track
@@ -320,8 +323,8 @@ export default function Dashboard() {
           </article>
         )}
         {surprise && (
-          <article className="rounded-[24px] border border-line bg-card p-5">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
+          <ThemeCard tone="violet" compact>
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-fuchsia-400">
               <Shuffle size={12} />
               Surprise round
             </p>
@@ -333,20 +336,20 @@ export default function Dashboard() {
                 Shuffle
               </button>
             </div>
-          </article>
+          </ThemeCard>
         )}
-        <article className="rounded-[24px] border border-line bg-card p-5">
+        <ThemeCard tone="quiet" compact>
           <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
             <Sparkles size={12} />
             Coach note
           </p>
           <h3 className="mt-2 text-lg font-bold">Tip of the day</h3>
           <p className="mt-2 text-sm leading-6 text-mute">{tip}</p>
-        </article>
+        </ThemeCard>
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="quiet">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="label-caps">Your report</p>
@@ -366,9 +369,9 @@ export default function Dashboard() {
             <Stat label="OA saved" value={`${progress?.oaCompleted || 0}/${oaTotal || 0}`} hint="timed rounds" />
             <Stat label="Today" value={`${todayDone}`} hint="unique submits" />
           </div>
-        </article>
+        </ThemeCard>
 
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="blue">
           <p className="label-caps">Badges</p>
           <h2 className="mt-1 text-xl font-extrabold tracking-tight">Earn the next one</h2>
           {nextBadge && (
@@ -387,13 +390,13 @@ export default function Dashboard() {
             <BadgeRow earned={(byType.HLD || 0) >= 1} title="System designer" detail="Submit one HLD design" />
             <BadgeRow earned={sheetDone >= 3} title="Sheet hunter" detail="Finish 3 sheet problems" />
           </div>
-        </article>
+        </ThemeCard>
       </section>
 
       {(companyItems.length > 0 || oaSet) && (
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
           {companyItems.length > 0 && (
-            <article className="rounded-[28px] border border-line bg-card p-6">
+            <ThemeCard tone="quiet">
               <p className="label-caps">Company drill</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">{company} tagged problems</h2>
               <p className="mt-2 text-sm text-mute">From your target list. Clear these before a loop.</p>
@@ -402,17 +405,17 @@ export default function Dashboard() {
                   <Link
                     key={question.id}
                     to={hrefFor(question.id, question.type)}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 hover:border-brand/40"
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-field px-4 py-3 hover:border-brand/40"
                   >
                     <span className="min-w-0 truncate font-semibold">{question.title}</span>
                     <span className="shrink-0 text-xs text-mute">{typeLabel(question.type)}</span>
                   </Link>
                 ))}
               </div>
-            </article>
+            </ThemeCard>
           )}
           {oaSet && (
-            <article className="rounded-[28px] border border-line bg-gradient-to-br from-blue-500/15 via-card to-card p-6">
+            <ThemeCard tone="blue">
               <p className="label-caps">Simulate pressure</p>
               <h2 className="mt-1 text-xl font-extrabold tracking-tight">{oaSet.title}</h2>
               <p className="mt-2 text-sm text-mute">
@@ -421,7 +424,7 @@ export default function Dashboard() {
               <Link to="/practice/OA" className="btn-ghost mt-5 inline-flex !px-5 !py-2.5">
                 Enter OA lobby
               </Link>
-            </article>
+            </ThemeCard>
           )}
         </section>
       )}
@@ -442,10 +445,10 @@ export default function Dashboard() {
             return (
               <article
                 key={track.type}
-                className={`group flex flex-col rounded-[24px] border border-line bg-gradient-to-br ${track.accent} p-5 transition hover:-translate-y-0.5 hover:border-brand/40`}
+                className={`group flex h-full flex-col rounded-[24px] border border-line bg-gradient-to-br p-5 transition hover:-translate-y-0.5 hover:border-brand/40 ${track.accent}`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/20 text-ink">
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${track.chip}`}>
                     <Icon size={18} />
                   </span>
                   <span className="text-2xl font-extrabold tabular-nums text-ink">{pct}%</span>
@@ -460,7 +463,7 @@ export default function Dashboard() {
                     Play
                   </Link>
                   {track.sheet && (
-                    <Link to={track.sheet} className="inline-flex items-center gap-1.5 rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10">
+                    <Link to={track.sheet} className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-card/80 px-4 py-2 text-sm font-semibold hover:border-brand/40">
                       <ListChecks size={14} className="text-brand" />
                       Sheet
                     </Link>
@@ -473,7 +476,7 @@ export default function Dashboard() {
       </section>
 
       {queue.length > 0 && (
-        <section className="mt-6 rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="quiet" className="mt-6">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="label-caps">Queue</p>
@@ -486,7 +489,7 @@ export default function Dashboard() {
               <Link
                 key={question.id}
                 to={hrefFor(question.id, question.type)}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition hover:border-brand/40"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-field px-4 py-3.5 transition hover:border-brand/40"
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{index + 1}. {question.title}</p>
@@ -496,7 +499,7 @@ export default function Dashboard() {
               </Link>
             ))}
           </div>
-        </section>
+        </ThemeCard>
       )}
     </Layout>
   );
@@ -580,10 +583,10 @@ function daySeed() {
 
 function WeekStrip({ week }) {
   return (
-    <div className="flex items-center justify-between gap-1 rounded-2xl border border-line bg-white/5 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-1 rounded-2xl border border-line bg-field px-3 py-2.5">
       {week.map((on, index) => (
         <div key={DAY_LABELS[index]} className="flex flex-col items-center gap-1">
-          <span className={`h-2.5 w-2.5 rounded-full ${on ? "bg-brand shadow-[0_0_10px_rgba(249,115,22,0.8)]" : "bg-white/15"}`} />
+          <span className={`h-2.5 w-2.5 rounded-full ${on ? "bg-brand shadow-[0_0_10px_rgba(249,115,22,0.8)]" : "bg-line"}`} />
           <span className="text-[10px] font-semibold text-mute">{DAY_LABELS[index]}</span>
         </div>
       ))}
@@ -593,7 +596,7 @@ function WeekStrip({ week }) {
 
 function Stat({ label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-line bg-white/5 px-4 py-3">
+    <div className="rounded-2xl border border-line bg-field px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-mute">{label}</p>
       <p className="mt-1 text-xl font-extrabold">{value}</p>
       <p className="text-xs text-mute">{hint}</p>
@@ -603,7 +606,7 @@ function Stat({ label, value, hint }) {
 
 function BadgeRow({ earned, title, detail }) {
   return (
-    <div className={`flex items-start gap-3 rounded-2xl border px-3 py-2.5 ${earned ? "border-brand/30 bg-brand/10" : "border-line bg-white/5"}`}>
+    <div className={`flex items-start gap-3 rounded-2xl border px-3 py-2.5 ${earned ? "border-brand/30 bg-brand/10" : "border-line bg-field"}`}>
       <Sparkles size={16} className={`mt-0.5 ${earned ? "text-brand" : "text-mute"}`} />
       <div>
         <p className="text-sm font-semibold">{title}</p>

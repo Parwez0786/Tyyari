@@ -1,23 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Camera, Clock } from "lucide-react";
+import { BookOpen, Camera, Clock, Code2, LayoutTemplate, Network, Puzzle } from "lucide-react";
 import Layout from "../components/Layout";
 import ModeOverlay from "../components/ModeOverlay";
 import ProblemCard from "../components/ProblemCard";
+import ThemeCard from "../components/ThemeCard";
 import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
 import { formatClock, isActive, loadSession, remainingMs } from "../components/oa/session";
 import { typeLabel } from "../data/labels";
 import { contentApi } from "../services/api";
 
 const TYPES = [
-  { key: "HLD", title: "System Design (HLD)", detail: "High-level architecture problems" },
-  { key: "LLD", title: "Low Level Design", detail: "OOP and machine coding" },
-  { key: "DSA", title: "DSA", detail: "Data structures and algorithms" },
-  { key: "FRONTEND", title: "Frontend Coding", detail: "UI machine-coding rounds" },
-  { key: "CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks" },
-  { key: "OA", title: "Online Assessment", detail: "Timed DSA sets with camera check" },
+  { key: "HLD", title: "System Design (HLD)", detail: "High-level architecture problems", Icon: Network, accent: "from-orange-500/20 to-amber-500/5", chip: "bg-brand/15 text-brand", hero: "brand" },
+  { key: "LLD", title: "Low Level Design", detail: "OOP and machine coding", Icon: Puzzle, accent: "from-sky-500/20 to-cyan-500/5", chip: "bg-sky-500/15 text-sky-400", hero: "blue" },
+  { key: "DSA", title: "DSA", detail: "Data structures and algorithms", Icon: Code2, accent: "from-emerald-500/20 to-teal-500/5", chip: "bg-emerald-500/15 text-emerald-400", hero: "mint" },
+  { key: "FRONTEND", title: "Frontend Coding", detail: "UI machine-coding rounds", Icon: LayoutTemplate, accent: "from-fuchsia-500/20 to-pink-500/5", chip: "bg-fuchsia-500/15 text-fuchsia-400", hero: "violet" },
+  { key: "CS", title: "CS Fundamentals", detail: "OS, DBMS, OOP, networks", Icon: BookOpen, accent: "from-lime-500/20 to-emerald-500/5", chip: "bg-lime-500/15 text-lime-400", hero: "lime" },
+  { key: "OA", title: "Online Assessment", detail: "Timed DSA sets with camera check", Icon: Camera, accent: "from-blue-500/20 to-indigo-500/5", chip: "bg-blue-500/15 text-premium", hero: "blue" },
 ];
+
+const TYPE_META = Object.fromEntries(TYPES.map((item) => [item.key, item]));
 
 const SHEET_BY_TYPE = {
   HLD: "hld-core-sheet",
@@ -63,33 +66,33 @@ export default function Practice() {
   if (!selected) {
     return (
       <Layout>
-        <section className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Practice</h1>
-          <p className="mt-3 text-mute">The question library. Pick a track and open any problem.</p>
+        <ThemeCard className="sm:p-8">
+          <p className="label-caps">Library</p>
+          <h1 className="mt-2 text-4xl font-extrabold tracking-tight">Practice</h1>
+          <p className="mt-3 max-w-xl text-mute">The question library. Pick a track and open any problem.</p>
           <p className="mt-2 text-sm text-mute">
             Want a curated set instead?{" "}
             <Link to="/sheets/hld-core-sheet" className="font-semibold text-brand">Open sheets</Link>
           </p>
-        </section>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          {TYPES.map((item) =>
-            item.key === "HLD" || item.key === "LLD" || item.key === "DSA" || item.key === "OA" || item.key === "FRONTEND" || item.key === "CS" ? (
-              <Link key={item.key} to={`/practice/${item.key}`} className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-brand/40">
-                <p className="text-xs font-bold tracking-[0.14em] text-brand">{typeLabel(item.key)}</p>
+        </ThemeCard>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {TYPES.map((item) => {
+            const Icon = item.Icon;
+            return (
+              <Link
+                key={item.key}
+                to={`/practice/${item.key}`}
+                className={`group rounded-[24px] border border-line bg-gradient-to-br p-6 text-left transition hover:-translate-y-0.5 hover:border-brand/40 ${item.accent}`}
+              >
+                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.chip}`}>
+                  <Icon size={18} />
+                </span>
+                <p className="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-brand">{typeLabel(item.key)}</p>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
                 <p className="mt-1 text-sm text-mute">{item.detail}</p>
               </Link>
-            ) : (
-              <div key={item.key} className="rounded-2xl border border-line bg-surface p-6 text-left opacity-70">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold tracking-[0.14em] text-brand">{typeLabel(item.key)}</p>
-                  <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-mute">Coming soon</span>
-                </div>
-                <p className="mt-2 text-lg font-bold">{item.title}</p>
-                <p className="mt-1 text-sm text-mute">{item.detail}</p>
-              </div>
-            ),
-          )}
+            );
+          })}
         </div>
       </Layout>
     );
@@ -108,12 +111,12 @@ export default function Practice() {
 
 function ComingSoon({ title }) {
   return (
-    <section className="mx-auto max-w-lg py-16 text-center">
+    <ThemeCard className="mx-auto max-w-lg text-center sm:p-8">
       <p className="label-caps">Coming soon</p>
       <h1 className="mt-3 text-3xl font-extrabold tracking-tight">{title}</h1>
       <p className="mt-3 text-sm text-mute">This track is not open yet. HLD, LLD, DSA, Frontend, CS, and OA are available now.</p>
-      <Link to="/practice/HLD" className="btn-black mt-8">Open HLD practice</Link>
-    </section>
+      <Link to="/practice/HLD" className="btn-brand mt-8 inline-flex">Open HLD practice</Link>
+    </ThemeCard>
   );
 }
 
@@ -156,61 +159,70 @@ function TypeSheet({ type }) {
     navigate(`/questions/${picked.id}?view=${view}`);
   }
 
+  const track = TYPE_META[type];
+  const Icon = track?.Icon;
+
   return (
     <Layout>
-      <section className="mx-auto max-w-3xl text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
-        <p className="mt-3 text-[15px] text-mute">{meta.subtitle}</p>
+      <ThemeCard tone={track?.hero || "brand"} className="sm:p-8">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+          {Icon && <Icon size={12} />}
+          {typeLabel(type)}
+        </p>
+        <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
+        <p className="mt-3 max-w-2xl text-[15px] text-mute">{meta.subtitle}</p>
         {SHEET_BY_TYPE[type] && (
           <p className="mt-2 text-sm text-mute">
             Looking for a curated set?{" "}
             <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">Open {typeLabel(type)} sheet</Link>
           </p>
         )}
-      </section>
+      </ThemeCard>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <label className="relative block min-w-0 flex-1">
-          <span className="pointer-events-none absolute inset-y-0 left-4 z-10 flex items-center text-mute">
-            <SearchIcon />
-          </span>
-          <input
-            className="field search-field mt-0"
-            placeholder="Search by title, like two sum or YouTube"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <label className="relative block sm:w-40">
-          <select className="field mt-0 appearance-none pr-10" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-            <option value="">Difficulty</option>
-            {DIFFS.map((d) => (
-              <option key={d} value={d}>{d.charAt(0) + d.slice(1).toLowerCase()}</option>
-            ))}
-          </select>
-          <Chevron />
-        </label>
-        <label className="relative block sm:w-44">
-          <select className="field mt-0 appearance-none pr-10" value={company} onChange={(e) => setCompany(e.target.value)}>
-            <option value="">All Companies</option>
-            {(companiesQuery.data?.data ?? []).map((c) => (
-              <option key={c.id} value={c.name}>{c.name}</option>
-            ))}
-          </select>
-          <Chevron />
-        </label>
-        {type === "CS" && (
-          <label className="relative block sm:w-48">
-            <select className="field mt-0 appearance-none pr-10" value={topic} onChange={(e) => setTopic(e.target.value)}>
-              <option value="">All topics</option>
-              {(topicsQuery.data?.data ?? []).map((item) => (
-                <option key={item.id} value={item.name}>{item.name}</option>
+      <ThemeCard tone={track?.hero || "quiet"} compact className="mt-6">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <label className="relative block min-w-0 flex-1">
+            <span className="pointer-events-none absolute inset-y-0 left-4 z-10 flex items-center text-mute">
+              <SearchIcon />
+            </span>
+            <input
+              className="field search-field mt-0"
+              placeholder="Search by title, like two sum or YouTube"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+          <label className="relative block sm:w-40">
+            <select className="field mt-0 appearance-none pr-10" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+              <option value="">Difficulty</option>
+              {DIFFS.map((d) => (
+                <option key={d} value={d}>{d.charAt(0) + d.slice(1).toLowerCase()}</option>
               ))}
             </select>
             <Chevron />
           </label>
-        )}
-      </div>
+          <label className="relative block sm:w-44">
+            <select className="field mt-0 appearance-none pr-10" value={company} onChange={(e) => setCompany(e.target.value)}>
+              <option value="">All Companies</option>
+              {(companiesQuery.data?.data ?? []).map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <Chevron />
+          </label>
+          {type === "CS" && (
+            <label className="relative block sm:w-48">
+              <select className="field mt-0 appearance-none pr-10" value={topic} onChange={(e) => setTopic(e.target.value)}>
+                <option value="">All topics</option>
+                {(topicsQuery.data?.data ?? []).map((item) => (
+                  <option key={item.id} value={item.name}>{item.name}</option>
+                ))}
+              </select>
+              <Chevron />
+            </label>
+          )}
+        </div>
+      </ThemeCard>
 
       {questionsQuery.isLoading && (
         <p className="mt-10 text-center text-sm text-mute">Loading {type.toLowerCase()} problems…</p>
@@ -253,11 +265,15 @@ function OaSheet() {
 
   return (
     <Layout>
-      <section className="mx-auto max-w-3xl text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
-        <p className="mt-3 text-[15px] text-mute">{meta.subtitle}</p>
-      </section>
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <ThemeCard tone="blue" className="sm:p-8">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-premium">
+          <Camera size={12} />
+          Online Assessment
+        </p>
+        <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{meta.title}</h1>
+        <p className="mt-3 max-w-2xl text-[15px] text-mute">{meta.subtitle}</p>
+      </ThemeCard>
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
         {sets.map((set) => (
           <AssessmentCard key={set.id} set={set} onStart={() => navigate(`/oa/${set.id}/precheck`)} />
         ))}
@@ -282,11 +298,11 @@ function AssessmentCard({ set, onStart }) {
   const cta = submitted ? "View result" : active ? `Resume · ${formatClock(remainingMs(session))}` : "Start Assessment";
 
   return (
-    <article className="flex flex-col rounded-xl border border-white/10 bg-card p-5 shadow-sm">
+    <article className="flex flex-col rounded-[24px] border border-brand/25 bg-gradient-to-br from-blue-500/15 via-card to-card p-5">
       <div className="flex items-start justify-between gap-3">
         <DifficultyBadge difficulty={set.difficulty} />
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-mute">
-          <Camera size={13} className="text-brand" />
+          <Camera size={13} className="text-premium" />
           Camera
         </span>
       </div>
@@ -306,7 +322,7 @@ function AssessmentCard({ set, onStart }) {
         <button
           type="button"
           onClick={onStart}
-          className="flex w-full items-center justify-between rounded-xl bg-white/5 px-4 py-3 text-sm font-semibold hover:bg-white/10"
+          className="flex w-full items-center justify-between rounded-xl border border-line bg-field px-4 py-3 text-sm font-semibold hover:border-brand/40"
         >
           {cta}
           <span aria-hidden="true">→</span>

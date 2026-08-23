@@ -19,6 +19,7 @@ export default function Users() {
     rows,
     filtered,
     filteredOn,
+    clearFilters,
     toggleStatus,
     setRole,
     submitInvite,
@@ -32,7 +33,10 @@ export default function Users() {
         detail="Search and filter accounts. Invite a candidate or editor, then open a profile for support."
       />
 
-      <article className="rounded-[28px] border border-line bg-card p-6">
+      <article className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-6">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="relative">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Invite</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Create an account</h2>
         <p className="mt-1 text-sm text-mute">
@@ -82,18 +86,21 @@ export default function Users() {
             )}
           </div>
         )}
+        </div>
       </article>
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-mute">{filtered.length} of {rows.length} accounts</p>
-          <div className="flex flex-wrap items-center gap-2">
+      <article className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-blue-500/15 via-card to-card p-5 sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-brand/10 blur-3xl" />
+        <div className="relative">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Directory</p>
+            <p className="mt-2 text-sm text-mute">{filtered.length} of {rows.length} accounts</p>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
             {filteredOn && (
-              <button
-                type="button"
-                className="btn-ghost !px-3 !py-1.5 text-xs"
-                onClick={() => { setSearch(""); setFilters(EMPTY_FILTERS); }}
-              >
+              <button type="button" className="btn-ghost !px-3 !py-1.5 text-xs" onClick={clearFilters}>
                 Clear
               </button>
             )}
@@ -105,79 +112,85 @@ export default function Users() {
             />
           </div>
         </div>
-        <FilterRow
-          label="Role"
-          value={filters.role}
-          onChange={(role) => setFilters((prev) => ({ ...prev, role }))}
-          options={[
-            { key: "", label: `All · ${rows.length}` },
-            { key: "USER", label: roleLabel("USER") },
-            { key: "EDITOR", label: roleLabel("EDITOR") },
-            { key: "ADMIN", label: roleLabel("ADMIN") },
-          ]}
-        />
-        <FilterRow
-          label="Status"
-          value={filters.status}
-          onChange={(status) => setFilters((prev) => ({ ...prev, status }))}
-          options={[
-            { key: "", label: "All" },
-            { key: "ACTIVE", label: statusLabel("ACTIVE") },
-            { key: "DISABLED", label: statusLabel("DISABLED") },
-            { key: "DELETING", label: statusLabel("DELETING") },
-          ]}
-        />
-        <FilterRow
-          label="Access"
-          value={filters.access}
-          onChange={(access) => setFilters((prev) => ({ ...prev, access }))}
-          options={[
-            { key: "", label: "All" },
-            { key: "premium", label: "Premium" },
-            { key: "free", label: "Free" },
-          ]}
-        />
-        <FilterRow
-          label="Verified"
-          value={filters.verified}
-          onChange={(verified) => setFilters((prev) => ({ ...prev, verified }))}
-          options={[
-            { key: "", label: "All" },
-            { key: "yes", label: "Verified" },
-            { key: "no", label: "Unverified" },
-          ]}
-        />
-        <FilterRow
-          label="Sign-in"
-          value={filters.provider}
-          onChange={(provider) => setFilters((prev) => ({ ...prev, provider }))}
-          options={[
-            { key: "", label: "All" },
-            { key: "LOCAL", label: "Password" },
-            { key: "GOOGLE", label: "Google" },
-            { key: "GITHUB", label: "GitHub" },
-          ]}
-        />
-        <FilterRow
-          label="Onboarded"
-          value={filters.onboarded}
-          onChange={(onboarded) => setFilters((prev) => ({ ...prev, onboarded }))}
-          options={[
-            { key: "", label: "All" },
-            { key: "yes", label: "Done" },
-            { key: "no", label: "Not yet" },
-          ]}
-        />
-      </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <FilterSelect
+            label="Role"
+            value={filters.role}
+            onChange={(role) => setFilters((prev) => ({ ...prev, role }))}
+            options={[
+              { key: "", label: "All roles" },
+              { key: "USER", label: roleLabel("USER") },
+              { key: "EDITOR", label: roleLabel("EDITOR") },
+              { key: "ADMIN", label: roleLabel("ADMIN") },
+            ]}
+          />
+          <FilterSelect
+            label="Status"
+            value={filters.status}
+            onChange={(status) => setFilters((prev) => ({ ...prev, status }))}
+            options={[
+              { key: "", label: "All statuses" },
+              { key: "ACTIVE", label: statusLabel("ACTIVE") },
+              { key: "DISABLED", label: statusLabel("DISABLED") },
+              { key: "DELETING", label: statusLabel("DELETING") },
+            ]}
+          />
+          <FilterSelect
+            label="Access"
+            value={filters.access}
+            onChange={(access) => setFilters((prev) => ({ ...prev, access }))}
+            options={[
+              { key: "", label: "All access" },
+              { key: "premium", label: "Premium" },
+              { key: "free", label: "Free" },
+            ]}
+          />
+          <FilterSelect
+            label="Verified"
+            value={filters.verified}
+            onChange={(verified) => setFilters((prev) => ({ ...prev, verified }))}
+            options={[
+              { key: "", label: "All inboxes" },
+              { key: "yes", label: "Verified" },
+              { key: "no", label: "Unverified" },
+            ]}
+          />
+          <FilterSelect
+            label="Sign-in"
+            value={filters.provider}
+            onChange={(provider) => setFilters((prev) => ({ ...prev, provider }))}
+            options={[
+              { key: "", label: "All sign-in" },
+              { key: "LOCAL", label: "Password" },
+              { key: "GOOGLE", label: "Google" },
+              { key: "GITHUB", label: "GitHub" },
+            ]}
+          />
+          <FilterSelect
+            label="Onboarded"
+            value={filters.onboarded}
+            onChange={(onboarded) => setFilters((prev) => ({ ...prev, onboarded }))}
+            options={[
+              { key: "", label: "All onboarding" },
+              { key: "yes", label: "Done" },
+              { key: "no", label: "Not yet" },
+            ]}
+          />
+        </div>
+        </div>
+      </article>
 
       {usersQuery.isLoading && <p className="text-sm text-mute">Loading accounts…</p>}
       {usersQuery.isError && <p className="text-sm text-hard">{usersQuery.error.message || "Could not load users."}</p>}
 
-      <div className="space-y-3">
+      <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-5 sm:p-6">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="relative space-y-3">
         {filtered.map((u) => (
           <article
             key={u.id}
-            className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/90 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex min-w-0 items-center gap-3">
               <Avatar name={u.name} email={u.email} />
@@ -252,35 +265,29 @@ export default function Users() {
           </article>
         ))}
         {!usersQuery.isLoading && !filtered.length && (
-          <div className="rounded-2xl border border-line bg-surface px-5 py-8 text-center">
+          <div className="rounded-2xl border border-dashed border-line bg-surface/70 px-5 py-8 text-center">
             <p className="font-semibold">{rows.length ? "No accounts match" : "No accounts yet"}</p>
             <p className="mt-1 text-sm text-mute">
               {rows.length ? "Clear filters or try another search." : "Invite someone or wait for a candidate to register."}
             </p>
           </div>
         )}
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-function FilterRow({ label, value, onChange, options }) {
+function FilterSelect({ label, value, onChange, options }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="w-20 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">{label}</span>
-      {options.map((option) => (
-        <button
-          key={option.key || "all"}
-          type="button"
-          onClick={() => onChange(value === option.key ? "" : option.key)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            value === option.key ? "bg-brand/15 text-brand" : "bg-white/5 text-mute hover:text-ink"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <label className="block">
+      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">{label}</span>
+      <select className="field mt-2" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((option) => (
+          <option key={option.key || "all"} value={option.key}>{option.label}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
