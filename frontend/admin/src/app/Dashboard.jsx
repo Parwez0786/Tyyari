@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { BarChart, Donut, HBarList, countByDay, lastDays } from "../components/Charts";
 import PageHero from "../components/PageHero";
+import ThemeCard from "../components/ThemeCard";
 import { providerLabel, targetRoleLabel, typeLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
@@ -69,16 +70,17 @@ export default function Dashboard() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Candidates" value={candidates.length} hint={`${active} active · ${disabled} disabled`} />
-        <Stat label="Premium" value={premium} hint={candidates.length ? `${Math.round((100 * premium) / candidates.length)}% of accounts` : "From checkout"} />
+        <Stat label="Premium" value={premium} hint={candidates.length ? `${Math.round((100 * premium) / candidates.length)}% of accounts` : "From checkout"} tone="blue" />
         <Stat label="Practice submits" value={metrics.practiceSubmissions ?? 0} hint={`${metrics.oaSubmissions ?? 0} OA · ${metrics.uniqueSolvers ?? 0} solvers`} />
-        <Stat label="Active in 7 days" value={metrics.activeLast7Days ?? 0} hint="Users who submitted once" />
+        <Stat label="Active in 7 days" value={metrics.activeLast7Days ?? 0} hint="Users who submitted once" tone="blue" />
         <Stat label="Verified email" value={verified} hint={`${candidates.length - verified} still pending`} />
-        <Stat label="Onboarded" value={onboarded} hint={`${profiles} profiles created`} />
+        <Stat label="Onboarded" value={onboarded} hint={`${profiles} profiles created`} tone="blue" />
         <Stat label="Published questions" value={published} hint="Live on the candidate library" />
         <Stat
           label="CS quiz average"
           value={metrics.quizAvgPercent == null ? "—" : `${Math.round(metrics.quizAvgPercent)}%`}
           hint="Across submitted quizzes"
+          tone="blue"
         />
       </div>
 
@@ -86,7 +88,7 @@ export default function Dashboard() {
         <ChartCard kicker="Accounts" title="New signups" detail="Candidates created in the last 14 days.">
           <BarChart series={signups} />
         </ChartCard>
-        <ChartCard kicker="Practice" title="Submits" detail="Last answer saved per problem, last 14 days.">
+        <ChartCard kicker="Practice" title="Submits" detail="Last answer saved per problem, last 14 days." tone="blue">
           <BarChart series={submissionsByDay.length ? submissionsByDay : days.map((d) => ({ label: d.slice(5), value: 0 }))} color="#2563eb" />
         </ChartCard>
       </div>
@@ -103,7 +105,7 @@ export default function Dashboard() {
             ]}
           />
         </ChartCard>
-        <ChartCard kicker="Practice" title="Submits by track" detail="Which editors candidates actually finish.">
+        <ChartCard kicker="Practice" title="Submits by track" detail="Which editors candidates actually finish." tone="blue">
           {byType.some((row) => row.value) ? (
             <Donut
               center={metrics.submissions ?? 0}
@@ -120,7 +122,7 @@ export default function Dashboard() {
         <ChartCard kicker="Catalog" title="Published library" detail="Questions live per track.">
           <HBarList series={catalog} />
         </ChartCard>
-        <ChartCard kicker="Profiles" title="Target role" detail="What they picked in onboarding.">
+        <ChartCard kicker="Profiles" title="Target role" detail="What they picked in onboarding." tone="blue">
           <HBarList series={roles} color="#38bdf8" />
         </ChartCard>
         <ChartCard kicker="Profiles" title="Experience" detail="Fresher through senior tracks.">
@@ -132,7 +134,7 @@ export default function Dashboard() {
         <ChartCard kicker="Auth" title="Sign-in provider" detail="Password vs Google vs GitHub.">
           <HBarList series={providers} color="#e879f9" />
         </ChartCard>
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Jump in</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Act on the numbers</h2>
           <p className="mt-1 text-sm text-mute">Disable a stale account, or publish the track that is empty.</p>
@@ -144,30 +146,30 @@ export default function Dashboard() {
             <Link to="/oa" className="btn-ghost">OA sets</Link>
             <Link to="/audit" className="btn-ghost">Audit log</Link>
           </div>
-        </article>
+        </ThemeCard>
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, hint }) {
+function Stat({ label, value, hint, tone = "brand" }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
+    <ThemeCard tone={tone} compact>
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">{label}</p>
       <p className="mt-1 text-3xl font-extrabold tracking-tight">{value}</p>
       {hint && <p className="mt-1 text-xs text-mute">{hint}</p>}
-    </div>
+    </ThemeCard>
   );
 }
 
-function ChartCard({ kicker, title, detail, children }) {
+function ChartCard({ kicker, title, detail, children, tone = "brand" }) {
   return (
-    <article className="rounded-[28px] border border-line bg-card p-6">
+    <ThemeCard tone={tone}>
       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{kicker}</p>
       <h2 className="mt-2 text-xl font-extrabold tracking-tight">{title}</h2>
       {detail && <p className="mt-1 text-sm text-mute">{detail}</p>}
       <div className="mt-5">{children}</div>
-    </article>
+    </ThemeCard>
   );
 }
 

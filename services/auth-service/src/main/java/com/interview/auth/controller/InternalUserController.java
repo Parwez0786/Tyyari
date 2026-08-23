@@ -1,6 +1,7 @@
 package com.interview.auth.controller;
 
 import com.interview.auth.dto.ApiResponse;
+import com.interview.auth.dto.ChangeEmailRequest;
 import com.interview.auth.dto.InviteUserRequest;
 import com.interview.auth.dto.InviteUserResult;
 import com.interview.auth.dto.SupportMailResult;
@@ -68,6 +69,11 @@ public class InternalUserController {
     @PostMapping("/{id}/resend-verification")
     public ApiResponse<SupportMailResult> resendVerification(@PathVariable String id) {
         return ApiResponse.ok(authService.resendVerificationForUser(id));
+    }
+
+    @PatchMapping("/{id}/email")
+    public ApiResponse<SupportMailResult> changeEmail(@PathVariable String id, @RequestBody ChangeEmailRequest body) {
+        return ApiResponse.ok(authService.changeEmail(id, body == null ? null : body.email()));
     }
 
     @PatchMapping("/{id}/verify")

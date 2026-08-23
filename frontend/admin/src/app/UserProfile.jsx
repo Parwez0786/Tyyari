@@ -13,6 +13,7 @@ import {
   typeLabel,
   viewLabel,
 } from "../data/labels";
+import ThemeCard from "../components/ThemeCard";
 import { DAILY, EXPERIENCES, ROLES, formatWhen } from "../data/profile";
 import { useAdminUserProfile } from "../hooks/useAdminUserProfile";
 
@@ -45,6 +46,9 @@ export default function UserProfile() {
     supportNote,
     deleteEmail,
     setDeleteEmail,
+    newEmail,
+    setNewEmail,
+    changeEmail,
     fileIndex,
     setFileIndex,
     setSelectedId,
@@ -62,7 +66,7 @@ export default function UserProfile() {
       {loading && <p className="text-sm text-mute">Loading this profile…</p>}
       {error && <p className="text-sm text-hard">{error.message || "Could not load this profile."}</p>}
 
-      <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-card p-6 sm:p-8">
+      <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-5">
@@ -127,12 +131,42 @@ export default function UserProfile() {
       </section>
 
       {account && account.role !== "ADMIN" && (
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Support</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Help this inbox</h2>
           <p className="mt-1 text-sm text-mute">
-            Send a reset or verification email, mark the inbox verified, or kick every device. Disable also kills refresh tokens.
+            Fix a signup typo, send a reset or verification email, mark the inbox verified, or kick every device.
           </p>
+          {account.provider && account.provider !== "LOCAL" ? (
+            <p className="mt-5 text-sm text-mute">
+              This account signs in with {providerLabel(account.provider)}. Change the email on that provider.
+            </p>
+          ) : (
+            <>
+              <label className="mt-5 block max-w-md">
+                <p className="text-xs font-semibold uppercase tracking-wide text-mute">New login email</p>
+                <input
+                  className="field mt-2"
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder={account.email}
+                  autoComplete="off"
+                  disabled={Boolean(busy) || account.status === "DELETING"}
+                />
+              </label>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={Boolean(busy) || account.status === "DELETING" || !newEmail.trim()}
+                  onClick={changeEmail}
+                >
+                  {busy === "email" ? "Saving…" : "Change email"}
+                </button>
+              </div>
+            </>
+          )}
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => support("reset")}>
               {busy === "reset" ? "Sending…" : "Reset password"}
@@ -174,11 +208,11 @@ export default function UserProfile() {
               )}
             </div>
           )}
-        </article>
+        </ThemeCard>
       )}
 
       {account && account.role !== "ADMIN" && (
-        <article className="rounded-[28px] border border-rose-500/25 bg-card p-6">
+        <ThemeCard tone="danger">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Danger</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Delete account</h2>
           <p className="mt-1 text-sm text-mute">
@@ -209,10 +243,10 @@ export default function UserProfile() {
                   : "Delete account"}
             </button>
           </div>
-        </article>
+        </ThemeCard>
       )}
 
-      <article className="rounded-[28px] border border-line bg-card p-6">
+      <ThemeCard>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Last submission</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Read-only workspace</h2>
         <p className="mt-1 text-sm text-mute">
@@ -226,7 +260,7 @@ export default function UserProfile() {
           </p>
         )}
         {rows.length > 0 && (
-          <div className="mt-5 grid gap-4 lg:grid-cols-[220px_1fr]">
+          <div className="mt-5 grid gap-4 lg:grid-cols-[260px_1fr]">
             <ul className="space-y-2">
               {rows.map((item) => (
                 <li key={item.id}>
@@ -237,8 +271,14 @@ export default function UserProfile() {
                       item.id === activeId ? "border-brand/40 bg-brand/10" : "border-line bg-surface hover:border-brand/25"
                     }`}
                   >
-                    <p className="text-sm font-semibold">{item.questionType ? typeLabel(item.questionType) : "Practice"} · {scopeLabel(item.scope)}</p>
-                    <p className="mt-0.5 text-xs text-mute">{formatWhen(item.submittedAt)}</p>
+                    <p className="truncate text-sm font-semibold">
+                      {item.questionTitle || (item.questionType ? typeLabel(item.questionType) : "Practice")}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-mute">
+                      {item.assessmentSetTitle || scopeLabel(item.scope)}
+                      {" · "}
+                      {formatWhen(item.submittedAt)}
+                    </p>
                   </button>
                 </li>
               ))}
@@ -246,10 +286,10 @@ export default function UserProfile() {
             <SubmissionRead submission={submission} loading={detailLoading} fileIndex={fileIndex} onFile={setFileIndex} />
           </div>
         )}
-      </article>
+      </ThemeCard>
 
       {account && account.role !== "ADMIN" && (
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Billing</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Premium access</h2>
           <p className="mt-1 text-sm text-mute">
@@ -281,7 +321,7 @@ export default function UserProfile() {
           </div>
           <div className="mt-5 space-y-2">
             {payments.slice(0, 5).map((item) => (
-              <div key={item.id || item.providerRef} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
+              <div key={item.id || item.providerRef} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface/90 px-4 py-2.5 text-sm">
                 <span className="font-semibold">{paymentLabel(item.status)}</span>
                 <span className="text-mute">{item.displayAmount} · {providerLabel(item.provider)}</span>
                 <span className="text-xs text-mute">{formatWhen(item.createdAt)}</span>
@@ -291,10 +331,10 @@ export default function UserProfile() {
               <p className="text-sm text-mute">No checkout or grant rows yet.</p>
             )}
           </div>
-        </article>
+        </ThemeCard>
       )}
 
-      <article className="rounded-[28px] border border-line bg-card p-6">
+      <ThemeCard>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Identity</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">How they show up</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -305,9 +345,9 @@ export default function UserProfile() {
             <p className="mt-2 rounded-2xl bg-field px-4 py-3.5 text-sm leading-6">{profile.bio || "No bio yet."}</p>
           </div>
         </div>
-      </article>
+      </ThemeCard>
 
-      <article className="rounded-[28px] border border-line bg-card p-6">
+      <ThemeCard>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Target role</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">What they are preparing for</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -333,9 +373,9 @@ export default function UserProfile() {
             );
           })}
         </div>
-      </article>
+      </ThemeCard>
 
-      <article className="rounded-[28px] border border-line bg-card p-6">
+      <ThemeCard tone="blue">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Target companies</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Company drill list</h2>
         <div className="mt-5 flex flex-wrap gap-2">
@@ -348,10 +388,10 @@ export default function UserProfile() {
             <p className="text-sm text-mute">No target companies saved.</p>
           )}
         </div>
-      </article>
+      </ThemeCard>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Experience</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Where they are now</h2>
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -370,8 +410,8 @@ export default function UserProfile() {
               );
             })}
           </div>
-        </article>
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        </ThemeCard>
+        <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Daily goal</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">How long they sit</h2>
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -390,11 +430,11 @@ export default function UserProfile() {
               );
             })}
           </div>
-        </article>
+        </ThemeCard>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Practice</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Progress</h2>
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -416,9 +456,9 @@ export default function UserProfile() {
           <div className="mt-5">
             <HBarList series={byType} />
           </div>
-        </article>
+        </ThemeCard>
 
-        <article className="rounded-[28px] border border-line bg-card p-6">
+        <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Account</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Access and prefs</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -448,7 +488,7 @@ export default function UserProfile() {
             <Field label="Theme" value={themeLabel(prefs.theme)} />
             <Field label="Email notices" value={prefs.emailNotifications ? "On" : "Off"} />
           </div>
-        </article>
+        </ThemeCard>
       </div>
     </div>
   );
@@ -471,13 +511,31 @@ function SubmissionRead({ submission, loading, fileIndex, onFile }) {
   const quiz = submission.quizAnswers || [];
   return (
     <div className="min-w-0 space-y-4">
+      <div>
+        <p className="font-semibold">{submission.questionTitle || typeLabel(submission.questionType) || "Submission"}</p>
+        {submission.assessmentSetTitle && (
+          <p className="mt-0.5 text-sm text-mute">{submission.assessmentSetTitle}</p>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-bold tracking-wide text-mute">{typeLabel(submission.questionType)}</span>
         {submission.language && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{languageLabel(submission.language)}</span>}
         {submission.view && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{viewLabel(submission.view)}</span>}
+        <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-mute">{scopeLabel(submission.scope)}</span>
         <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-mute">{formatWhen(submission.submittedAt)}</span>
       </div>
-      <p className="truncate text-xs text-mute">Question {submission.questionId}</p>
+      <div className="flex flex-wrap gap-3 text-sm">
+        {submission.questionId && (
+          <Link to={`/questions/${submission.questionId}/view`} className="font-semibold text-brand">
+            View question
+          </Link>
+        )}
+        {submission.assessmentSetId && (
+          <Link to={`/oa/${submission.assessmentSetId}/view`} className="font-semibold text-brand">
+            View OA set
+          </Link>
+        )}
+      </div>
 
       {files.length > 0 && (
         <div>
@@ -549,7 +607,7 @@ function canvasSummary(canvas) {
 
 function MiniStat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3">
+    <div className="rounded-2xl border border-line bg-surface/90 px-4 py-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">{label}</p>
       <p className="mt-1 text-2xl font-extrabold tracking-tight">{value}</p>
     </div>

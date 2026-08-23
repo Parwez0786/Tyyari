@@ -120,6 +120,12 @@ const ACTIONS = {
     pill: "bg-sky-500/15 text-sky-400",
     href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },
+  USER_CHANGE_EMAIL: {
+    title: "Changed login email",
+    detail: "Fixed the inbox after a signup typo. They must verify the new address.",
+    pill: "bg-sky-500/15 text-sky-400",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
+  },
   USER_FORCE_VERIFY: {
     title: "Marked email verified",
     detail: "Admin verified this inbox without the email link.",
@@ -252,9 +258,7 @@ function FilterChip({ active, onClick, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-        active ? "bg-brand/15 text-brand" : "bg-white/5 text-mute hover:text-ink"
-      }`}
+      className={`tab-chip ${active ? "tab-chip-on" : ""}`}
     >
       {label}
     </button>

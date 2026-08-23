@@ -27,6 +27,7 @@ export function useAdminUserProfile(id) {
   const [busy, setBusy] = useState("");
   const [supportNote, setSupportNote] = useState(null);
   const [deleteEmail, setDeleteEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [fileIndex, setFileIndex] = useState(0);
 
@@ -114,6 +115,36 @@ export function useAdminUserProfile(id) {
       setSupportNote({ message: "All refresh tokens were revoked. They must sign in again." });
     } catch (err) {
       await dialog.alert(err.message || "Could not revoke sessions.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function changeEmail() {
+    if (locked()) return;
+    const next = newEmail.trim().toLowerCase();
+    if (!next || !next.includes("@") || next.includes(" ")) {
+      await dialog.alert("Enter a valid email address.", { title: "Check the email" });
+      return;
+    }
+    if (next === String(account.email || "").toLowerCase()) {
+      await dialog.alert("That is already the login email.", { title: "No change" });
+      return;
+    }
+    if (!await dialog.confirm(`Change login from ${account.email} to ${next}? They must verify the new inbox, and every device will be signed out.`, {
+      title: "Change email",
+      confirmLabel: "Change email",
+      tone: "warning",
+    })) return;
+    setBusy("email");
+    setSupportNote(null);
+    try {
+      const json = await adminApi.changeEmail(account.id, next);
+      setSupportNote(json.data);
+      setNewEmail("");
+      await refreshAccount();
+    } catch (err) {
+      await dialog.alert(err.message || "Could not change this email.");
     } finally {
       setBusy("");
     }
@@ -221,6 +252,9 @@ export function useAdminUserProfile(id) {
     supportNote,
     deleteEmail,
     setDeleteEmail,
+    newEmail,
+    setNewEmail,
+    changeEmail,
     fileIndex,
     setFileIndex,
     setSelectedId,

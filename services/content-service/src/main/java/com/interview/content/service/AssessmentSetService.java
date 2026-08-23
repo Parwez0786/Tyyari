@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class AssessmentSetService {
@@ -64,6 +67,30 @@ public class AssessmentSetService {
         return sets.findById(id)
                 .or(() -> sets.findBySlug(id))
                 .orElseThrow(() -> new ApiException(ErrorCode.ASSESSMENT_NOT_FOUND, "Assessment not found", HttpStatus.NOT_FOUND));
+    }
+
+    public Map<String, String> titles(Collection<String> ids) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (ids == null || ids.isEmpty()) {
+            return out;
+        }
+        List<String> wanted = ids.stream().filter(StringUtils::hasText).map(String::trim).distinct().toList();
+        for (AssessmentSet set : sets.findAllById(wanted)) {
+            if (StringUtils.hasText(set.getTitle())) {
+                out.put(set.getId(), set.getTitle());
+            }
+        }
+        for (String id : wanted) {
+            if (out.containsKey(id)) {
+                continue;
+            }
+            sets.findBySlug(id).ifPresent(set -> {
+                if (StringUtils.hasText(set.getTitle())) {
+                    out.put(id, set.getTitle());
+                }
+            });
+        }
+        return out;
     }
 
     public AssessmentSet create(AssessmentWriteRequest req) {

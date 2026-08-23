@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import QuestionOrderPicker from "../components/QuestionOrderPicker";
 import { adminApi } from "../services/api";
@@ -21,6 +21,7 @@ function blank() {
 export default function OaForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const readOnly = Boolean(useMatch("/oa/:id/view"));
   const [form, setForm] = useState(blank);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -68,6 +69,7 @@ export default function OaForm() {
 
   async function onSubmit(e) {
     e.preventDefault();
+    if (readOnly) return;
     const message = validate();
     if (message) {
       setError(message);
@@ -100,10 +102,16 @@ export default function OaForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <PageHero
         kicker="OA"
-        title={id ? "Edit OA set" : "New OA set"}
-        detail="Title, duration, company, difficulty, and the DSA questions in the timed camera round."
-        action={<Link to="/oa" className="btn-ghost">Cancel</Link>}
+        title={readOnly ? (form.title || "OA set") : id ? "Edit OA set" : "New OA set"}
+        detail={readOnly
+          ? "Read-only catalog copy of the timed set they sat."
+          : "Title, duration, company, difficulty, and the DSA questions in the timed camera round."}
+        action={readOnly
+          ? <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>Back</button>
+          : <Link to="/oa" className="btn-ghost">Cancel</Link>}
       />
+
+      <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">
 
       {existing.isLoading && id && <p className="text-sm text-mute">Loading OA set…</p>}
       {existing.isError && <p className="text-sm text-hard">{existing.error.message || "Could not load this OA set."}</p>}
@@ -166,23 +174,27 @@ export default function OaForm() {
             onChange={(questionSlugs) => set("questionSlugs", questionSlugs)}
             pool={pool}
             loading={poolQuery.isLoading}
+            readOnly={readOnly}
             emptyHint="Add DSA problems from the pool. Candidates see this order."
           />
         </div>
       </article>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
-        <label className="flex items-center gap-2 text-sm font-semibold">
-          <input type="checkbox" checked={form.published} onChange={(e) => set("published", e.target.checked)} />
-          Publish now
-        </label>
-        <div className="flex gap-2">
-          {error && <p className="self-center text-sm text-hard">{error}</p>}
-          <button type="submit" className="btn-brand" disabled={saving}>
-            {saving ? "Saving…" : id ? "Save OA set" : "Create OA set"}
-          </button>
+      {!readOnly && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" checked={form.published} onChange={(e) => set("published", e.target.checked)} />
+            Publish now
+          </label>
+          <div className="flex gap-2">
+            {error && <p className="self-center text-sm text-hard">{error}</p>}
+            <button type="submit" className="btn-brand" disabled={saving}>
+              {saving ? "Saving…" : id ? "Save OA set" : "Create OA set"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+      </fieldset>
     </form>
   );
 }

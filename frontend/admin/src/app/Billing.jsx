@@ -75,9 +75,7 @@ export default function Billing() {
               key={key || "all"}
               type="button"
               onClick={() => setStatus(key === status ? "" : key)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                status === key ? "bg-brand/15 text-brand" : "bg-white/5 text-mute hover:text-ink"
-              }`}
+              className={`tab-chip ${status === key ? "tab-chip-on" : ""}`}
             >
               {key ? paymentLabel(key) : `All · ${items.length}`}
             </button>

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useMatch, useNavigate, useParams } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import { subjectLabel } from "../data/labels";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
@@ -37,6 +37,7 @@ function blank(type) {
 export default function QuestionForm() {
   const { id, type: typeParam } = useParams();
   const navigate = useNavigate();
+  const readOnly = Boolean(useMatch("/questions/:id/view"));
   const createType = typeParam ? String(typeParam).toUpperCase() : "";
   const knownCreate = Boolean(createType && QUESTION_TYPES.some((item) => item.key === createType));
   const [form, setForm] = useState(() => blank(createType || "DSA"));
@@ -132,6 +133,7 @@ export default function QuestionForm() {
 
   async function onSubmit(e) {
     e.preventDefault();
+    if (readOnly) return;
     const message = validate();
     if (message) {
       setError(message);
@@ -196,10 +198,16 @@ export default function QuestionForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <PageHero
         kicker={meta.key}
-        title={id ? `Edit ${meta.title}` : meta.add}
-        detail={`${meta.hook} Optional extras sit below — hidden cases, starter files, or labels.`}
-        action={<Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>}
+        title={readOnly ? (form.title || meta.title) : id ? `Edit ${meta.title}` : meta.add}
+        detail={readOnly
+          ? "Read-only catalog copy of the prompt they submitted against."
+          : `${meta.hook} Optional extras sit below — hidden cases, starter files, or labels.`}
+        action={readOnly
+          ? <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>Back</button>
+          : <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>}
       />
+
+      <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">
 
       <article className={`rounded-[28px] border border-line bg-gradient-to-br p-6 ${meta.accent}`}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Required</p>
@@ -511,10 +519,13 @@ export default function QuestionForm() {
       </article>
 
       {error && <p className="text-sm text-hard">{error}</p>}
-      <div className="flex flex-wrap gap-3">
-        <button className="btn-brand" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
-        <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
-      </div>
+      {!readOnly && (
+        <div className="flex flex-wrap gap-3">
+          <button className="btn-brand" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+          <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
+        </div>
+      )}
+      </fieldset>
     </form>
   );
 }

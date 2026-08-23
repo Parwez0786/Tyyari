@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useDialog } from "../components/Dialog";
-import { QUESTION_TYPES } from "../data/questionTypes";
+import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
 const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONTEND"].includes(type.key));
@@ -9,12 +10,15 @@ const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONT
 export function useAdminSheets() {
   const client = useQueryClient();
   const dialog = useDialog();
+  const [params, setParams] = useSearchParams();
   const query = useQuery({
     queryKey: ["admin-sheets"],
     queryFn: adminApi.sheets,
   });
   const items = query.data?.data ?? [];
   const [search, setSearch] = useState("");
+  const requested = String(params.get("type") || "").toUpperCase();
+  const tab = SHEET_TYPES.some((type) => type.key === requested) ? requested : SHEET_TYPES[0].key;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -27,13 +31,28 @@ export function useAdminSheets() {
     );
   }, [items, search]);
 
-  const grouped = useMemo(
+  const tabs = useMemo(
     () => SHEET_TYPES.map((type) => ({
+      ...type,
+      count: items.filter((item) => String(item.type || "").toUpperCase() === type.key).length,
+    })),
+    [items],
+  );
+
+  const selected = useMemo(() => {
+    const type = typeMeta(tab);
+    return {
       type,
       items: filtered.filter((item) => String(item.type || "").toUpperCase() === type.key),
-    })),
-    [filtered],
-  );
+    };
+  }, [filtered, tab]);
+
+  function setTab(key) {
+    const next = new URLSearchParams(params);
+    if (key === SHEET_TYPES[0].key) next.delete("type");
+    else next.set("type", key);
+    setParams(next, { replace: true });
+  }
 
   async function togglePublish(sheet) {
     await adminApi.publishSheet(sheet.id, !sheet.published);
@@ -56,8 +75,10 @@ export function useAdminSheets() {
     items,
     search,
     setSearch,
-    filtered,
-    grouped,
+    tab,
+    setTab,
+    tabs,
+    selected,
     togglePublish,
     remove,
   };

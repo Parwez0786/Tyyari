@@ -327,6 +327,52 @@ public class AuthService {
         return user;
     }
 
+    public SupportMailResult changeEmail(String userId, String email) {
+        User user = getUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change an admin email from support", HttpStatus.BAD_REQUEST);
+        }
+        rejectIfDeleting(user);
+        if (user.getProvider() != null && !"LOCAL".equalsIgnoreCase(user.getProvider())) {
+            throw new ApiException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "This account signs in with " + user.getProvider() + ". Change the email on that provider.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+        String normalized = EmailAddresses.normalize(email);
+        if (!EmailAddresses.isValid(normalized)) {
+            throw new ApiException(ErrorCode.AUTH_INVALID_EMAIL, "Enter a valid email address", HttpStatus.BAD_REQUEST);
+        }
+        if (normalized.equals(user.getEmail())) {
+            return new SupportMailResult(false, user.getEmail(), null, "This is already the login email.");
+        }
+        if (users.existsByEmail(normalized)) {
+            throw new ApiException(ErrorCode.AUTH_EMAIL_TAKEN, "Another account already uses that email", HttpStatus.CONFLICT);
+        }
+        user.setEmail(normalized);
+        user.setEmailVerified(false);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+        refreshTokens.deleteByUserId(user.getId());
+        sessionBan.block(user.getId());
+
+        Instant now = Instant.now();
+        String raw = issueVerificationToken(user.getId(), now);
+        String encoded = java.net.URLEncoder.encode(raw, java.nio.charset.StandardCharsets.UTF_8);
+        String actionUrl = frontendUrl + "/verify-email?token=" + encoded;
+        boolean sent = true;
+        String message = "Login email updated. They must verify the new inbox before signing in.";
+        try {
+            mailService.sendVerification(user.getEmail(), null, raw);
+        } catch (RuntimeException e) {
+            sent = false;
+            message = "Email was updated. Verification mail was not delivered. Copy the link.";
+            log.warn("Support change-email verification failed for {}", user.getEmail(), e);
+        }
+        return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
+    }
+
     public SupportMailResult resendVerificationForUser(String userId) {
         User user = getUser(userId);
         rejectIfDeleting(user);

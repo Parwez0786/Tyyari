@@ -35,7 +35,10 @@ body {
 }
 
 html.dark body {
-  background: #000000;
+  background:
+    radial-gradient(1100px 520px at 0% -8%, rgba(249, 115, 22, 0.2) 0%, transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+    #000000;
 }
 
 input, select, button, textarea {
@@ -104,4 +107,24 @@ html.dark .btn-ghost:hover {
 }
 .field:focus {
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+}
+
+.tab-chip {
+  @apply rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors;
+  border-color: var(--line);
+  background-color: var(--card);
+  color: var(--mute);
+}
+.tab-chip:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  color: var(--ink);
+}
+.tab-chip-on {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(37, 99, 235, 0.1) 100%);
+  color: #f97316;
+}
+.tab-chip-on:hover {
+  border-color: rgba(249, 115, 22, 0.55);
+  color: #f97316;
 }

@@ -31,6 +31,7 @@ export default function App() {
         <Route path="questions" element={<Questions />} />
         <Route path="questions/new" element={<NewQuestion />} />
         <Route path="questions/new/:type" element={<QuestionForm />} />
+        <Route path="questions/:id/view" element={<QuestionForm />} />
         <Route path="questions/:id" element={<QuestionForm />} />
         <Route path="catalog" element={<Catalog />} />
         <Route path="sheets" element={<Sheets />} />
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="sheets/:id" element={<SheetForm />} />
         <Route path="oa" element={<OaSets />} />
         <Route path="oa/new" element={<OaForm />} />
+        <Route path="oa/:id/view" element={<OaForm />} />
         <Route path="oa/:id" element={<OaForm />} />
         <Route path="users" element={<Users />} />
         <Route path="users/:id" element={<UserProfile />} />

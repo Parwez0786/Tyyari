@@ -5,6 +5,7 @@ export default function QuestionOrderPicker({
   onChange,
   pool = [],
   loading = false,
+  readOnly = false,
   emptyHint = "Add a question from the pool to set the order candidates see.",
 }) {
   const [search, setSearch] = useState("");
@@ -37,10 +38,10 @@ export default function QuestionOrderPicker({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={`grid gap-4 ${readOnly ? "" : "lg:grid-cols-2"}`}>
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Order on the sheet</p>
-        <p className="mt-1 text-xs text-mute">First item is question 1. Use up/down to rearrange.</p>
+        <p className="mt-1 text-xs text-mute">{readOnly ? "First item is question 1." : "First item is question 1. Use up/down to rearrange."}</p>
         <ol className="mt-3 space-y-2">
           {selected.map((item, index) => (
             <li
@@ -56,11 +57,13 @@ export default function QuestionOrderPicker({
                   {item.missing ? " · not in this type pool" : ""}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-1">
-                <IconBtn label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>↑</IconBtn>
-                <IconBtn label="Move down" disabled={index === slugs.length - 1} onClick={() => move(index, 1)}>↓</IconBtn>
-                <IconBtn label="Remove" onClick={() => onChange(slugs.filter((_, i) => i !== index))}>×</IconBtn>
-              </div>
+              {!readOnly && (
+                <div className="flex shrink-0 gap-1">
+                  <IconBtn label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>↑</IconBtn>
+                  <IconBtn label="Move down" disabled={index === slugs.length - 1} onClick={() => move(index, 1)}>↓</IconBtn>
+                  <IconBtn label="Remove" onClick={() => onChange(slugs.filter((_, i) => i !== index))}>×</IconBtn>
+                </div>
+              )}
             </li>
           ))}
           {!selected.length && (
@@ -70,6 +73,7 @@ export default function QuestionOrderPicker({
           )}
         </ol>
       </div>
+      {!readOnly && (
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Add from the catalog</p>
         <input
@@ -109,6 +113,7 @@ export default function QuestionOrderPicker({
           )}
         </ul>
       </div>
+      )}
     </div>
   );
 }

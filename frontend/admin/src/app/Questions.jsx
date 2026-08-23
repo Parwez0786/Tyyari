@@ -40,9 +40,7 @@ export default function Questions() {
             key={item.key}
             type="button"
             onClick={() => setTab(item.key)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              tab === item.key ? "bg-brand/15 text-brand" : "bg-white/5 text-mute hover:text-ink"
-            }`}
+            className={`tab-chip ${tab === item.key ? "tab-chip-on" : ""}`}
           >
             {item.title} · {item.count}
           </button>
