@@ -118,6 +118,21 @@ export default function UserProfile() {
     }
   }
 
+  async function revokeSessions() {
+    if (!account || account.role === "ADMIN") return;
+    if (!window.confirm("Sign this person out on every device? They will need to log in again.")) return;
+    setBusy("revoke");
+    setSupportNote(null);
+    try {
+      await adminApi.revokeSessions(account.id);
+      setSupportNote({ message: "All refresh tokens were revoked. They must sign in again." });
+    } catch (err) {
+      window.alert(err.message || "Could not revoke sessions.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function forceVerify() {
     if (!account || account.role === "ADMIN" || account.emailVerified) return;
     if (!window.confirm("Mark this email verified? They can sign in without clicking the mail link.")) return;
@@ -223,7 +238,7 @@ export default function UserProfile() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Support</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Help this inbox</h2>
           <p className="mt-1 text-sm text-mute">
-            Send a reset or verification email, or mark the inbox verified when mail cannot reach them.
+            Send a reset or verification email, mark the inbox verified, or kick every device. Disable also kills refresh tokens.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="button" className="btn-brand" disabled={Boolean(busy)} onClick={() => support("reset")}>
@@ -242,6 +257,9 @@ export default function UserProfile() {
                 {busy === "force-verify" ? "Saving…" : "Mark email verified"}
               </button>
             )}
+            <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy)} onClick={revokeSessions}>
+              {busy === "revoke" ? "Signing out…" : "Sign out everywhere"}
+            </button>
           </div>
           {supportNote && (
             <div className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3.5">

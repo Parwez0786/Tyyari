@@ -82,6 +82,7 @@ public class GoogleAuthService {
         if (created) {
             events.publishRegistered(user.getId(), email, name == null ? email : name);
         }
+        authService.rejectIfDisabled(user);
         return authService.issueTokens(user, device);
     }
 

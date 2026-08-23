@@ -42,6 +42,7 @@ public class AuthService {
     private final TokenHasher tokenHasher;
     private final UserEventPublisher events;
     private final MailService mailService;
+    private final SessionBan sessionBan;
     private final long refreshTokenDays;
     private final String frontendUrl;
 
@@ -55,6 +56,7 @@ public class AuthService {
             TokenHasher tokenHasher,
             UserEventPublisher events,
             MailService mailService,
+            SessionBan sessionBan,
             @Value("${jwt.refresh-token-days}") long refreshTokenDays,
             @Value("${app.frontend-url}") String frontendUrl
     ) {
@@ -67,6 +69,7 @@ public class AuthService {
         this.tokenHasher = tokenHasher;
         this.events = events;
         this.mailService = mailService;
+        this.sessionBan = sessionBan;
         this.refreshTokenDays = refreshTokenDays;
         this.frontendUrl = frontendUrl;
     }
@@ -111,15 +114,13 @@ public class AuthService {
     public LoginResponse login(String email, String password, String device) {
         User user = users.findByEmail(EmailAddresses.normalize(email))
                 .orElseThrow(() -> new ApiException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid credentials", HttpStatus.UNAUTHORIZED));
-        if (user.getStatus() != User.Status.ACTIVE) {
-            throw new ApiException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid credentials", HttpStatus.UNAUTHORIZED);
-        }
         if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
             throw new ApiException(ErrorCode.AUTH_USE_GOOGLE, "This account uses Google or GitHub sign-in", HttpStatus.UNAUTHORIZED);
         }
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new ApiException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid credentials", HttpStatus.UNAUTHORIZED);
         }
+        rejectIfDisabled(user);
         if (!user.isEmailVerified()) {
             throw new ApiException(
                     ErrorCode.AUTH_EMAIL_UNVERIFIED,
@@ -142,6 +143,10 @@ public class AuthService {
         refreshTokens.save(stored);
         User user = users.findById(stored.getUserId())
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
+        if (user.getStatus() != User.Status.ACTIVE) {
+            refreshTokens.deleteByUserId(user.getId());
+            rejectIfDisabled(user);
+        }
         return issueTokens(user, device);
     }
 
@@ -264,6 +269,7 @@ public class AuthService {
         stored.setUsed(true);
         resetTokens.save(stored);
         refreshTokens.deleteByUserId(user.getId());
+        sessionBan.block(user.getId());
     }
 
     public List<User> listUsers() {
@@ -343,7 +349,21 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
         user.setStatus(status);
         user.setUpdatedAt(Instant.now());
-        return users.save(user);
+        User saved = users.save(user);
+        if (status == User.Status.DISABLED) {
+            refreshTokens.deleteByUserId(user.getId());
+            sessionBan.block(user.getId());
+        }
+        return saved;
+    }
+
+    public void revokeSessions(String userId) {
+        User user = getUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot revoke admin sessions from support", HttpStatus.BAD_REQUEST);
+        }
+        refreshTokens.deleteByUserId(user.getId());
+        sessionBan.block(user.getId());
     }
 
     public InviteUserResult inviteUser(String email, String name, String roleName) {
@@ -422,7 +442,19 @@ public class AuthService {
         return verifyRaw;
     }
 
+    public void rejectIfDisabled(User user) {
+        if (user.getStatus() == User.Status.DISABLED) {
+            throw new ApiException(
+                    ErrorCode.AUTH_ACCOUNT_DISABLED,
+                    "This account is disabled. Contact support if you think this is a mistake.",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+    }
+
     public LoginResponse issueTokens(User user, String device) {
+        rejectIfDisabled(user);
+        sessionBan.clear(user.getId());
         String access = jwtService.generateAccessToken(user.getId(), user.getRole().name(), isPremium(user));
         String refreshRaw = tokenHasher.randomToken();
         Instant now = Instant.now();

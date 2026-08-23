@@ -38,6 +38,9 @@ export default function Login() {
       if (err.code === "AUTH_EMAIL_UNVERIFIED") {
         setNotice("Need a new link? Use Resend verification below.");
       }
+      if (err.code === "AUTH_ACCOUNT_DISABLED") {
+        setNotice("An admin disabled this account. Ask them to enable it if you should still have access.");
+      }
     }
   }
 

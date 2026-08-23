@@ -126,6 +126,12 @@ const ACTIONS = {
     pill: "bg-emerald-500/15 text-emerald-400",
     href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },
+  USER_REVOKE_SESSIONS: {
+    title: "Signed out everywhere",
+    detail: "Refresh tokens were revoked. They must sign in again.",
+    pill: "bg-rose-500/15 text-hard",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
+  },
 };
 
 export default function Audit() {

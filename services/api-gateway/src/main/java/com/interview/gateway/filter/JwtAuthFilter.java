@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -38,10 +39,14 @@ public class JwtAuthFilter implements WebFilter, Ordered {
             "/api/v1/billing/webhook"
     );
 
-    private final JwtService jwtService;
+    private static final String SESSION_BLOCK = "session:block:";
 
-    public JwtAuthFilter(JwtService jwtService) {
+    private final JwtService jwtService;
+    private final ReactiveStringRedisTemplate redis;
+
+    public JwtAuthFilter(JwtService jwtService, ReactiveStringRedisTemplate redis) {
         this.jwtService = jwtService;
+        this.redis = redis;
     }
 
     @Override
@@ -75,7 +80,12 @@ public class JwtAuthFilter implements WebFilter, Ordered {
                     .build();
             exchange.getAttributes().put("userId", userId);
             exchange.getAttributes().put("role", role);
-            return chain.filter(exchange.mutate().request(mutated).build());
+            ServerWebExchange next = exchange.mutate().request(mutated).build();
+            return redis.hasKey(SESSION_BLOCK + userId)
+                    .onErrorReturn(false)
+                    .flatMap(blocked -> Boolean.TRUE.equals(blocked)
+                            ? unauthorized(exchange, "AUTH_SESSION_REVOKED", "Signed out everywhere. Sign in again.")
+                            : chain.filter(next));
         } catch (ExpiredJwtException e) {
             return unauthorized(exchange, "AUTH_TOKEN_EXPIRED", "Access token expired");
         } catch (JwtException e) {

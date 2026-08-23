@@ -76,6 +76,7 @@ export const adminApi = {
   resetPassword: (id) => api(`/api/v1/admin/users/${id}/reset-password`, { method: "POST", body: "{}" }),
   resendVerification: (id) => api(`/api/v1/admin/users/${id}/resend-verification`, { method: "POST", body: "{}" }),
   forceVerify: (id) => api(`/api/v1/admin/users/${id}/verify`, { method: "PATCH", body: "{}" }),
+  revokeSessions: (id) => api(`/api/v1/admin/users/${id}/revoke-sessions`, { method: "POST", body: "{}" }),
   userSubmissions: (id) => api(`/api/v1/admin/users/${id}/submissions`),
   userSubmission: (id, submissionId) => api(`/api/v1/admin/users/${id}/submissions/${submissionId}`),
   payments: (params = {}) => {
