@@ -302,6 +302,21 @@ public class AuthService {
         return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
     }
 
+    public User forceVerifyEmail(String userId) {
+        User user = getUser(userId);
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change verification on an admin account", HttpStatus.BAD_REQUEST);
+        }
+        if (user.isEmailVerified()) {
+            return user;
+        }
+        user.setEmailVerified(true);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+        emailTokens.deleteByUserId(user.getId());
+        return user;
+    }
+
     public SupportMailResult resendVerificationForUser(String userId) {
         User user = getUser(userId);
         if (user.isEmailVerified()) {
