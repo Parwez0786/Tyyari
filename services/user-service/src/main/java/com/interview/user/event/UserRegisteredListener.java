@@ -22,17 +22,26 @@ public class UserRegisteredListener {
 
     @KafkaListener(topics = "${app.kafka.user-events-topic}")
     public void onMessage(String payload) {
+        JsonNode event;
         try {
-            JsonNode event = objectMapper.readTree(payload);
-            if (!"USER_REGISTERED".equals(event.path("eventType").asText())) {
-                return;
-            }
-            String userId = event.path("userId").asText();
+            event = objectMapper.readTree(payload);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid user event payload", e);
+        }
+        String type = event.path("eventType").asText();
+        String userId = event.path("userId").asText("");
+        if ("USER_REGISTERED".equals(type)) {
             JsonNode data = event.path("data");
             userService.createDefaults(userId, data.path("name").asText(null), data.path("email").asText(null));
             log.info("Created profile for {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to consume user event", e);
+            return;
+        }
+        if ("USER_DELETE_REQUESTED".equals(type)) {
+            if (userId.isBlank()) {
+                throw new IllegalArgumentException("USER_DELETE_REQUESTED missing userId");
+            }
+            userService.deleteAccount(userId);
+            log.info("Purged profile, goals, prefs, and submissions for {}", userId);
         }
     }
 }

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { difficultyLabel, typeLabel } from "../data/labels";
 import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
 
 const badge = {
@@ -19,7 +20,7 @@ export default function QuestionCard({ question, actionLabel = "Open", index }) 
         <div className="min-w-0">
           <p className="font-semibold">{q.title}</p>
           <p className="mt-1 truncate text-sm text-mute">
-            {q.type}
+            {typeLabel(q.type)}
             {(q.companies || []).length ? ` · ${(q.companies || []).slice(0, 3).join(", ")}` : ""}
           </p>
         </div>
@@ -27,7 +28,7 @@ export default function QuestionCard({ question, actionLabel = "Open", index }) 
       <div className="flex shrink-0 items-center gap-2 sm:pl-4">
         {q.difficulty && (
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${badge[q.difficulty] || badge.MEDIUM}`}>
-            {q.difficulty}
+            {difficultyLabel(q.difficulty)}
           </span>
         )}
         <Link

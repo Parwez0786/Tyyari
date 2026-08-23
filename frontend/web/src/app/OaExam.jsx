@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Camera } from "lucide-react";
 import DsaWorkspace from "../components/code/DsaWorkspace";
+import { useDialog } from "../components/Dialog";
 import Layout from "../components/Layout";
 import CameraPreview from "../components/oa/CameraPreview";
 import ExamTimer from "../components/oa/ExamTimer";
@@ -22,6 +23,7 @@ import { dsaFiles, oaDraftFromStorage, saveSubmission } from "../services/submis
 export default function OaExam() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dialog = useDialog();
   const camera = useCamera();
   const cameraStop = useRef(camera.stop);
   cameraStop.current = camera.stop;
@@ -58,7 +60,10 @@ export default function OaExam() {
   }, [data, navigate]);
 
   const finish = useCallback(async (ask = false) => {
-    if (ask && !window.confirm("Submit this assessment? You cannot change answers after this.")) return;
+    if (ask && !await dialog.confirm("Submit this assessment? You cannot change answers after this.", {
+      title: "Submit assessment",
+      confirmLabel: "Submit",
+    })) return;
     if (!data) return;
     try {
       const currentSnap = snapshotRef.current?.();
@@ -85,7 +90,7 @@ export default function OaExam() {
     setSession(next);
     cameraStop.current();
     exitFullscreen();
-  }, [data]);
+  }, [data, dialog]);
 
   useEffect(() => {
     if (!session || session.submittedAt) return;
@@ -101,8 +106,11 @@ export default function OaExam() {
     setSession(next);
   }
 
-  function leave() {
-    if (submitted || window.confirm("Leave this assessment? The timer keeps running until you submit or time runs out.")) {
+  async function leave() {
+    if (submitted || await dialog.confirm("Leave this assessment? The timer keeps running until you submit or time runs out.", {
+      title: "Leave assessment",
+      confirmLabel: "Leave",
+    })) {
       camera.stop();
       exitFullscreen();
       navigate("/practice/OA");

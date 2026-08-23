@@ -35,9 +35,4 @@ export function formatPremiumUntil(premium, until) {
   return until ? formatWhen(until) : "Lifetime";
 }
 
-export function providerLabel(provider) {
-  const value = String(provider || "LOCAL").toUpperCase();
-  if (value === "GOOGLE") return "Google";
-  if (value === "GITHUB") return "GitHub";
-  return "Password";
-}
+export { providerLabel } from "./labels";

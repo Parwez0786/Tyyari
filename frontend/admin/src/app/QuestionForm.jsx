@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import PageHero from "../components/PageHero";
+import { subjectLabel } from "../data/labels";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
@@ -210,14 +211,14 @@ export default function QuestionForm() {
             <label className="block">
               <FieldLabel>Subject</FieldLabel>
               <select className="field" value={form.subType} onChange={(e) => set("subType", e.target.value)} required>
-                {(meta.subTypes || []).map((t) => <option key={t}>{t}</option>)}
+                {(meta.subTypes || []).map((t) => <option key={t} value={t}>{subjectLabel(t)}</option>)}
               </select>
             </label>
           )}
           <label className="block">
             <FieldLabel>Difficulty</FieldLabel>
             <select className="field" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)} required>
-              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t}>{t}</option>)}
+              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">

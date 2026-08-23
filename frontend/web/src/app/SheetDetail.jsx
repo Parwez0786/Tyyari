@@ -6,6 +6,7 @@ import ModeOverlay from "../components/ModeOverlay";
 import ProblemCard from "../components/ProblemCard";
 import { completedSet, countCompleted, Donut } from "../components/ProgressCharts";
 import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
+import { typeLabel } from "../data/labels";
 import { contentApi, userApi } from "../services/api";
 
 export default function SheetDetail() {
@@ -59,8 +60,8 @@ export default function SheetDetail() {
           <section className="mx-auto mt-6 max-w-3xl text-center">
             <div className="flex items-center justify-center gap-2">
               <DifficultyBadge difficulty={sheet.difficulty} />
-              <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
-                {sheet.type}
+              <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+                {typeLabel(sheet.type)}
               </span>
             </div>
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">{sheet.title}</h1>
@@ -90,7 +91,7 @@ export default function SheetDetail() {
           {!questions.length && (
             <p className="mt-10 text-center text-sm text-mute">
               This sheet has no published questions yet. Try the{" "}
-              <Link to={backTo} className="font-semibold text-brand">{sheet.type} practice library</Link>.
+              <Link to={backTo} className="font-semibold text-brand">{typeLabel(sheet.type)} practice library</Link>.
             </p>
           )}
         </>

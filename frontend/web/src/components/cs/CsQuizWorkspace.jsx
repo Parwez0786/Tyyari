@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
+import { subjectLabel } from "../../data/labels";
 import { DifficultyBadge } from "../QuestionMeta";
 import { loadSubmission, saveSubmission } from "../../services/submissions";
 
@@ -120,8 +121,8 @@ export default function CsQuizWorkspace({ data, backTo = "/practice/CS", backLab
           <div className="flex flex-wrap items-center gap-2">
             <DifficultyBadge difficulty={data.difficulty} />
             {data.subType && (
-              <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
-                {data.subType}
+              <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+                {subjectLabel(data.subType)}
               </span>
             )}
             <span className="text-xs font-semibold text-mute">{total} questions</span>

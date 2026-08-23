@@ -20,9 +20,11 @@ Gateway validates JWT (signature, expiry, issuer), then forwards `X-User-Id` and
 
 ## Events
 
-Synchronous path for login. Kafka for `USER_REGISTERED` and content mutations so later services (progress, notifications, AI) can subscribe without coupling.
+Synchronous path for login. Kafka for `USER_REGISTERED`, `USER_DELETE_REQUESTED`, and content mutations so later services (progress, notifications, AI) can subscribe without coupling.
 
-Topics: `user-events`, `content-events`, `audit-events`.
+Topics: `user-events`, `user-events.DLT`, `content-events`, `audit-events`.
+
+Account delete is async: admin queues `USER_DELETE_REQUESTED` after locking the login (`DELETING` + session ban). Auth and user-service consume independently, retry with exponential backoff, then dead-letter.
 
 ## Content model
 

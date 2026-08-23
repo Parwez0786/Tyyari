@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import { QUESTION_TYPES } from "../data/questionTypes";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const DIFFICULTY = {
@@ -13,6 +14,7 @@ const DIFFICULTY = {
 
 export default function Questions() {
   const client = useQueryClient();
+  const dialog = useDialog();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-questions"],
     queryFn: () => adminApi.questions({ limit: 50 }),
@@ -45,7 +47,10 @@ export default function Questions() {
   }
 
   async function remove(question) {
-    if (!window.confirm(`Delete “${question.title}”? This removes it from the candidate library.`)) return;
+    if (!await dialog.confirm(`Delete “${question.title}”? This removes it from the candidate library.`, {
+      title: "Delete question",
+      confirmLabel: "Delete",
+    })) return;
     await adminApi.deleteQuestion(question.id);
     client.invalidateQueries({ queryKey: ["admin-questions"] });
   }
@@ -77,7 +82,7 @@ export default function Questions() {
           <section key={type.key} className={`rounded-[28px] border border-line bg-gradient-to-br p-5 sm:p-6 ${type.accent}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{type.key}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{type.title}</p>
                 <h2 className="mt-1 text-xl font-extrabold tracking-tight">{type.title}</h2>
                 <p className="mt-1 text-sm text-mute">{type.hook} · {rows.length} in this list</p>
               </div>

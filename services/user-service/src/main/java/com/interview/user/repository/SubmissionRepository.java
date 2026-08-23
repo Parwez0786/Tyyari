@@ -14,4 +14,6 @@ public interface SubmissionRepository extends MongoRepository<Submission, String
     List<Submission> findByUserIdAndAssessmentSetIdOrderBySubmittedAtAsc(String userId, String assessmentSetId);
 
     List<Submission> findByUserIdOrderBySubmittedAtDesc(String userId);
+
+    void deleteByUserId(String userId);
 }

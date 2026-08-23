@@ -134,7 +134,7 @@ export default function SheetForm() {
           <label className="block">
             <FieldLabel>Difficulty</FieldLabel>
             <select className="field" value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)} required>
-              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t}>{t}</option>)}
+              {["EASY", "MEDIUM", "HARD"].map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
             </select>
           </label>
           <label className="block sm:col-span-2">

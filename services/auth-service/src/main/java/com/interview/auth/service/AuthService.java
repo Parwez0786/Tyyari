@@ -184,6 +184,7 @@ public class AuthService {
 
     public User grantPremium(String userId, Instant until) {
         User user = requireUser(userId);
+        rejectIfDeleting(user);
         user.setPremium(true);
         user.setPremiumUntil(until);
         user.setUpdatedAt(Instant.now());
@@ -195,6 +196,7 @@ public class AuthService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot revoke Premium on an admin account", HttpStatus.BAD_REQUEST);
         }
+        rejectIfDeleting(user);
         user.setPremium(false);
         user.setPremiumUntil(null);
         user.setUpdatedAt(Instant.now());
@@ -286,6 +288,7 @@ public class AuthService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot reset an admin password from support", HttpStatus.BAD_REQUEST);
         }
+        rejectIfDeleting(user);
         String raw = tokenHasher.randomToken();
         Instant now = Instant.now();
         resetTokens.save(PasswordResetToken.builder()
@@ -313,6 +316,7 @@ public class AuthService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change verification on an admin account", HttpStatus.BAD_REQUEST);
         }
+        rejectIfDeleting(user);
         if (user.isEmailVerified()) {
             return user;
         }
@@ -325,6 +329,7 @@ public class AuthService {
 
     public SupportMailResult resendVerificationForUser(String userId) {
         User user = getUser(userId);
+        rejectIfDeleting(user);
         if (user.isEmailVerified()) {
             return new SupportMailResult(false, user.getEmail(), null, "This inbox is already verified.");
         }
@@ -347,6 +352,10 @@ public class AuthService {
     public User updateStatus(String userId, User.Status status) {
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
+        rejectIfDeleting(user);
+        if (status == User.Status.DELETING) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Use delete account to wipe this user", HttpStatus.BAD_REQUEST);
+        }
         user.setStatus(status);
         user.setUpdatedAt(Instant.now());
         User saved = users.save(user);
@@ -362,6 +371,7 @@ public class AuthService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot revoke admin sessions from support", HttpStatus.BAD_REQUEST);
         }
+        rejectIfDeleting(user);
         refreshTokens.deleteByUserId(user.getId());
         sessionBan.block(user.getId());
     }
@@ -415,6 +425,7 @@ public class AuthService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change an admin role", HttpStatus.BAD_REQUEST);
         }
+        rejectIfDeleting(user);
         user.setRole(parseAssignableRole(roleName));
         user.setUpdatedAt(Instant.now());
         return users.save(user);
@@ -443,12 +454,25 @@ public class AuthService {
     }
 
     public void rejectIfDisabled(User user) {
+        if (user.getStatus() == User.Status.DELETING) {
+            throw new ApiException(
+                    ErrorCode.AUTH_ACCOUNT_DISABLED,
+                    "This account is being deleted.",
+                    HttpStatus.FORBIDDEN
+            );
+        }
         if (user.getStatus() == User.Status.DISABLED) {
             throw new ApiException(
                     ErrorCode.AUTH_ACCOUNT_DISABLED,
                     "This account is disabled. Contact support if you think this is a mistake.",
                     HttpStatus.FORBIDDEN
             );
+        }
+    }
+
+    public void rejectIfDeleting(User user) {
+        if (user.getStatus() == User.Status.DELETING) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "This account is being deleted", HttpStatus.BAD_REQUEST);
         }
     }
 

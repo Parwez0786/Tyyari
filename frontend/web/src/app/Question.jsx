@@ -17,6 +17,7 @@ import { QuestionMeta } from "../components/QuestionMeta";
 import ThemeToggle from "../components/ThemeToggle";
 import WhiteboardBoard from "../components/WhiteboardBoard";
 import { PremiumGate } from "./Premium";
+import { typeLabel } from "../data/labels";
 import { contentApi } from "../services/api";
 import { loadSubmission, saveSubmission } from "../services/submissions";
 
@@ -89,7 +90,7 @@ export default function Question() {
 function ProblemPreview({ data, backTo, sheet }) {
   return (
     <div>
-      <Link to={backTo} className="text-sm font-medium text-brand">← {sheet ? "Sheet" : `${data.type} practice`}</Link>
+      <Link to={backTo} className="text-sm font-medium text-brand">← {sheet ? "Sheet" : `${typeLabel(data.type)} practice`}</Link>
       <section className="mx-auto mt-8 max-w-3xl text-center">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{data.title}</h1>
         <div className="mt-4">

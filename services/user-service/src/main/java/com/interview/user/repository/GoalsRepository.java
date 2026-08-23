@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface GoalsRepository extends MongoRepository<Goals, String> {
     Optional<Goals> findByUserId(String userId);
+    void deleteByUserId(String userId);
 }

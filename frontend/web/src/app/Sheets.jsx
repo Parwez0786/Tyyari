@@ -5,6 +5,7 @@ import { ListChecks } from "lucide-react";
 import Layout from "../components/Layout";
 import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
+import { typeLabel } from "../data/labels";
 import { contentApi, userApi } from "../services/api";
 
 const TYPES = ["HLD", "LLD", "DSA", "FRONTEND"];
@@ -88,8 +89,8 @@ function SheetCard({ sheet, done }) {
     <article className="flex flex-col rounded-xl border border-white/10 bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <DifficultyBadge difficulty={sheet.difficulty} />
-        <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
-          {sheet.type}
+        <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+          {typeLabel(sheet.type)}
         </span>
       </div>
       <h3 className="mt-4 text-lg font-bold leading-snug">{sheet.title}</h3>

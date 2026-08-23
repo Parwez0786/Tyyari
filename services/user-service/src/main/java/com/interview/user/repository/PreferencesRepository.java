@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface PreferencesRepository extends MongoRepository<Preferences, String> {
     Optional<Preferences> findByUserId(String userId);
+    void deleteByUserId(String userId);
 }

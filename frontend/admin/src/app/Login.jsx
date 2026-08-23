@@ -22,7 +22,7 @@ export default function Login() {
       const me = await adminApi.me();
       if (me.data.role !== "ADMIN") {
         useAuthStore.getState().clear();
-        setError("This console is for ADMIN accounts only.");
+        setError("This console is for admin accounts only.");
         return;
       }
       navigate("/");

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import { QUESTION_TYPES } from "../data/questionTypes";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const SHEET_TYPES = QUESTION_TYPES.filter((type) => ["DSA", "HLD", "LLD", "FRONTEND"].includes(type.key));
@@ -15,6 +16,7 @@ const DIFFICULTY = {
 
 export default function Sheets() {
   const client = useQueryClient();
+  const dialog = useDialog();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-sheets"],
     queryFn: adminApi.sheets,
@@ -47,7 +49,10 @@ export default function Sheets() {
   }
 
   async function remove(sheet) {
-    if (!window.confirm(`Delete “${sheet.title}”? Candidates will lose this grind list.`)) return;
+    if (!await dialog.confirm(`Delete “${sheet.title}”? Candidates will lose this grind list.`, {
+      title: "Delete sheet",
+      confirmLabel: "Delete",
+    })) return;
     await adminApi.deleteSheet(sheet.id);
     client.invalidateQueries({ queryKey: ["admin-sheets"] });
   }
@@ -79,7 +84,7 @@ export default function Sheets() {
           <section key={type.key} className={`rounded-[28px] border border-line bg-gradient-to-br p-5 sm:p-6 ${type.accent}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{type.key}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{type.title}</p>
                 <h2 className="mt-1 text-xl font-extrabold tracking-tight">{type.title} sheets</h2>
                 <p className="mt-1 text-sm text-mute">{rows.length} in this list</p>
               </div>
