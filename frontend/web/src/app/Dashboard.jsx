@@ -23,6 +23,7 @@ import { DifficultyBadge } from "../components/QuestionMeta";
 import { completedSet, countCompleted, Donut, ProgressBar } from "../components/ProgressCharts";
 import { contentApi, userApi, authApi } from "../services/api";
 import { ROADMAPS, roleFromProfile } from "../data/roadmaps";
+import { difficultyLabel, targetRoleLabel, typeLabel, viewLabel } from "../data/labels";
 import { useEntitled } from "../hooks/usePremium";
 
 const TRACKS = [
@@ -202,7 +203,7 @@ export default function Dashboard() {
               </span>
               {profile?.targetRole && (
                 <Link to="/learn" className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-ink hover:bg-white/10">
-                  {profile.targetRole} path
+                  {targetRoleLabel(profile.targetRole)} path
                 </Link>
               )}
               {companies.map((name) => (
@@ -273,8 +274,8 @@ export default function Dashboard() {
             </p>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight">{lastQuestion.title}</h2>
             <p className="mt-2 text-sm text-mute">
-              Last submit · {lastQuestion.type}
-              {progress?.lastView ? ` · ${progress.lastView}` : ""}
+              Last submit · {typeLabel(lastQuestion.type)}
+              {progress?.lastView ? ` · ${viewLabel(progress.lastView)}` : ""}
             </p>
             <Link
               to={hrefFor(lastQuestion.id, lastQuestion.type, progress?.lastView)}
@@ -315,7 +316,7 @@ export default function Dashboard() {
             </p>
             <h3 className="mt-2 text-lg font-bold">{gap.title}</h3>
             <p className="mt-1 text-sm text-mute">{gap.done} of {gap.total} submitted. Close the gap here first.</p>
-            <Link to={gap.practice} className="mt-4 inline-block text-sm font-semibold text-brand">Train {gap.type} →</Link>
+            <Link to={gap.practice} className="mt-4 inline-block text-sm font-semibold text-brand">Train {typeLabel(gap.type)} →</Link>
           </article>
         )}
         {surprise && (
@@ -325,7 +326,7 @@ export default function Dashboard() {
               Surprise round
             </p>
             <h3 className="mt-2 line-clamp-2 text-lg font-bold">{surprise.title}</h3>
-            <p className="mt-1 text-sm text-mute">{surprise.type} · A random unpublished-for-you problem.</p>
+            <p className="mt-1 text-sm text-mute">{typeLabel(surprise.type)} · A random unpublished-for-you problem.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link to={hrefFor(surprise.id, surprise.type)} className="text-sm font-semibold text-brand">Open →</Link>
               <button type="button" onClick={() => setShuffle((n) => n + 1)} className="text-sm font-semibold text-mute hover:text-ink">
@@ -404,7 +405,7 @@ export default function Dashboard() {
                     className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 hover:border-brand/40"
                   >
                     <span className="min-w-0 truncate font-semibold">{question.title}</span>
-                    <span className="shrink-0 text-xs text-mute">{question.type}</span>
+                    <span className="shrink-0 text-xs text-mute">{typeLabel(question.type)}</span>
                   </Link>
                 ))}
               </div>
@@ -489,7 +490,7 @@ export default function Dashboard() {
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{index + 1}. {question.title}</p>
-                  <p className="mt-0.5 text-xs text-mute">{question.difficulty || "DSA"}</p>
+                  <p className="mt-0.5 text-xs text-mute">{question.difficulty ? difficultyLabel(question.difficulty) : typeLabel("DSA")}</p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-brand">Go →</span>
               </Link>

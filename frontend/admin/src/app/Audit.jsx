@@ -132,6 +132,12 @@ const ACTIONS = {
     pill: "bg-rose-500/15 text-hard",
     href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },
+  USER_DELETE: {
+    title: "Queued account delete",
+    detail: "Login locked. Profile, submissions, and auth rows wipe over Kafka.",
+    pill: "bg-rose-500/15 text-hard",
+    href: () => "/users",
+  },
 };
 
 export default function Audit() {

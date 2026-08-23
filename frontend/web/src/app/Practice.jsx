@@ -7,6 +7,7 @@ import ModeOverlay from "../components/ModeOverlay";
 import ProblemCard from "../components/ProblemCard";
 import { CompanyTags, DifficultyBadge } from "../components/QuestionMeta";
 import { formatClock, isActive, loadSession, remainingMs } from "../components/oa/session";
+import { typeLabel } from "../data/labels";
 import { contentApi } from "../services/api";
 
 const TYPES = [
@@ -74,14 +75,14 @@ export default function Practice() {
           {TYPES.map((item) =>
             item.key === "HLD" || item.key === "LLD" || item.key === "DSA" || item.key === "OA" || item.key === "FRONTEND" || item.key === "CS" ? (
               <Link key={item.key} to={`/practice/${item.key}`} className="rounded-2xl border border-line bg-surface p-6 text-left hover:border-brand/40">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
+                <p className="text-xs font-bold tracking-[0.14em] text-brand">{typeLabel(item.key)}</p>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
                 <p className="mt-1 text-sm text-mute">{item.detail}</p>
               </Link>
             ) : (
               <div key={item.key} className="rounded-2xl border border-line bg-surface p-6 text-left opacity-70">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
+                  <p className="text-xs font-bold tracking-[0.14em] text-brand">{typeLabel(item.key)}</p>
                   <span className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-mute">Coming soon</span>
                 </div>
                 <p className="mt-2 text-lg font-bold">{item.title}</p>
@@ -163,7 +164,7 @@ function TypeSheet({ type }) {
         {SHEET_BY_TYPE[type] && (
           <p className="mt-2 text-sm text-mute">
             Looking for a curated set?{" "}
-            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">Open {type} sheet</Link>
+            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">Open {typeLabel(type)} sheet</Link>
           </p>
         )}
       </section>
@@ -226,7 +227,7 @@ function TypeSheet({ type }) {
         <p className="mt-10 text-center text-sm text-mute">
           No problems match these filters. Clear search or company, or open the{" "}
           {SHEET_BY_TYPE[type] ? (
-            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">{type} sheet</Link>
+            <Link to={`/sheets/${SHEET_BY_TYPE[type]}`} className="font-semibold text-brand">{typeLabel(type)} sheet</Link>
           ) : (
             "full library"
           )}

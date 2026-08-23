@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const DIFFICULTY = {
@@ -12,6 +13,7 @@ const DIFFICULTY = {
 
 export default function OaSets() {
   const client = useQueryClient();
+  const dialog = useDialog();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-oa"],
     queryFn: adminApi.assessmentSets,
@@ -36,7 +38,10 @@ export default function OaSets() {
   }
 
   async function remove(set) {
-    if (!window.confirm(`Delete “${set.title}”? This timed camera round will disappear for candidates.`)) return;
+    if (!await dialog.confirm(`Delete “${set.title}”? This timed camera round will disappear for candidates.`, {
+      title: "Delete OA set",
+      confirmLabel: "Delete",
+    })) return;
     await adminApi.deleteAssessmentSet(set.id);
     client.invalidateQueries({ queryKey: ["admin-oa"] });
   }

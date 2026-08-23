@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import PageHero from "../components/PageHero";
+import { paymentLabel, providerLabel } from "../data/labels";
 import { formatWhen } from "../data/profile";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const STATUS_PILL = {
@@ -15,6 +17,7 @@ const STATUS_PILL = {
 
 export default function Billing() {
   const client = useQueryClient();
+  const dialog = useDialog();
   const [params, setParams] = useSearchParams();
   const userId = params.get("user") || "";
   const paymentsQuery = useQuery({
@@ -71,14 +74,17 @@ export default function Billing() {
       await adminApi.refreshPayment(item.id);
       await client.invalidateQueries({ queryKey: ["admin-payments"] });
     } catch (err) {
-      window.alert(err.message || "Could not refresh Stripe status.");
+      await dialog.alert(err.message || "Could not refresh Stripe status.");
     } finally {
       setBusy("");
     }
   }
 
   async function refund(item) {
-    if (!window.confirm(`Refund ${item.displayAmount || "this payment"} for ${item.email || "this user"}? This also revokes Premium.`)) return;
+    if (!await dialog.confirm(`Refund ${item.displayAmount || "this payment"} for ${item.email || "this user"}? This also revokes Premium.`, {
+      title: "Refund payment",
+      confirmLabel: "Refund",
+    })) return;
     setBusy(item.id);
     try {
       await adminApi.refundPayment(item.id);
@@ -88,7 +94,7 @@ export default function Billing() {
         client.invalidateQueries({ queryKey: ["admin-user"] }),
       ]);
     } catch (err) {
-      window.alert(err.message || "Could not refund this payment.");
+      await dialog.alert(err.message || "Could not refund this payment.");
     } finally {
       setBusy("");
     }
@@ -138,7 +144,7 @@ export default function Billing() {
                 status === key ? "bg-brand/15 text-brand" : "bg-white/5 text-mute hover:text-ink"
               }`}
             >
-              {key ? key : `All · ${items.length}`}
+              {key ? paymentLabel(key) : `All · ${items.length}`}
             </button>
           ))}
         </div>
@@ -189,19 +195,19 @@ function PaymentRow({ item, busy, onRefresh, onRefund }) {
     <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_PILL[status] || STATUS_PILL.open}`}>
-            {status}
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide ${STATUS_PILL[status] || STATUS_PILL.open}`}>
+            {paymentLabel(status)}
           </span>
           {item.stripeStatus && (
-            <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
-              Stripe {item.stripeStatus}
+            <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+              Stripe {paymentLabel(item.stripeStatus)}
             </span>
           )}
           <span className="text-xs text-mute">{formatWhen(item.createdAt)}</span>
         </div>
         <p className="mt-2 font-semibold">{item.email || item.userId || "Unknown user"}</p>
         <p className="mt-1 truncate text-sm text-mute">
-          {item.displayAmount || "—"} · {item.provider || "—"}
+          {item.displayAmount || "—"} · {providerLabel(item.provider)}
           {item.providerRef ? ` · ${item.providerRef}` : ""}
         </p>
         {item.refundId && <p className="mt-1 truncate text-xs text-mute">Refund {item.refundId}</p>}

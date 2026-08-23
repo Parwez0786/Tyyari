@@ -267,6 +267,15 @@ public class AdminController {
         return json(downstream.auth("POST", "/internal/v1/users/" + id + "/revoke-sessions", "{}", userId));
     }
 
+    @PostMapping("/users/{id}/delete")
+    public ResponseEntity<String> deleteUser(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        auditService.record(userId, "USER_DELETE", id);
+        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/delete", "{}", userId));
+    }
+
     @GetMapping("/users/{id}/submissions")
     public ResponseEntity<String> userSubmissions(
             @PathVariable String id,

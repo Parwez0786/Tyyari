@@ -18,7 +18,7 @@ export default function NewQuestion() {
             to={`/questions/new/${item.key}`}
             className={`group flex flex-col rounded-[24px] border border-line bg-gradient-to-br p-6 text-left transition hover:-translate-y-0.5 hover:border-brand/40 ${item.accent}`}
           >
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.key}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.title}</p>
             <h2 className="mt-3 text-xl font-extrabold tracking-tight">{item.title}</h2>
             <p className="mt-1 text-sm leading-6 text-mute">{item.hook}</p>
             <span className="mt-5 text-sm font-semibold text-brand">{item.add} →</span>

@@ -3,7 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
 import Avatar from "../components/Avatar";
+import { roleLabel, statusLabel } from "../data/labels";
 import { formatPremiumUntil, formatWhen, providerLabel } from "../data/profile";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const EMPTY_FILTERS = {
@@ -17,6 +19,7 @@ const EMPTY_FILTERS = {
 
 export default function Users() {
   const client = useQueryClient();
+  const dialog = useDialog();
   const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
   const directoryQuery = useQuery({ queryKey: ["admin-directory"], queryFn: adminApi.userDirectory });
   const accounts = usersQuery.data?.data ?? [];
@@ -62,20 +65,21 @@ export default function Users() {
   const filteredOn = Object.values(filters).some(Boolean) || Boolean(search.trim());
 
   async function toggleStatus(user) {
+    if (user.status === "DELETING") return;
     const next = user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
     setBusy(`status-${user.id}`);
     try {
       await adminApi.setUserStatus(user.id, next);
       await client.invalidateQueries({ queryKey: ["admin-users"] });
     } catch (err) {
-      window.alert(err.message || "Could not update status.");
+      await dialog.alert(err.message || "Could not update status.");
     } finally {
       setBusy("");
     }
   }
 
   async function setRole(user, role) {
-    if (user.role === role) return;
+    if (user.role === role || user.status === "DELETING") return;
     setBusy(`role-${user.id}`);
     try {
       await adminApi.setUserRole(user.id, role);
@@ -84,7 +88,7 @@ export default function Users() {
         client.invalidateQueries({ queryKey: ["admin-user", user.id] }),
       ]);
     } catch (err) {
-      window.alert(err.message || "Could not update role.");
+      await dialog.alert(err.message || "Could not update role.");
     } finally {
       setBusy("");
     }
@@ -103,7 +107,7 @@ export default function Users() {
         client.invalidateQueries({ queryKey: ["admin-directory"] }),
       ]);
     } catch (err) {
-      window.alert(err.message || "Could not create this account.");
+      await dialog.alert(err.message || "Could not create this account.");
     } finally {
       setBusy("");
     }
@@ -143,8 +147,8 @@ export default function Users() {
             value={invite.role}
             onChange={(e) => setInvite((prev) => ({ ...prev, role: e.target.value }))}
           >
-            <option value="USER">User</option>
-            <option value="EDITOR">Editor</option>
+            <option value="USER">{roleLabel("USER")}</option>
+            <option value="EDITOR">{roleLabel("EDITOR")}</option>
           </select>
           <button className="btn-brand" type="submit" disabled={busy === "invite"}>
             {busy === "invite" ? "Creating…" : "Invite"}
@@ -196,9 +200,9 @@ export default function Users() {
           onChange={(role) => setFilters((prev) => ({ ...prev, role }))}
           options={[
             { key: "", label: `All · ${rows.length}` },
-            { key: "USER", label: "User" },
-            { key: "EDITOR", label: "Editor" },
-            { key: "ADMIN", label: "Admin" },
+            { key: "USER", label: roleLabel("USER") },
+            { key: "EDITOR", label: roleLabel("EDITOR") },
+            { key: "ADMIN", label: roleLabel("ADMIN") },
           ]}
         />
         <FilterRow
@@ -207,8 +211,9 @@ export default function Users() {
           onChange={(status) => setFilters((prev) => ({ ...prev, status }))}
           options={[
             { key: "", label: "All" },
-            { key: "ACTIVE", label: "Active" },
-            { key: "DISABLED", label: "Disabled" },
+            { key: "ACTIVE", label: statusLabel("ACTIVE") },
+            { key: "DISABLED", label: statusLabel("DISABLED") },
+            { key: "DELETING", label: statusLabel("DELETING") },
           ]}
         />
         <FilterRow
@@ -269,13 +274,17 @@ export default function Users() {
                 <Link to={`/users/${u.id}`} className="truncate font-semibold hover:text-brand">{u.name}</Link>
                 <p className="truncate text-sm text-mute">{u.email}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
-                    {u.role}
+                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-mute">
+                    {roleLabel(u.role)}
                   </span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                    u.status === "ACTIVE" ? "bg-brand/15 text-brand" : "bg-rose-500/15 text-hard"
+                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide ${
+                    u.status === "ACTIVE"
+                      ? "bg-brand/15 text-brand"
+                      : u.status === "DELETING"
+                        ? "bg-amber-400/15 text-amber-400"
+                        : "bg-rose-500/15 text-hard"
                   }`}>
-                    {u.status}
+                    {statusLabel(u.status)}
                   </span>
                   {u.premium && (
                     <span className="rounded-full bg-blue-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-premium">
@@ -303,22 +312,22 @@ export default function Users() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {u.role !== "ADMIN" && (
+              {u.role !== "ADMIN" && u.status !== "DELETING" && (
                 <select
                   className="field mt-0 !w-auto !py-1.5 text-sm"
                   value={u.role}
                   disabled={busy === `role-${u.id}`}
                   onChange={(e) => setRole(u, e.target.value)}
                 >
-                  <option value="USER">User</option>
-                  <option value="EDITOR">Editor</option>
+                  <option value="USER">{roleLabel("USER")}</option>
+                  <option value="EDITOR">{roleLabel("EDITOR")}</option>
                 </select>
               )}
               <Link to={`/users/${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">View profile</Link>
               {u.role !== "ADMIN" && (
                 <Link to={`/billing?user=${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Billing</Link>
               )}
-              {u.role !== "ADMIN" && (
+              {u.role !== "ADMIN" && u.status !== "DELETING" && (
                 <button
                   type="button"
                   className={u.status === "ACTIVE" ? "btn-ghost !px-4 !py-1.5 !text-hard text-sm" : "btn-brand !px-4 !py-1.5 text-sm"}

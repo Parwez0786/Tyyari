@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import Layout from "../components/Layout";
+import { typeLabel } from "../data/labels";
 import { useAuthStore } from "../stores/authStore";
 
 const TRACKS = [
@@ -235,7 +236,7 @@ export default function Landing() {
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/20 text-ink">
                     <Icon size={18} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-mute">{track.type}</span>
+                  <span className="text-xs font-bold tracking-[0.14em] text-mute">{typeLabel(track.type)}</span>
                 </div>
                 <h3 className="mt-4 text-lg font-bold">{track.title}</h3>
                 <p className="mt-1 text-sm leading-6 text-mute">{track.hook}</p>

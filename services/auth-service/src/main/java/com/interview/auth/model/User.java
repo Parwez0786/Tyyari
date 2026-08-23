@@ -36,5 +36,5 @@ public class User {
     private Instant updatedAt;
 
     public enum Role { USER, ADMIN, EDITOR }
-    public enum Status { ACTIVE, DISABLED }
+    public enum Status { ACTIVE, DISABLED, DELETING }
 }

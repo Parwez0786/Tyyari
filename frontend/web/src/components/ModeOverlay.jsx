@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { typeLabel } from "../data/labels";
 import { QuestionMeta } from "./QuestionMeta";
 
 export default function ModeOverlay({ question, onPick, onClose }) {
@@ -31,7 +32,7 @@ export default function ModeOverlay({ question, onPick, onClose }) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-400">{question.type}</p>
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-amber-400">{typeLabel(question.type)}</p>
             <h2 id="mode-overlay-title" className="mt-1 text-xl font-bold text-white sm:text-2xl">{question.title}</h2>
             <div className="mt-3">
               <QuestionMeta data={question} />

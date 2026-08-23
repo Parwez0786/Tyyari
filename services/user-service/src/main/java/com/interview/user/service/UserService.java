@@ -143,6 +143,16 @@ public class UserService {
         return rows;
     }
 
+    public void deleteAccount(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId is required");
+        }
+        submissions.deleteByUserId(userId);
+        profiles.deleteByUserId(userId);
+        preferences.deleteByUserId(userId);
+        goals.deleteByUserId(userId);
+    }
+
     public Goals saveGoals(String userId, GoalsRequest req) {
         Goals current = goals.findByUserId(userId).orElse(Goals.builder().userId(userId).build());
         if (req.targetCompanies() != null) current.setTargetCompanies(req.targetCompanies());

@@ -14,6 +14,7 @@ create_topic() {
 }
 
 create_topic "user-events"
+create_topic "user-events.DLT"
 create_topic "content-events"
 create_topic "audit-events"
 

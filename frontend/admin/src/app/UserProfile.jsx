@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
 import { HBarList } from "../components/Charts";
+import {
+  difficultyLabel,
+  languageLabel,
+  paymentLabel,
+  providerLabel,
+  roleLabel,
+  scopeLabel,
+  statusLabel,
+  themeLabel,
+  typeLabel,
+  viewLabel,
+} from "../data/labels";
 import { DAILY, EXPERIENCES, ROLES, formatWhen, roleMeta } from "../data/profile";
+import { useDialog } from "../components/Dialog";
 import { adminApi } from "../services/api";
 
 const TYPE_COLORS = {
@@ -17,7 +30,9 @@ const TYPE_COLORS = {
 
 export default function UserProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const client = useQueryClient();
+  const dialog = useDialog();
   const accountQuery = useQuery({ queryKey: ["admin-user", id], queryFn: () => adminApi.user(id) });
   const profileQuery = useQuery({ queryKey: ["admin-user-profile", id], queryFn: () => adminApi.userProfile(id) });
   const paymentsQuery = useQuery({ queryKey: ["admin-payments", id], queryFn: () => adminApi.payments({ userId: id }) });
@@ -25,6 +40,7 @@ export default function UserProfile() {
   const [until, setUntil] = useState("");
   const [busy, setBusy] = useState("");
   const [supportNote, setSupportNote] = useState(null);
+  const [deleteEmail, setDeleteEmail] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [fileIndex, setFileIndex] = useState(0);
 
@@ -45,7 +61,7 @@ export default function UserProfile() {
   const daily = goals.dailyGoalMinutes;
   const role = roleMeta(targetRole);
   const byType = (progress.byType || []).map((row) => ({
-    label: row.type,
+    label: typeLabel(row.type),
     value: row.completed,
     color: TYPE_COLORS[row.type],
   }));
@@ -68,7 +84,7 @@ export default function UserProfile() {
   }, [activeId]);
 
   async function setRole(role) {
-    if (!account || account.role === "ADMIN" || account.role === role) return;
+    if (!account || account.role === "ADMIN" || account.role === role || account.status === "DELETING") return;
     setBusy("role");
     try {
       await adminApi.setUserRole(account.id, role);
@@ -77,14 +93,14 @@ export default function UserProfile() {
         client.invalidateQueries({ queryKey: ["admin-users"] }),
       ]);
     } catch (err) {
-      window.alert(err.message || "Could not update role.");
+      await dialog.alert(err.message || "Could not update role.");
     } finally {
       setBusy("");
     }
   }
 
   async function toggleStatus() {
-    if (!account || account.role === "ADMIN") return;
+    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
     const next = account.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
     await adminApi.setUserStatus(account.id, next);
     await Promise.all([
@@ -102,7 +118,7 @@ export default function UserProfile() {
   }
 
   async function support(kind) {
-    if (!account || account.role === "ADMIN") return;
+    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
     setBusy(kind);
     setSupportNote(null);
     try {
@@ -112,30 +128,37 @@ export default function UserProfile() {
       setSupportNote(json.data);
       await client.invalidateQueries({ queryKey: ["admin-user", id] });
     } catch (err) {
-      window.alert(err.message || "Could not send the email.");
+      await dialog.alert(err.message || "Could not send the email.");
     } finally {
       setBusy("");
     }
   }
 
   async function revokeSessions() {
-    if (!account || account.role === "ADMIN") return;
-    if (!window.confirm("Sign this person out on every device? They will need to log in again.")) return;
+    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
+    if (!await dialog.confirm("Sign this person out on every device? They will need to log in again.", {
+      title: "Sign out everywhere",
+      confirmLabel: "Sign out",
+    })) return;
     setBusy("revoke");
     setSupportNote(null);
     try {
       await adminApi.revokeSessions(account.id);
       setSupportNote({ message: "All refresh tokens were revoked. They must sign in again." });
     } catch (err) {
-      window.alert(err.message || "Could not revoke sessions.");
+      await dialog.alert(err.message || "Could not revoke sessions.");
     } finally {
       setBusy("");
     }
   }
 
   async function forceVerify() {
-    if (!account || account.role === "ADMIN" || account.emailVerified) return;
-    if (!window.confirm("Mark this email verified? They can sign in without clicking the mail link.")) return;
+    if (!account || account.role === "ADMIN" || account.emailVerified || account.status === "DELETING") return;
+    if (!await dialog.confirm("Mark this email verified? They can sign in without clicking the mail link.", {
+      title: "Mark email verified",
+      confirmLabel: "Verify",
+      tone: "warning",
+    })) return;
     setBusy("force-verify");
     setSupportNote(null);
     try {
@@ -146,14 +169,44 @@ export default function UserProfile() {
         client.invalidateQueries({ queryKey: ["admin-users"] }),
       ]);
     } catch (err) {
-      window.alert(err.message || "Could not verify this inbox.");
+      await dialog.alert(err.message || "Could not verify this inbox.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function deleteAccount() {
+    if (!account || account.role === "ADMIN") return;
+    if (deleteEmail.trim().toLowerCase() !== String(account.email || "").toLowerCase()) {
+      await dialog.alert("Type the account email to confirm delete.", { title: "Confirm the email" });
+      return;
+    }
+    if (!await dialog.confirm("Queue a wipe of this login, profile, submissions, and payment rows? This cannot be undone.", {
+      title: "Delete account",
+      confirmLabel: "Delete",
+    })) return;
+    setBusy("delete");
+    setSupportNote(null);
+    try {
+      const json = await adminApi.deleteAccount(account.id);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-users"] }),
+        client.invalidateQueries({ queryKey: ["admin-audit"] }),
+      ]);
+      await dialog.alert(json.message || "Deletion queued. They are signed out.", {
+        title: "Deletion queued",
+        tone: "ok",
+      });
+      navigate("/users");
+    } catch (err) {
+      await dialog.alert(err.message || "Could not queue the wipe.");
     } finally {
       setBusy("");
     }
   }
 
   async function setPremium(premium) {
-    if (!account || account.role === "ADMIN") return;
+    if (!account || account.role === "ADMIN" || account.status === "DELETING") return;
     setBusy(premium ? "grant" : "revoke");
     try {
       await adminApi.setPremium(account.id, {
@@ -162,7 +215,7 @@ export default function UserProfile() {
       });
       await refreshPayments();
     } catch (err) {
-      window.alert(err.message || "Could not update Premium.");
+      await dialog.alert(err.message || "Could not update Premium.");
     } finally {
       setBusy("");
     }
@@ -199,10 +252,14 @@ export default function UserProfile() {
                   <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-premium">Premium</span>
                 )}
                 {account?.status && (
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                    account.status === "ACTIVE" ? "bg-brand/15 text-brand" : "bg-rose-500/15 text-hard"
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold tracking-wide ${
+                    account.status === "ACTIVE"
+                      ? "bg-brand/15 text-brand"
+                      : account.status === "DELETING"
+                        ? "bg-amber-400/15 text-amber-400"
+                        : "bg-rose-500/15 text-hard"
                   }`}>
-                    {account.status}
+                    {statusLabel(account.status)}
                   </span>
                 )}
               </div>
@@ -210,7 +267,7 @@ export default function UserProfile() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/users" className="btn-ghost">Back to users</Link>
-            {account && account.role !== "ADMIN" && (
+            {account && account.role !== "ADMIN" && account.status !== "DELETING" && (
               <>
                 <button
                   type="button"
@@ -241,26 +298,29 @@ export default function UserProfile() {
             Send a reset or verification email, mark the inbox verified, or kick every device. Disable also kills refresh tokens.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="btn-brand" disabled={Boolean(busy)} onClick={() => support("reset")}>
+            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => support("reset")}>
               {busy === "reset" ? "Sending…" : "Reset password"}
             </button>
             <button
               type="button"
               className="btn-ghost"
-              disabled={Boolean(busy) || account.emailVerified}
+              disabled={Boolean(busy) || account.emailVerified || account.status === "DELETING"}
               onClick={() => support("verify")}
             >
               {busy === "verify" ? "Sending…" : account.emailVerified ? "Email already verified" : "Resend verification"}
             </button>
             {!account.emailVerified && (
-              <button type="button" className="btn-ghost" disabled={Boolean(busy)} onClick={forceVerify}>
+              <button type="button" className="btn-ghost" disabled={Boolean(busy) || account.status === "DELETING"} onClick={forceVerify}>
                 {busy === "force-verify" ? "Saving…" : "Mark email verified"}
               </button>
             )}
-            <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy)} onClick={revokeSessions}>
+            <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === "DELETING"} onClick={revokeSessions}>
               {busy === "revoke" ? "Signing out…" : "Sign out everywhere"}
             </button>
           </div>
+          {account.status === "DELETING" && (
+            <p className="mt-4 text-sm text-amber-400">Wipe is queued. Support actions are locked until the account is gone.</p>
+          )}
           {supportNote && (
             <div className="mt-4 rounded-2xl border border-line bg-surface px-4 py-3.5">
               <p className="text-sm font-semibold">{supportNote.message}</p>
@@ -278,6 +338,41 @@ export default function UserProfile() {
               )}
             </div>
           )}
+        </article>
+      )}
+
+      {account && account.role !== "ADMIN" && (
+        <article className="rounded-[28px] border border-rose-500/25 bg-card p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Danger</p>
+          <h2 className="mt-2 text-xl font-extrabold tracking-tight">Delete account</h2>
+          <p className="mt-1 text-sm text-mute">
+            Signs them out now, then wipes login, profile, goals, prefs, submissions, and payment rows in the background.
+            If a service is down, the wipe retries automatically. Cannot undo.
+          </p>
+          <label className="mt-5 block">
+            <p className="text-xs font-semibold uppercase tracking-wide text-mute">Type {account.email} to confirm</p>
+            <input
+              className="field mt-2"
+              value={deleteEmail}
+              onChange={(e) => setDeleteEmail(e.target.value)}
+              placeholder={account.email}
+              autoComplete="off"
+            />
+          </label>
+          <div className="mt-4">
+            <button
+              type="button"
+              className="btn-ghost !text-hard"
+              disabled={Boolean(busy) || deleteEmail.trim().toLowerCase() !== String(account.email || "").toLowerCase()}
+              onClick={deleteAccount}
+            >
+              {busy === "delete"
+                ? "Queueing…"
+                : account.status === "DELETING"
+                  ? "Retry wipe"
+                  : "Delete account"}
+            </button>
+          </div>
         </article>
       )}
 
@@ -306,7 +401,7 @@ export default function UserProfile() {
                       item.id === activeId ? "border-brand/40 bg-brand/10" : "border-line bg-surface hover:border-brand/25"
                     }`}
                   >
-                    <p className="text-sm font-semibold">{item.questionType || "Practice"} · {item.scope}</p>
+                    <p className="text-sm font-semibold">{item.questionType ? typeLabel(item.questionType) : "Practice"} · {scopeLabel(item.scope)}</p>
                     <p className="mt-0.5 text-xs text-mute">{formatWhen(item.submittedAt)}</p>
                   </button>
                 </li>
@@ -338,11 +433,11 @@ export default function UserProfile() {
             </label>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="btn-brand" disabled={Boolean(busy)} onClick={() => setPremium(true)}>
+            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => setPremium(true)}>
               {busy === "grant" ? "Saving…" : account.premium ? "Update Premium" : "Grant Premium"}
             </button>
             {account.premium && (
-              <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy)} onClick={() => setPremium(false)}>
+              <button type="button" className="btn-ghost !text-hard" disabled={Boolean(busy) || account.status === "DELETING"} onClick={() => setPremium(false)}>
                 {busy === "revoke" ? "Saving…" : "Revoke Premium"}
               </button>
             )}
@@ -351,8 +446,8 @@ export default function UserProfile() {
           <div className="mt-5 space-y-2">
             {(paymentsQuery.data?.data ?? []).slice(0, 5).map((item) => (
               <div key={item.id || item.providerRef} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
-                <span className="font-semibold capitalize">{item.status}</span>
-                <span className="text-mute">{item.displayAmount} · {item.provider}</span>
+                <span className="font-semibold">{paymentLabel(item.status)}</span>
+                <span className="text-mute">{item.displayAmount} · {providerLabel(item.provider)}</span>
                 <span className="text-xs text-mute">{formatWhen(item.createdAt)}</span>
               </div>
             ))}
@@ -481,7 +576,7 @@ export default function UserProfile() {
               />
             ))}
           </div>
-          <p className="mt-3 text-xs text-mute">Last submit {formatWhen(progress.lastSubmittedAt)} · {progress.lastQuestionType || "none"}</p>
+          <p className="mt-3 text-xs text-mute">Last submit {formatWhen(progress.lastSubmittedAt)} · {progress.lastQuestionType ? typeLabel(progress.lastQuestionType) : "none"}</p>
           <div className="mt-5">
             <HBarList series={byType} />
           </div>
@@ -497,24 +592,24 @@ export default function UserProfile() {
                 <select
                   className="field mt-2"
                   value={account.role}
-                  disabled={busy === "role"}
+                  disabled={busy === "role" || account.status === "DELETING"}
                   onChange={(e) => setRole(e.target.value)}
                 >
-                  <option value="USER">USER</option>
-                  <option value="EDITOR">EDITOR</option>
+                  <option value="USER">{roleLabel("USER")}</option>
+                  <option value="EDITOR">{roleLabel("EDITOR")}</option>
                 </select>
               </label>
             ) : (
-              <Field label="Role" value={account?.role || "—"} />
+              <Field label="Role" value={roleLabel(account?.role)} />
             )}
-            <Field label="Provider" value={account?.provider || "password"} />
+            <Field label="Sign-in" value={providerLabel(account?.provider)} />
             <Field label="Email verified" value={account?.emailVerified ? "Yes" : "No"} />
             <Field label="Premium until" value={account?.premium ? (account.premiumUntil ? formatWhen(account.premiumUntil) : "Lifetime") : "—"} />
             <Field label="Joined" value={formatWhen(account?.createdAt)} />
             <Field label="Updated" value={formatWhen(account?.updatedAt)} />
-            <Field label="Editor language" value={prefs.preferredLanguage || "—"} />
-            <Field label="Difficulty pref" value={prefs.difficultyPreference || "—"} />
-            <Field label="Theme" value={prefs.theme || "—"} />
+            <Field label="Editor language" value={languageLabel(prefs.preferredLanguage)} />
+            <Field label="Difficulty pref" value={difficultyLabel(prefs.difficultyPreference)} />
+            <Field label="Theme" value={themeLabel(prefs.theme)} />
             <Field label="Email notices" value={prefs.emailNotifications ? "On" : "Off"} />
           </div>
         </article>
@@ -549,9 +644,9 @@ function SubmissionRead({ submission, loading, fileIndex, onFile }) {
   return (
     <div className="min-w-0 space-y-4">
       <div className="flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-bold uppercase tracking-wide text-mute">{submission.questionType || "—"}</span>
-        {submission.language && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{submission.language}</span>}
-        {submission.view && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{submission.view}</span>}
+        <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-bold tracking-wide text-mute">{typeLabel(submission.questionType)}</span>
+        {submission.language && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{languageLabel(submission.language)}</span>}
+        {submission.view && <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-mute">{viewLabel(submission.view)}</span>}
         <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-mute">{formatWhen(submission.submittedAt)}</span>
       </div>
       <p className="truncate text-xs text-mute">Question {submission.questionId}</p>

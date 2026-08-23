@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class UserEventPublisher {
@@ -41,6 +42,21 @@ public class UserEventPublisher {
             kafkaTemplate.send(topic, userId, objectMapper.writeValueAsString(event));
         } catch (Exception e) {
             log.warn("Failed to publish USER_REGISTERED for {}", userId, e);
+        }
+    }
+
+    public void publishDeleteRequested(String userId, String email) {
+        try {
+            Map<String, Object> event = Map.of(
+                    "eventId", UUID.randomUUID().toString(),
+                    "eventType", "USER_DELETE_REQUESTED",
+                    "userId", userId,
+                    "timestamp", Instant.now().toString(),
+                    "data", Map.of("email", email == null ? "" : email)
+            );
+            kafkaTemplate.send(topic, userId, objectMapper.writeValueAsString(event)).get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to queue account deletion for " + userId, e);
         }
     }
 }

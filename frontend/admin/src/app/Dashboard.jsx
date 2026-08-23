@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { BarChart, Donut, HBarList, countByDay, lastDays } from "../components/Charts";
 import PageHero from "../components/PageHero";
+import { providerLabel, targetRoleLabel, typeLabel } from "../data/labels";
 import { adminApi } from "../services/api";
 
 const TYPE_COLORS = {
@@ -32,18 +33,20 @@ export default function Dashboard() {
   const freeActive = candidates.filter((u) => !u.premium && u.status === "ACTIVE").length;
   const verified = candidates.filter((u) => u.emailVerified).length;
   const signups = countByDay(candidates, (u) => (u.createdAt || "").slice(0, 10), days);
-  const providers = tally(candidates.map((u) => u.provider || "password"));
+  const providers = tally(candidates.map((u) => providerLabel(u.provider)));
   const submissionsByDay = (metrics.submissionsByDay || []).map((row) => ({
     label: String(row.date || "").slice(5),
     value: row.count || 0,
   }));
-  const byType = Object.entries(metrics.byType || {}).map(([label, value]) => ({
-    label,
-    value,
-    color: TYPE_COLORS[label] || "#94a3b8",
-  }));
-  const catalog = Object.entries(stats.byType || {}).map(([label, value]) => ({ label, value }));
-  const roles = Object.entries(metrics.byTargetRole || {}).map(([label, value]) => ({ label, value }));
+  const byType = Object.entries(metrics.byType || {})
+    .filter(([label]) => label !== "UNKNOWN")
+    .map(([label, value]) => ({
+      label: typeLabel(label),
+      value,
+      color: TYPE_COLORS[label] || "#94a3b8",
+    }));
+  const catalog = Object.entries(stats.byType || {}).map(([label, value]) => ({ label: typeLabel(label), value }));
+  const roles = Object.entries(metrics.byTargetRole || {}).map(([label, value]) => ({ label: targetRoleLabel(label), value }));
   const experience = Object.entries(metrics.byExperience || {}).map(([label, value]) => ({ label, value }));
   const published = stats.publishedQuestions || 0;
   const onboarded = metrics.onboarded || 0;
@@ -105,7 +108,7 @@ export default function Dashboard() {
             <Donut
               center={metrics.submissions ?? 0}
               sub="submits"
-              segments={byType.filter((row) => row.label !== "UNKNOWN")}
+              segments={byType}
             />
           ) : (
             <p className="text-sm text-mute">No submissions yet. They appear after a candidate hits Submit.</p>
