@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { authApi } from "./services/api";
 import { useAuthStore } from "./stores/authStore";
 import Landing from "./app/Landing";
 import Login from "./app/Login";
@@ -22,7 +24,21 @@ import Legal from "./app/Legal";
 
 function Private({ children }) {
   const token = useAuthStore((s) => s.accessToken);
+  const clear = useAuthStore((s) => s.clear);
+  const session = useQuery({
+    queryKey: ["me"],
+    queryFn: authApi.me,
+    enabled: Boolean(token),
+    retry: false,
+  });
   if (!token) return <Navigate to="/login" replace />;
+  if (session.isLoading) {
+    return <p className="p-6 text-sm text-mute">Checking your session…</p>;
+  }
+  if (session.isError) {
+    clear();
+    return <Navigate to="/login" replace />;
+  }
   return children;
 }
 

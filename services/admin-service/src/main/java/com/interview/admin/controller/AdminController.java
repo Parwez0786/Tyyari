@@ -258,6 +258,15 @@ public class AdminController {
         return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/verify", "{}", userId));
     }
 
+    @PostMapping("/users/{id}/revoke-sessions")
+    public ResponseEntity<String> revokeSessions(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        auditService.record(userId, "USER_REVOKE_SESSIONS", id);
+        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/revoke-sessions", "{}", userId));
+    }
+
     @GetMapping("/users/{id}/submissions")
     public ResponseEntity<String> userSubmissions(
             @PathVariable String id,

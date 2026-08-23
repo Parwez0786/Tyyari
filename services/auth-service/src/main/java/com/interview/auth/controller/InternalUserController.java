@@ -71,4 +71,10 @@ public class InternalUserController {
     public ApiResponse<User> verify(@PathVariable String id) {
         return ApiResponse.ok(authService.forceVerifyEmail(id));
     }
+
+    @PostMapping("/{id}/revoke-sessions")
+    public ApiResponse<Void> revokeSessions(@PathVariable String id) {
+        authService.revokeSessions(id);
+        return ApiResponse.ok(null, "Sessions revoked");
+    }
 }
