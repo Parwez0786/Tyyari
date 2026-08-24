@@ -6,7 +6,7 @@ import { QuestionMeta } from "./QuestionMeta";
 export default function PromptCard({ data, hideHints = false }) {
   const dsa = data?.type === QuestionType.DSA || data?.type === QuestionType.OA;
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-white/10 bg-card">
+    <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-white/10 bg-card md:border-r">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/10 px-4">
         <FileText size={15} className="text-brand" />
         <p className="text-sm font-semibold text-ink">Description</p>

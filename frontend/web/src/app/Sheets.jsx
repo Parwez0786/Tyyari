@@ -30,7 +30,7 @@ export default function Sheets() {
           <Icon size={12} />
           {typeLabel(selected)}
         </p>
-        <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{track.title} sheets</h1>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">{track.title} sheets</h1>
         <p className="mt-3 max-w-2xl text-[15px] text-mute">
           Every user gets the same fixed question set. Submit an answer to mark a problem complete.
         </p>

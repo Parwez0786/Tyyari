@@ -22,7 +22,7 @@ export default function FilterSelect({ value, onChange, options, placeholder, cl
   }, []);
 
   return (
-    <div ref={root} className={`relative ${className}`}>
+    <div ref={root} className={`relative min-w-0 ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}

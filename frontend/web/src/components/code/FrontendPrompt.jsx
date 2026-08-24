@@ -9,7 +9,7 @@ export default function FrontendPrompt({ data, submitted = false }) {
   const tip = data?.hints?.[0] || "Focus on functionality first, then polish the styling.";
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-white/10 bg-card">
+    <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-white/10 bg-card md:border-r">
       <div className="flex h-11 shrink-0 items-center gap-1 border-b border-white/10 px-2">
         {["problem", "solution", "history"].map((id) => (
           <button

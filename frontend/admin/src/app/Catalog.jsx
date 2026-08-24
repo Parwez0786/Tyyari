@@ -34,7 +34,7 @@ export default function Catalog() {
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Interview loops</h2>
           <p className="mt-1 text-sm text-mute">Shows on practice cards and company filters.</p>
           <form
-            className="mt-5 flex gap-2"
+            className="mt-5 flex min-w-0 gap-2"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!company.trim()) return;
@@ -43,13 +43,13 @@ export default function Catalog() {
               client.invalidateQueries({ queryKey: ["admin-companies"] });
             }}
           >
-            <input className="field mt-0 flex-1" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Google" />
+            <input className="field mt-0 min-w-0 flex-1" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Google" />
             <button className="btn-brand !px-4">Add</button>
           </form>
           <ul className="mt-4 space-y-2 text-sm">
             {(companies.data?.data ?? []).map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5">
-                <span className="font-medium">{c.name}</span>
+                <span className="min-w-0 truncate font-medium">{c.name}</span>
                 <button
                   type="button"
                   className="text-xs font-semibold text-hard"
@@ -124,7 +124,7 @@ export default function Catalog() {
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Short labels</h2>
           <p className="mt-1 text-sm text-mute">Free-form chips like two-pointers or LRU.</p>
           <form
-            className="mt-5 flex gap-2"
+            className="mt-5 flex min-w-0 gap-2"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!tag.trim()) return;
@@ -133,7 +133,7 @@ export default function Catalog() {
               client.invalidateQueries({ queryKey: ["admin-tags"] });
             }}
           >
-            <input className="field mt-0 flex-1" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="two-pointers" />
+            <input className="field mt-0 min-w-0 flex-1" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="two-pointers" />
             <button className="btn-brand !px-4">Add</button>
           </form>
           <ul className="mt-4 space-y-2 text-sm">

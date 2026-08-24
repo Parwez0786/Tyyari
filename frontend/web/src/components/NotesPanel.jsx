@@ -33,7 +33,7 @@ export default function NotesPanel({ questionId, defaults, onCollapse, onApi }) 
   }, [onApi, math, explanation]);
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden border-l border-line bg-card">
+    <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-line bg-card md:border-l">
       <div className="flex h-11 shrink-0 items-center justify-between border-b border-line px-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink">Analysis & math</p>
         {onCollapse && (
@@ -75,7 +75,7 @@ export default function NotesPanel({ questionId, defaults, onCollapse, onApi }) 
           type="button"
           disabled
           title="AI analysis is not live yet. Submit your canvas and notes — they still save to your account."
-          className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white opacity-80"
+          className="flex w-full flex-wrap items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white opacity-80"
           style={{ background: "linear-gradient(90deg, #3b82f6 0%, #ec4899 100%)" }}
         >
           <PlayIcon />

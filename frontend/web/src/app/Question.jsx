@@ -10,10 +10,12 @@ import Palette from "../components/blueprint/Palette";
 import PromptCard, { RequirementsBlock } from "../components/PromptCard";
 import { QuestionMeta } from "../components/QuestionMeta";
 import ThemeToggle from "../components/ThemeToggle";
+import WorkspaceTabs from "../components/WorkspaceTabs";
 import { PremiumGate } from "./Premium";
 import { QuestionType, ViewMode, practicePath } from "../data/enums";
 import { typeLabel } from "../data/labels";
 import { useDesignWorkspace } from "../hooks/useDesignWorkspace";
+import { useNarrowScreen } from "../hooks/useNarrowScreen";
 import { useQuestion } from "../hooks/useQuestion";
 
 const BlueprintBoard = lazy(() => import("../components/BlueprintBoard"));
@@ -156,10 +158,12 @@ function WhiteboardMode({ data, backTo, backLabel }) {
 
 function DesignWorkspace({ data, backTo = practicePath(QuestionType.HLD), backLabel = "Back to HLD practice", onDownload, onSubmit, submitting = false, submitted = false, notesRef, children }) {
   const [focus, setFocus] = useState(false);
+  const [pane, setPane] = useState("canvas");
+  const narrow = useNarrowScreen();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-3">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5 sm:gap-2 sm:px-3">
         <Link
           to={backTo}
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-mute hover:bg-field hover:text-ink"
@@ -172,7 +176,7 @@ function DesignWorkspace({ data, backTo = practicePath(QuestionType.HLD), backLa
         <button
           type="button"
           onClick={() => setFocus((v) => !v)}
-          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${focus ? "bg-field text-ink" : "text-mute hover:bg-field hover:text-ink"}`}
+          className={`hidden h-8 w-8 items-center justify-center rounded-lg md:inline-flex ${focus ? "bg-field text-ink" : "text-mute hover:bg-field hover:text-ink"}`}
           aria-label={focus ? "Show side panels" : "Focus canvas"}
           title={focus ? "Show side panels" : "Focus canvas"}
         >
@@ -184,7 +188,7 @@ function DesignWorkspace({ data, backTo = practicePath(QuestionType.HLD), backLa
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500"
         >
           <Download size={15} />
-          Download
+          <span className="hidden sm:inline">Download</span>
         </button>
         {onSubmit && (
           <button
@@ -193,39 +197,70 @@ function DesignWorkspace({ data, backTo = practicePath(QuestionType.HLD), backLa
             disabled={submitting}
             className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
           >
-            {submitting ? "Saving…" : submitted ? "Submitted" : "Submit"}
+            {submitting ? "Saving…" : submitted ? "Saved" : "Submit"}
           </button>
         )}
       </header>
 
-      <PanelGroup direction="horizontal" autoSaveId="tyyari.design" className="min-h-0 flex-1">
-        {!focus && (
-          <>
-            <Panel defaultSize={22} minSize={16} maxSize={34} className="h-full min-h-0">
-              <PromptCard data={data} />
-            </Panel>
-            <PanelResizeHandle className="tyyari-resize" />
-          </>
-        )}
-        <Panel defaultSize={focus ? 100 : 50} minSize={30} className="h-full min-h-0">
-          {children}
-        </Panel>
-        {!focus && (
-          <>
-            <PanelResizeHandle className="tyyari-resize" />
-            <Panel defaultSize={28} minSize={18} maxSize={40} className="h-full min-h-0">
-              <NotesPanel
-                questionId={data.id}
-                defaults={{ math: data.estimates || "", explanation: data.canvasNotes || "" }}
-                onCollapse={() => setFocus(true)}
-                onApi={(api) => {
-                  if (notesRef) notesRef.current = api;
-                }}
-              />
-            </Panel>
-          </>
-        )}
-      </PanelGroup>
+      {narrow && (
+        <WorkspaceTabs
+          tabs={[
+            { id: "prompt", label: "Prompt" },
+            { id: "canvas", label: "Canvas" },
+            { id: "notes", label: "Notes" },
+          ]}
+          value={pane}
+          onChange={setPane}
+        />
+      )}
+      {narrow ? (
+        <div className="relative min-h-0 flex-1">
+          <div className={`h-full min-h-0 ${pane === "prompt" ? "" : "hidden"}`}>
+            <PromptCard data={data} />
+          </div>
+          <div className={`h-full min-h-0 ${pane === "canvas" ? "" : "hidden"}`}>
+            {children}
+          </div>
+          <div className={`h-full min-h-0 ${pane === "notes" ? "" : "hidden"}`}>
+            <NotesPanel
+              questionId={data.id}
+              defaults={{ math: data.estimates || "", explanation: data.canvasNotes || "" }}
+              onApi={(api) => {
+                if (notesRef) notesRef.current = api;
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <PanelGroup direction="horizontal" autoSaveId="tyyari.design" className="min-h-0 flex-1">
+          {!focus && (
+            <>
+              <Panel defaultSize={22} minSize={16} maxSize={34} className="h-full min-h-0">
+                <PromptCard data={data} />
+              </Panel>
+              <PanelResizeHandle className="tyyari-resize" />
+            </>
+          )}
+          <Panel defaultSize={focus ? 100 : 50} minSize={30} className="h-full min-h-0">
+            {children}
+          </Panel>
+          {!focus && (
+            <>
+              <PanelResizeHandle className="tyyari-resize" />
+              <Panel defaultSize={28} minSize={18} maxSize={40} className="h-full min-h-0">
+                <NotesPanel
+                  questionId={data.id}
+                  defaults={{ math: data.estimates || "", explanation: data.canvasNotes || "" }}
+                  onCollapse={() => setFocus(true)}
+                  onApi={(api) => {
+                    if (notesRef) notesRef.current = api;
+                  }}
+                />
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
+      )}
     </div>
   );
 }

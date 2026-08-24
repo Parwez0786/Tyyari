@@ -9,14 +9,14 @@ export default function AuthShell({ children, title, subtitle, aside }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 bg-surface">
-        <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Logo />
           <div className="flex shrink-0 items-center gap-2">
             {!onLogin && (
               <Link to="/login" className="hidden text-sm font-medium sm:inline">Sign in</Link>
             )}
             <ThemeToggle compact />
-            <Link to="/register" className="btn-black !h-9 !px-3.5 !py-0 text-sm">
+            <Link to="/register" className="btn-black !h-9 shrink-0 !px-3 !py-0 text-sm">
               Get started
             </Link>
           </div>

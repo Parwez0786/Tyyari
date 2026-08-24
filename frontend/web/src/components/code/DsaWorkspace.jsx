@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { CheckCircle2, CirclePlus, Terminal, X } from "lucide-react";
 import PromptCard from "../PromptCard";
+import WorkspaceTabs from "../WorkspaceTabs";
 import MonacoPane from "./MonacoPane";
 import WorkspaceHeader from "./WorkspaceHeader";
 import { formatOutput } from "./formatOutput";
 import { dsaStarterFor, languageById, newFileId } from "./languages";
 import { runWorkspace } from "./piston";
 import { QuestionType, practicePath } from "../../data/enums";
+import { useNarrowScreen } from "../../hooks/useNarrowScreen";
 import { dsaFiles, dsaFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 export default function DsaWorkspace({
@@ -32,6 +34,8 @@ export default function DsaWorkspace({
   const [output, setOutput] = useState(null);
   const [running, setRunning] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [pane, setPane] = useState("prompt");
+  const narrow = useNarrowScreen();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(Boolean(initial.submittedAt));
   const saveTimer = useRef(null);
@@ -88,6 +92,7 @@ export default function DsaWorkspace({
 
   async function run() {
     if (running) return;
+    if (narrow) setPane("code");
     setRunning(true);
     setTab("result");
     setOutput({ status: "running" });
@@ -183,48 +188,125 @@ export default function DsaWorkspace({
         submitted={submitted}
       />
 
-      <PanelGroup direction="horizontal" autoSaveId="tyyari.dsa" className="min-h-0 flex-1">
-        {!focus && (
-          <>
-            <Panel defaultSize={32} minSize={18} maxSize={46} className="h-full min-h-0">
+      {narrow ? (
+        <>
+          <WorkspaceTabs
+            tabs={[
+              { id: "prompt", label: "Prompt" },
+              { id: "code", label: "Code" },
+            ]}
+            value={pane}
+            onChange={setPane}
+          />
+          <div className="min-h-0 flex-1">
+            {pane === "prompt" ? (
               <PromptCard data={data} hideHints={hideHints} />
-            </Panel>
-            <PanelResizeHandle className="tyyari-resize" />
-          </>
-        )}
-        <Panel defaultSize={focus ? 100 : 68} minSize={40} className="h-full min-h-0">
-          <PanelGroup direction="vertical" autoSaveId="tyyari.dsa.editor" className="h-full min-h-0">
-            <Panel defaultSize={68} minSize={36} className="min-h-0">
-              <div className="flex h-full min-h-0 flex-col bg-canvas">
-                <div className="flex h-10 shrink-0 items-center border-b border-white/10 bg-card px-3">
-                  <span className="rounded-md bg-white/5 px-2 py-1 font-mono text-xs font-semibold text-ink">{lang.main}</span>
-                </div>
-                <div className="min-h-0 flex-1">
-                  <MonacoPane file={file} onChange={updateCode} onRun={run} />
-                </div>
-              </div>
-            </Panel>
-            <PanelResizeHandle className="tyyari-resize-y" />
-            <Panel defaultSize={32} minSize={16} className="min-h-0">
-              <TestcasePanel
+            ) : (
+              <EditorSplit
+                lang={lang}
+                file={file}
+                onChange={updateCode}
+                onRun={run}
                 tab={tab}
                 onTab={setTab}
                 cases={testcases}
-                active={activeCase}
-                onSelect={setActiveCase}
-                onAdd={addCase}
-                onRemove={removeCase}
+                activeCase={activeCase}
+                setActiveCase={setActiveCase}
+                addCase={addCase}
+                removeCase={removeCase}
                 current={current}
-                onChange={updateCase}
+                updateCase={updateCase}
                 output={output}
                 running={running}
-                onClear={() => setOutput(null)}
+                setOutput={setOutput}
               />
-            </Panel>
-          </PanelGroup>
-        </Panel>
-      </PanelGroup>
+            )}
+          </div>
+        </>
+      ) : (
+        <PanelGroup direction="horizontal" autoSaveId="tyyari.dsa" className="min-h-0 flex-1">
+          {!focus && (
+            <>
+              <Panel defaultSize={32} minSize={18} maxSize={46} className="h-full min-h-0">
+                <PromptCard data={data} hideHints={hideHints} />
+              </Panel>
+              <PanelResizeHandle className="tyyari-resize" />
+            </>
+          )}
+          <Panel defaultSize={focus ? 100 : 68} minSize={40} className="h-full min-h-0">
+            <EditorSplit
+              lang={lang}
+              file={file}
+              onChange={updateCode}
+              onRun={run}
+              tab={tab}
+              onTab={setTab}
+              cases={testcases}
+              activeCase={activeCase}
+              setActiveCase={setActiveCase}
+              addCase={addCase}
+              removeCase={removeCase}
+              current={current}
+              updateCase={updateCase}
+              output={output}
+              running={running}
+              setOutput={setOutput}
+            />
+          </Panel>
+        </PanelGroup>
+      )}
     </div>
+  );
+}
+
+function EditorSplit({
+  lang,
+  file,
+  onChange,
+  onRun,
+  tab,
+  onTab,
+  cases,
+  activeCase,
+  setActiveCase,
+  addCase,
+  removeCase,
+  current,
+  updateCase,
+  output,
+  running,
+  setOutput,
+}) {
+  return (
+    <PanelGroup direction="vertical" autoSaveId="tyyari.dsa.editor" className="h-full min-h-0">
+      <Panel defaultSize={68} minSize={36} className="min-h-0">
+        <div className="flex h-full min-h-0 flex-col bg-canvas">
+          <div className="flex h-10 shrink-0 items-center border-b border-white/10 bg-card px-3">
+            <span className="rounded-md bg-white/5 px-2 py-1 font-mono text-xs font-semibold text-ink">{lang.main}</span>
+          </div>
+          <div className="min-h-0 flex-1">
+            <MonacoPane file={file} onChange={onChange} onRun={onRun} />
+          </div>
+        </div>
+      </Panel>
+      <PanelResizeHandle className="tyyari-resize-y" />
+      <Panel defaultSize={32} minSize={16} className="min-h-0">
+        <TestcasePanel
+          tab={tab}
+          onTab={onTab}
+          cases={cases}
+          active={activeCase}
+          onSelect={setActiveCase}
+          onAdd={addCase}
+          onRemove={removeCase}
+          current={current}
+          onChange={updateCase}
+          output={output}
+          running={running}
+          onClear={() => setOutput(null)}
+        />
+      </Panel>
+    </PanelGroup>
   );
 }
 

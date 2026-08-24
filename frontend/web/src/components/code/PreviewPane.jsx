@@ -35,7 +35,7 @@ export default function PreviewPane({ srcDoc, logs, onClear }) {
         <div className={`min-h-0 flex-1 overflow-auto ${mobile ? "flex justify-center bg-[#111] p-4" : "bg-white"}`}>
           <iframe
             title="Frontend preview"
-            className={mobile ? "h-full w-[320px] rounded-lg border-0 bg-white shadow-xl" : "h-full w-full border-0 bg-white"}
+            className={mobile ? "h-full w-full max-w-[320px] rounded-lg border-0 bg-white shadow-xl" : "h-full w-full border-0 bg-white"}
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={srcDoc}
           />

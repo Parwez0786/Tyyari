@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { ChevronLeft, FilePlus, Play, X } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
+import WorkspaceTabs from "../WorkspaceTabs";
 import { DifficultyBadge } from "../QuestionMeta";
 import FrontendPrompt from "./FrontendPrompt";
 import MonacoPane from "./MonacoPane";
@@ -17,6 +18,7 @@ import {
   normalizeFilePath,
 } from "./languages";
 import { Difficulty, QuestionType, practicePath } from "../../data/enums";
+import { useNarrowScreen } from "../../hooks/useNarrowScreen";
 import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 const DURATION = { [Difficulty.EASY]: 20, [Difficulty.MEDIUM]: 30, [Difficulty.HARD]: 45 };
@@ -30,6 +32,8 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
   const [dialog, setDialog] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pane, setPane] = useState("prompt");
+  const narrow = useNarrowScreen();
   const [srcDoc, setSrcDoc] = useState("");
   const { logs, clearLogs } = usePreviewLogs();
   const saveTimer = useMemo(() => ({ current: null }), []);
@@ -77,6 +81,7 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
   function run() {
     clearLogs();
     setSrcDoc(buildPreviewSrcDoc(files));
+    if (narrow) setPane("preview");
   }
 
   async function submit() {
@@ -119,7 +124,7 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-2 py-1.5 sm:gap-2 sm:px-3">
         <Link
           to={backTo}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-mute hover:bg-white/5 hover:text-ink"
@@ -127,12 +132,12 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
         >
           <ChevronLeft size={18} />
         </Link>
-        <h1 className="truncate text-sm font-semibold text-ink">{data.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{data.title}</h1>
         <DifficultyBadge difficulty={data.difficulty} />
         <span className="hidden rounded-md border border-white/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-mute sm:inline">
           {minutes} mins
         </span>
-        <div className="flex-1" />
+        <div className="hidden flex-1 sm:block" />
         <label className="hidden items-center gap-2 text-xs font-semibold text-mute sm:inline-flex">
           <input type="checkbox" checked={autoSave} onChange={(event) => setAutoSave(event.target.checked)} />
           Auto-Save {autoSave ? "Enabled" : "Off"}
@@ -141,22 +146,83 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
         <button
           type="button"
           onClick={run}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark"
+          className="inline-flex h-9 items-center gap-2 rounded-xl bg-brand px-3 text-sm font-semibold text-white hover:bg-brand-dark sm:h-10 sm:px-4"
         >
           <Play size={14} fill="currentColor" />
-          Run Code
+          <span className="hidden sm:inline">Run Code</span>
         </button>
         <button
           type="button"
           onClick={submit}
           disabled={submitting}
-          className="inline-flex h-10 items-center rounded-xl bg-white/10 px-4 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
+          className="inline-flex h-9 items-center rounded-xl bg-white/10 px-3 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60 sm:h-10 sm:px-4"
         >
-          {submitting ? "Saving…" : submitted ? "Submitted" : "Submit"}
+          {submitting ? "Saving…" : submitted ? "Saved" : "Submit"}
         </button>
       </header>
 
-      <PanelGroup direction="horizontal" autoSaveId="tyyari.fe.cols" className="min-h-0 flex-1">
+      {narrow && (
+        <WorkspaceTabs
+          tabs={[
+            { id: "prompt", label: "Prompt" },
+            { id: "code", label: "Code" },
+            { id: "preview", label: "Preview" },
+          ]}
+          value={pane}
+          onChange={setPane}
+        />
+      )}
+      {narrow ? (
+        <div className="min-h-0 flex-1">
+          {pane === "prompt" && <FrontendPrompt data={data} submitted={submitted} />}
+          {pane === "code" && (
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="flex h-10 shrink-0 items-center gap-1 overflow-x-auto bg-card px-2">
+                {files.map((file) => (
+                  <button
+                    key={file.id}
+                    type="button"
+                    onClick={() => setActiveId(file.id)}
+                    className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-t-lg px-2.5 text-xs font-semibold ${
+                      file.id === active?.id ? "bg-canvas text-ink" : "text-mute hover:text-ink"
+                    }`}
+                  >
+                    {file.name}
+                    {files.length > 1 && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="rounded p-0.5 text-mute hover:bg-white/10 hover:text-ink"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeFile(file.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") removeFile(file.id);
+                        }}
+                      >
+                        <X size={11} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setDialog(true)}
+                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-brand hover:bg-white/5"
+                >
+                  <FilePlus size={13} />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 bg-canvas">
+                <MonacoPane file={active} onChange={updateActive} onRun={run} />
+              </div>
+            </div>
+          )}
+          {pane === "preview" && <PreviewPane srcDoc={srcDoc} logs={logs} onClear={clearLogs} />}
+        </div>
+      ) : (
+        <PanelGroup direction="horizontal" autoSaveId="tyyari.fe.cols" className="min-h-0 flex-1">
         <Panel defaultSize={24} minSize={16} maxSize={36} className="h-full min-h-0">
           <FrontendPrompt data={data} submitted={submitted} />
         </Panel>
@@ -210,6 +276,7 @@ export default function FrontendWorkspace({ data, backTo = practicePath(Question
           <PreviewPane srcDoc={srcDoc} logs={logs} onClear={clearLogs} />
         </Panel>
       </PanelGroup>
+      )}
 
       {dialog && (
         <AddFrontendFile entries={entries} onClose={() => setDialog(false)} onCreate={addFile} />

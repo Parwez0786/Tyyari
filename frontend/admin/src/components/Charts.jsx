@@ -83,7 +83,7 @@ export function Donut({ segments, center, sub }) {
           </text>
         )}
       </svg>
-      <ul className="min-w-[140px] space-y-2 text-sm">
+      <ul className="min-w-0 flex-1 space-y-2 text-sm">
         {segments.map((item) => (
           <li key={item.label} className="flex items-center justify-between gap-4">
             <span className="inline-flex items-center gap-2">
