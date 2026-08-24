@@ -9,7 +9,7 @@ export default function PageHero({ kicker, title, detail, action }) {
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1>
           {detail && <p className="mt-2 text-sm leading-6 text-mute">{detail}</p>}
         </div>
-        {action}
+        {action && <div className="w-full shrink-0 sm:w-auto [&>a]:w-full sm:[&>a]:w-auto">{action}</div>}
       </div>
     </section>
   );

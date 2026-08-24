@@ -46,22 +46,35 @@ export default function OaExam() {
   return (
     <Layout wide fill hideNav>
       <div className="relative flex min-h-0 flex-1 flex-col bg-canvas">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3">
-          <button
-            type="button"
-            onClick={e.leave}
-            className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-mute hover:bg-white/5 hover:text-ink"
-          >
-            Leave
-          </button>
-          <h1 className="hidden min-w-0 truncate text-sm font-semibold text-ink sm:block">{e.data?.title}</h1>
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+        <header className="flex shrink-0 flex-col gap-2 border-b border-white/10 px-2 py-2 sm:flex-row sm:items-center sm:px-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={e.leave}
+              className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-mute hover:bg-white/5 hover:text-ink"
+            >
+              Leave
+            </button>
+            <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{e.data?.title}</h1>
+            {e.timerActive && <ExamTimer session={e.session} onExpire={e.finish} />}
+            <div className="hidden sm:block">
+              {!e.needsCamera && <CameraPreview videoRef={e.camera.videoRef} ready={e.camera.ready} compact />}
+            </div>
+            <button
+              type="button"
+              onClick={() => e.finish(true)}
+              className="inline-flex h-9 shrink-0 items-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Submit
+            </button>
+          </div>
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto sm:flex-1 sm:justify-center">
             {e.questions.map((item, i) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => e.selectQuestion(i)}
-                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-bold ${
+                className={`inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-lg px-2 text-xs font-bold ${
                   i === e.index ? "bg-white/10 text-ink" : "text-mute hover:bg-white/5 hover:text-ink"
                 }`}
               >
@@ -69,15 +82,6 @@ export default function OaExam() {
               </button>
             ))}
           </div>
-          {e.timerActive && <ExamTimer session={e.session} onExpire={e.finish} />}
-          {!e.needsCamera && <CameraPreview videoRef={e.camera.videoRef} ready={e.camera.ready} compact />}
-          <button
-            type="button"
-            onClick={() => e.finish(true)}
-            className="inline-flex h-9 shrink-0 items-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-500"
-          >
-            Submit
-          </button>
         </header>
 
         {e.needsCamera && (

@@ -46,7 +46,7 @@ export default function Users() {
         <p className="mt-1 text-sm text-mute">
           Sends a set-password link. Editors get catalog access without an admin login. You cannot invite an admin.
         </p>
-        <form className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_8rem_auto]" onSubmit={submitInvite}>
+        <form className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_8rem_auto]" onSubmit={submitInvite}>
           <input
             className="field mt-0"
             type="email"

@@ -25,6 +25,12 @@ html.dark {
   --card: #181818;
 }
 
+html, body, #root {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
 body {
   font-family: Inter, system-ui, sans-serif;
   color: var(--ink);
@@ -32,6 +38,10 @@ body {
     radial-gradient(1100px 520px at 0% -8%, rgba(249, 115, 22, 0.14) 0%, transparent 55%),
     radial-gradient(900px 480px at 100% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
     var(--canvas);
+}
+
+h1, h2, h3, p {
+  overflow-wrap: break-word;
 }
 
 html.dark body {

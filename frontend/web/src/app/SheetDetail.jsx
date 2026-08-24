@@ -37,7 +37,7 @@ export default function SheetDetail() {
               <p className="tab-chip tab-chip-on !inline-flex !px-2.5 !py-0.5 !text-[10px] !font-bold uppercase tracking-wide">
                 {typeLabel(s.sheet.type)}
               </p>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">{s.sheet.title}</h1>
+              <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">{s.sheet.title}</h1>
               <p className="mt-3 max-w-xl text-[15px] text-mute">{s.sheet.description}</p>
               <p className="mt-3 text-sm text-mute">Same question list for every user on Tyyari.</p>
             </div>

@@ -362,7 +362,7 @@ export default function Dashboard() {
 
 function WeekStrip({ week }) {
   return (
-    <div className="flex items-center justify-between gap-1 rounded-2xl border border-line bg-field px-3 py-2.5">
+    <div className="flex min-w-0 items-center justify-between gap-1 overflow-x-auto rounded-2xl border border-line bg-field px-3 py-2.5">
       {week.map((on, index) => (
         <div key={DAY_LABELS[index]} className="flex flex-col items-center gap-1">
           <span className={`h-2.5 w-2.5 rounded-full ${on ? "bg-brand shadow-[0_0_10px_rgba(249,115,22,0.8)]" : "bg-line"}`} />

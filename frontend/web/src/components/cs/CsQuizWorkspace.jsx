@@ -89,7 +89,7 @@ export default function CsQuizWorkspace({ data, backTo = practicePath(QuestionTy
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-canvas">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-3">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5 sm:gap-2 sm:px-3">
         <Link
           to={backTo}
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-mute hover:bg-field hover:text-ink"
@@ -105,7 +105,7 @@ export default function CsQuizWorkspace({ data, backTo = practicePath(QuestionTy
             onClick={retry}
             className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-ink hover:bg-white/15"
           >
-            Try again
+            Retry
           </button>
         )}
         <button
@@ -114,7 +114,7 @@ export default function CsQuizWorkspace({ data, backTo = practicePath(QuestionTy
           disabled={submitting || !total}
           className="inline-flex h-9 shrink-0 items-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-ink hover:bg-white/15 disabled:opacity-60"
         >
-          {submitting ? "Saving…" : revealed ? "Resubmit" : submitted ? "Submit again" : "Submit"}
+          {submitting ? "Saving…" : revealed ? "Resubmit" : submitted ? "Again" : "Submit"}
         </button>
       </header>
 

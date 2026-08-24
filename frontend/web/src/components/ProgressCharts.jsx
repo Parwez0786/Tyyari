@@ -14,7 +14,7 @@ export function Donut({ value, total, label, className = "" }) {
   const c = 2 * Math.PI * r;
   const dash = c * pct;
   return (
-    <div className={`flex items-center gap-4 ${className}`}>
+    <div className={`flex flex-col items-center gap-4 sm:flex-row sm:items-center ${className}`}>
       <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0 text-ink">
         <circle cx="60" cy="60" r={r} fill="none" stroke="currentColor" className="text-white/10" strokeWidth="12" />
         <circle

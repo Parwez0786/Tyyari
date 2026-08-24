@@ -149,7 +149,7 @@ export default function Landing() {
         <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
             <p className="font-hand text-2xl text-brand">Built with and for engineers</p>
-            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl sm:leading-[1.08]">
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl sm:leading-[1.08]">
               Interview prep that feels like a real session.
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-mute sm:text-base">
@@ -176,11 +176,11 @@ export default function Landing() {
               <p className="mt-1 text-3xl font-extrabold tracking-tight">6 tracks</p>
               <p className="mt-1 text-xs text-mute">Submit once. Streak, badges, and the report all start there.</p>
             </div>
-            <div className="flex items-center justify-between gap-1 rounded-2xl border border-line bg-white/5 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-1 overflow-x-auto rounded-2xl border border-line bg-white/5 px-3 py-2.5">
               {QUESTION_TYPE_LIST.map((type, index) => (
-                <div key={type} className="flex flex-col items-center gap-1">
+                <div key={type} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                   <span className={`h-2.5 w-2.5 rounded-full ${index < 4 ? "bg-brand shadow-[0_0_10px_rgba(249,115,22,0.8)]" : "bg-white/15"}`} />
-                  <span className="text-[10px] font-semibold text-mute">{type === QuestionType.FRONTEND ? "UI" : typeLabel(type)}</span>
+                  <span className="text-[10px] font-semibold text-mute">{type === QuestionType.FRONTEND ? "UI" : type}</span>
                 </div>
               ))}
             </div>

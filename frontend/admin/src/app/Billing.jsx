@@ -60,7 +60,7 @@ export default function Billing() {
         <p className="mt-1 text-sm text-mute">Paste a Checkout session id (cs_…) to see open, complete, or expired.</p>
         <form className="mt-5 flex flex-wrap gap-2" onSubmit={lookupSession}>
           <input
-            className="field mt-0 min-w-[16rem] flex-1"
+            className="field mt-0 min-w-0 w-full flex-1"
             value={sessionId}
             onChange={(e) => setSessionId(e.target.value)}
             placeholder="cs_test_…"

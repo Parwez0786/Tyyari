@@ -20,7 +20,7 @@ export default function Practice() {
       <Layout>
         <ThemeCard className="sm:p-8">
           <p className="label-caps">Library</p>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight">Practice</h1>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Practice</h1>
           <p className="mt-3 max-w-xl text-mute">The question library. Pick a track and open any problem.</p>
           <p className="mt-2 text-sm text-mute">
             Want a curated set instead?{" "}
@@ -85,7 +85,7 @@ function TypeSheet({ type }) {
           {Icon && <Icon size={12} />}
           {typeLabel(type)}
         </p>
-        <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{p.meta?.title}</h1>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">{p.meta?.title}</h1>
         <p className="mt-3 max-w-2xl text-[15px] text-mute">{p.meta?.subtitle}</p>
         {p.sheetSlug && (
           <p className="mt-2 text-sm text-mute">
@@ -182,7 +182,7 @@ function OaSheet() {
           <Camera size={12} />
           Online Assessment
         </p>
-        <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{lobby.meta?.title}</h1>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">{lobby.meta?.title}</h1>
         <p className="mt-3 max-w-2xl text-[15px] text-mute">{lobby.meta?.subtitle}</p>
       </ThemeCard>
       <div className="mt-6 grid gap-4 md:grid-cols-2">

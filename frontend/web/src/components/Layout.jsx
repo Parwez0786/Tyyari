@@ -53,7 +53,7 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
     <div className="flex min-h-screen flex-col">
       {!hideNav && (
         <header className="sticky top-0 z-20 bg-surface">
-          <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Logo to={authed ? "/dashboard" : "/"} />
             <div className="flex items-center gap-1.5 sm:gap-2">
               <ThemeToggle compact />
@@ -93,11 +93,11 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
         className={
           fill
             ? hideNav
-              ? "flex h-screen min-h-0 w-full flex-col p-0"
-              : "flex h-[calc(100vh-61px)] min-h-0 w-full flex-col px-3 py-3"
+              ? "flex h-dvh min-h-0 w-full min-w-0 flex-col overflow-hidden p-0"
+              : "flex h-[calc(100dvh-61px)] min-h-0 w-full min-w-0 flex-col overflow-hidden px-2 py-2 sm:px-3 sm:py-3"
             : wide
-              ? "mx-auto w-full max-w-[1600px] flex-1 px-4 py-4 sm:px-6"
-              : "mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"
+              ? "mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-4 sm:px-6"
+              : "mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"
         }
       >
         {children}

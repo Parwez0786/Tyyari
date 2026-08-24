@@ -34,7 +34,7 @@ function ShellFrame() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 bg-surface">
-        <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Logo to="/" />
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle compact />
@@ -51,7 +51,7 @@ function ShellFrame() {
         </div>
       </header>
       <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} email={email} onLogout={logout} />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Suspense fallback={<Loader fill />}>
           <Outlet />
         </Suspense>

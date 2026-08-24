@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import PromptCard from "../PromptCard";
+import WorkspaceTabs from "../WorkspaceTabs";
 import ConsolePanel from "./ConsolePanel";
 import MonacoPane from "./MonacoPane";
 import WorkspaceHeader from "./WorkspaceHeader";
@@ -35,6 +36,7 @@ import {
 } from "./languages";
 import { runWorkspace } from "./piston";
 import { QuestionType, practicePath } from "../../data/enums";
+import { useNarrowScreen } from "../../hooks/useNarrowScreen";
 import { filesFromSubmission, loadSubmission, saveSubmission } from "../../services/submissions";
 
 export default function CodeWorkspace({ data, backTo = practicePath(QuestionType.LLD), backLabel = "Back to LLD practice" }) {
@@ -46,6 +48,8 @@ export default function CodeWorkspace({ data, backTo = practicePath(QuestionType
   const [output, setOutput] = useState(null);
   const [running, setRunning] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [pane, setPane] = useState("prompt");
+  const narrow = useNarrowScreen();
   const [dialog, setDialog] = useState(null);
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [explorer, setExplorer] = useState(() => {
@@ -103,6 +107,7 @@ export default function CodeWorkspace({ data, backTo = practicePath(QuestionType
 
   async function run() {
     if (running) return;
+    if (narrow) setPane("code");
     setRunning(true);
     setOutput({ status: "running" });
     try {
@@ -249,70 +254,86 @@ export default function CodeWorkspace({ data, backTo = practicePath(QuestionType
         submitted={submitted}
       />
 
-      <PanelGroup direction="horizontal" autoSaveId="tyyari.lld" className="min-h-0 flex-1">
-        {!focus && (
-          <>
-            <Panel defaultSize={22} minSize={16} maxSize={34} className="h-full min-h-0">
-              <PromptCard data={data} />
-            </Panel>
-            <PanelResizeHandle className="tyyari-resize" />
-          </>
-        )}
-        <Panel defaultSize={focus ? 100 : 78} minSize={40} className="h-full min-h-0">
-          <PanelGroup direction="vertical" autoSaveId="tyyari.lld.editor" className="h-full min-h-0">
-            <Panel defaultSize={72} minSize={40} className="min-h-0">
-              <PanelGroup direction="horizontal" autoSaveId="tyyari.lld.files" className="h-full min-h-0">
-                {explorer && (
-                  <>
-                    <Panel defaultSize={22} minSize={12} maxSize={40} className="min-h-0">
-                      <FileSidebar
-                        tree={tree}
+      {narrow && (
+        <WorkspaceTabs
+          tabs={[
+            { id: "prompt", label: "Prompt" },
+            { id: "code", label: "Code" },
+          ]}
+          value={pane}
+          onChange={setPane}
+        />
+      )}
+      {narrow && pane === "prompt" ? (
+        <div className="min-h-0 flex-1">
+          <PromptCard data={data} />
+        </div>
+      ) : (
+        <PanelGroup direction="horizontal" autoSaveId="tyyari.lld" className="min-h-0 flex-1">
+          {!narrow && !focus && (
+            <>
+              <Panel defaultSize={22} minSize={16} maxSize={34} className="h-full min-h-0">
+                <PromptCard data={data} />
+              </Panel>
+              <PanelResizeHandle className="tyyari-resize" />
+            </>
+          )}
+          <Panel defaultSize={narrow || focus ? 100 : 78} minSize={40} className="h-full min-h-0">
+            <PanelGroup direction="vertical" autoSaveId="tyyari.lld.editor" className="h-full min-h-0">
+              <Panel defaultSize={72} minSize={40} className="min-h-0">
+                <PanelGroup direction="horizontal" autoSaveId="tyyari.lld.files" className="h-full min-h-0">
+                  {explorer && !narrow && (
+                    <>
+                      <Panel defaultSize={22} minSize={12} maxSize={40} className="min-h-0">
+                        <FileSidebar
+                          tree={tree}
+                          files={files}
+                          activeId={active?.id}
+                          expanded={collapsed}
+                          onToggle={toggleFolder}
+                          onSelect={selectFile}
+                          onAddFile={(parent) => openCreate("file", parent)}
+                          onAddFolder={(parent) => openCreate("folder", parent)}
+                          onRemove={removeEntry}
+                          onCollapse={() => setExplorer(false)}
+                        />
+                      </Panel>
+                      <PanelResizeHandle className="tyyari-resize" />
+                    </>
+                  )}
+                  <Panel defaultSize={explorer && !narrow ? 78 : 100} minSize={40} className="min-h-0">
+                    <div className="flex h-full min-h-0 flex-col">
+                      <FileTabs
                         files={files}
                         activeId={active?.id}
-                        expanded={collapsed}
-                        onToggle={toggleFolder}
+                        explorer={narrow || explorer}
                         onSelect={selectFile}
-                        onAddFile={(parent) => openCreate("file", parent)}
-                        onAddFolder={(parent) => openCreate("folder", parent)}
+                        onAddFile={() => openCreate("file", dirname(active?.name || ""))}
+                        onAddFolder={() => openCreate("folder", dirname(active?.name || ""))}
                         onRemove={removeEntry}
-                        onCollapse={() => setExplorer(false)}
+                        onOpenExplorer={() => setExplorer(true)}
                       />
-                    </Panel>
-                    <PanelResizeHandle className="tyyari-resize" />
-                  </>
-                )}
-                <Panel defaultSize={explorer ? 78 : 100} minSize={40} className="min-h-0">
-                  <div className="flex h-full min-h-0 flex-col">
-                    <FileTabs
-                      files={files}
-                      activeId={active?.id}
-                      explorer={explorer}
-                      onSelect={selectFile}
-                      onAddFile={() => openCreate("file", dirname(active?.name || ""))}
-                      onAddFolder={() => openCreate("folder", dirname(active?.name || ""))}
-                      onRemove={removeEntry}
-                      onOpenExplorer={() => setExplorer(true)}
-                    />
-                    <div className="min-h-0 flex-1 bg-canvas">
-                      <MonacoPane file={active} onChange={updateActive} onRun={run} />
+                      <div className="min-h-0 flex-1 bg-canvas">
+                        <MonacoPane file={active} onChange={updateActive} onRun={run} />
+                      </div>
                     </div>
-                  </div>
-                </Panel>
-              </PanelGroup>
-            </Panel>
-            <PanelResizeHandle className="tyyari-resize-y" />
-            <Panel defaultSize={28} minSize={16} className="min-h-0">
-              <ConsolePanel
-                stdin={stdin}
-                onStdin={setStdin}
-                output={output}
-                running={running}
-                onClear={() => setOutput(null)}
-              />
-            </Panel>
-          </PanelGroup>
-        </Panel>
-      </PanelGroup>
+                  </Panel>
+                </PanelGroup>
+              </Panel>
+              <PanelResizeHandle className="tyyari-resize-y" />
+              <Panel defaultSize={28} minSize={16} className="min-h-0">
+                <ConsolePanel
+                  stdin={stdin}
+                  onStdin={setStdin}
+                  output={output}
+                  running={running}
+                  onClear={() => setOutput(null)}
+                />
+              </Panel>
+            </PanelGroup>
+          </Panel>
+        </PanelGroup>
+      )}
 
       {dialog && (
         <AddItemDialog

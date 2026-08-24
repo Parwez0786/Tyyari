@@ -19,7 +19,7 @@ const TONES = {
 export default function ThemeCard({ tone = "brand", compact = false, className = "", children }) {
   const look = TONES[tone] || TONES.brand;
   return (
-    <article className={`relative overflow-hidden border ${look.wrap} ${compact ? "rounded-2xl p-4" : "rounded-[28px] p-6"} ${className}`}>
+    <article className={`relative min-w-0 overflow-hidden border ${look.wrap} ${compact ? "rounded-2xl p-4" : "rounded-[28px] p-6"} ${className}`}>
       <div className={`pointer-events-none absolute rounded-full blur-3xl ${look.a} ${
         compact ? "-right-10 -top-12 h-32 w-32" : "-right-16 -top-20 h-56 w-56"
       }`} />
