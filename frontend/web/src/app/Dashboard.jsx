@@ -13,6 +13,7 @@ import Layout from "../components/Layout";
 import Loader from "../components/Loader";
 import Avatar from "../components/Avatar";
 import ThemeCard from "../components/ThemeCard";
+import ProfileLinks from "../components/ProfileLinks";
 import { CompanyMark, DifficultyBadge } from "../components/QuestionMeta";
 import { Donut, ProgressBar } from "../components/ProgressCharts";
 import { difficultyLabel, targetRoleLabel, typeLabel, viewLabel } from "../data/labels";
@@ -33,7 +34,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <ThemeCard className="sm:p-8" innerClassName="flex flex-wrap items-start gap-5">
-          <Avatar name={d.profile?.name} email={d.email} size="lg" square />
+          <Avatar name={d.profile?.name} email={d.email} src={d.profile?.avatar} size="lg" square />
           <div className="min-w-0 flex-1">
             <p className="font-hand text-2xl text-brand">{d.greeting}</p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{d.firstName}</h1>
@@ -53,6 +54,7 @@ export default function Dashboard() {
               {d.companies.map((name) => (
                 <span key={name} className="tab-chip">{name}</span>
               ))}
+              <ProfileLinks githubUrl={d.profile?.githubUrl} linkedinUrl={d.profile?.linkedinUrl} />
               {d.entitled ? (
                 <span className="rounded-full border border-premium/30 bg-blue-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-premium">
                   Premium

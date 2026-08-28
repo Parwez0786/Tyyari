@@ -74,7 +74,7 @@ export default function Questions() {
             <h2 className="mt-1 text-xl font-extrabold tracking-tight">{type.title}</h2>
             <p className="mt-1 text-sm text-mute">{type.hook} · {rows.length} in this list</p>
           </div>
-          <Link to={`/questions/new/${type.key}`} className="btn-brand !px-4 !py-2 text-sm">
+          <Link to={type.createTo || `/questions/new/${type.key}`} className="btn-brand !px-4 !py-2 text-sm">
             {type.add}
           </Link>
         </div>
@@ -134,8 +134,10 @@ export default function Questions() {
             <div className="rounded-2xl border border-dashed border-line bg-surface/70 px-5 py-7 text-center">
               <p className="font-semibold">No {type.title} questions yet</p>
               <p className="mt-1 text-sm text-mute">
-                <Link to={`/questions/new/${type.key}`} className="font-semibold text-brand">{type.add}</Link>
-                {" "}with the fields this track uses.
+                <Link to={type.createTo || `/questions/new/${type.key}`} className="font-semibold text-brand">{type.add}</Link>
+                {type.createTo
+                  ? " from DSA problems for the timed camera lobby."
+                  : " with the fields this track uses."}
               </p>
             </div>
           )}

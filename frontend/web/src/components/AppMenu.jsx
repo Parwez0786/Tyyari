@@ -54,7 +54,7 @@ const groups = [
   },
 ];
 
-export default function AppMenu({ open, onClose, authed, name, email, onLogout }) {
+export default function AppMenu({ open, onClose, authed, name, email, avatar, onLogout }) {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function AppMenu({ open, onClose, authed, name, email, onLogout }
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            {authed && <Avatar name={name} email={email} />}
+            {authed && <Avatar name={name} email={email} src={avatar} />}
             <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink" aria-label="Close">
               <CloseIcon />
             </button>

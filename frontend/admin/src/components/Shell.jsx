@@ -22,7 +22,10 @@ function ShellFrame() {
   const clear = useAuthStore((s) => s.clear);
   const [menuOpen, setMenuOpen] = useState(false);
   const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
+  const profileQuery = useQuery({ queryKey: ["admin-self-profile"], queryFn: adminApi.profile });
   const email = meQuery.data?.data?.email || "";
+  const name = profileQuery.data?.data?.name || "";
+  const avatar = profileQuery.data?.data?.avatar || "";
 
   const footerLocked = useFooterLocked();
 
@@ -38,7 +41,9 @@ function ShellFrame() {
           <Logo to="/" />
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle compact />
-            <Avatar email={email} />
+            <Link to="/account" aria-label="Your account">
+              <Avatar name={name} email={email} src={avatar} />
+            </Link>
             <button
               type="button"
               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink hover:bg-field"
@@ -50,7 +55,7 @@ function ShellFrame() {
           </div>
         </div>
       </header>
-      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} email={email} onLogout={logout} />
+      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} name={name} email={email} avatar={avatar} onLogout={logout} />
       <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Suspense fallback={<Loader fill />}>
           <Outlet />
@@ -82,6 +87,7 @@ function ShellFrame() {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Access</p>
             <ul className="mt-3 grid gap-2 text-sm">
+              <li><Link to="/account" className="text-ink hover:text-brand">Your account</Link></li>
               <li><Link to="/users" className="text-ink hover:text-brand">Users</Link></li>
               <li><Link to="/billing" className="text-ink hover:text-brand">Billing</Link></li>
               <li><Link to="/mail" className="text-ink hover:text-brand">Mail log</Link></li>

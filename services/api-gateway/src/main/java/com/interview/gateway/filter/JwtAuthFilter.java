@@ -36,7 +36,8 @@ public class JwtAuthFilter implements WebFilter, Ordered {
             "/api/v1/auth/github",
             "/api/v1/auth/public-config",
             "/api/v1/billing/public-config",
-            "/api/v1/billing/webhook"
+            "/api/v1/billing/webhook",
+            "/api/v1/users/avatars"
     );
 
     private static final String SESSION_BLOCK = "session:block:";

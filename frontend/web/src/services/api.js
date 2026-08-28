@@ -37,7 +37,8 @@ async function refreshAccess() {
 
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
-  if (options.body && !headers["Content-Type"]) {
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body && !headers["Content-Type"] && !isForm) {
     headers["Content-Type"] = "application/json";
   }
   const token = useAuthStore.getState().accessToken;
@@ -72,6 +73,12 @@ export const authApi = {
 export const userApi = {
   profile: () => api("/api/v1/users/me"),
   updateProfile: (body) => api("/api/v1/users/me", { method: "PUT", body: JSON.stringify(body) }),
+  uploadAvatar: (file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return api("/api/v1/users/me/avatar", { method: "POST", body });
+  },
+  deleteAvatar: () => api("/api/v1/users/me/avatar", { method: "DELETE" }),
   preferences: () => api("/api/v1/users/me/preferences"),
   goals: () => api("/api/v1/users/me/goals"),
   saveGoals: (body) => api("/api/v1/users/me/goals", { method: "PUT", body: JSON.stringify(body) }),

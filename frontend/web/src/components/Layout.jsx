@@ -34,6 +34,7 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
     enabled: authed,
   });
   const name = profileQuery.data?.data?.name || "";
+  const avatar = profileQuery.data?.data?.avatar || "";
   const email = meQuery.data?.data?.email || "";
 
   async function logout() {
@@ -59,7 +60,7 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
               <ThemeToggle compact />
               {authed && (
                 <button type="button" onClick={() => navigate("/onboarding")} aria-label="Profile">
-                  <Avatar name={name} email={email} />
+                  <Avatar name={name} email={email} src={avatar} />
                 </button>
               )}
               {!authed && publicPage && (
@@ -86,6 +87,7 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
           authed={authed}
           name={name}
           email={email}
+          avatar={avatar}
           onLogout={logout}
         />
       )}

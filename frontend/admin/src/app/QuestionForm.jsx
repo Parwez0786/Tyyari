@@ -31,6 +31,7 @@ function blank(type) {
     canvasNotes: "",
     companies: [],
     topics: [],
+    tags: [],
     published: false,
     premium: false,
   };
@@ -52,6 +53,7 @@ export default function QuestionForm() {
   });
   const companiesQuery = useQuery({ queryKey: ["admin-companies"], queryFn: adminApi.companies });
   const topicsQuery = useQuery({ queryKey: ["admin-topics"], queryFn: adminApi.topics });
+  const tagsQuery = useQuery({ queryKey: ["admin-tags"], queryFn: adminApi.tags });
 
   useEffect(() => {
     if (id || !knownCreate) return;
@@ -86,11 +88,15 @@ export default function QuestionForm() {
       canvasNotes: q.canvasNotes || "",
       companies: q.companies || [],
       topics: q.topics || [],
+      tags: q.tags || [],
       published: q.published,
       premium: Boolean(q.premium),
     });
   }, [existing.data]);
 
+  if (!id && createType === QuestionType.OA) {
+    return <Navigate to="/oa/new" replace />;
+  }
   if (!id && !knownCreate) {
     return <Navigate to="/questions/new" replace />;
   }
@@ -155,7 +161,7 @@ export default function QuestionForm() {
       difficulty: form.difficulty,
       topics: form.topics,
       companies: form.companies,
-      tags: existingQuestion.tags || [],
+      tags: form.tags,
       constraints: fields.constraints ? lines(form.constraints) : (existingQuestion.constraints || []),
       functionalRequirements: (fields.requirements || fields.features)
         ? lines(form.functionalRequirements)
@@ -506,9 +512,9 @@ export default function QuestionForm() {
 
       <article className="rounded-[28px] border border-line bg-card p-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Filters</p>
-        <h2 className="mt-2 text-xl font-extrabold tracking-tight">Companies and topics</h2>
+        <h2 className="mt-2 text-xl font-extrabold tracking-tight">Companies, topics, and tags</h2>
         <p className="mt-1 text-sm text-mute">Attach labels so practice filters and sheets can find this question. Add missing names under Catalog.</p>
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="mt-5 grid gap-5 lg:grid-cols-3">
           <ChipPick
             label="Companies"
             items={(companiesQuery.data?.data ?? []).map((item) => item.name)}
@@ -524,6 +530,13 @@ export default function QuestionForm() {
             selected={form.topics}
             onChange={(topics) => set("topics", topics)}
             empty="No topics for this track yet. Add Graphs or CDN in Catalog."
+          />
+          <ChipPick
+            label="Tags"
+            items={(tagsQuery.data?.data ?? []).map((item) => item.name)}
+            selected={form.tags}
+            onChange={(tags) => set("tags", tags)}
+            empty="No tags yet. Add two-pointers or LRU in Catalog."
           />
         </div>
       </article>

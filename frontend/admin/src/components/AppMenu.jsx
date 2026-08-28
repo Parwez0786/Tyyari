@@ -15,6 +15,7 @@ import {
   Puzzle,
   ScrollText,
   Tags,
+  CircleUserRound,
   Users,
 } from "lucide-react";
 import { QUESTION_TYPES } from "../data/questionTypes";
@@ -46,7 +47,7 @@ const groups = [
   {
     label: "Add a question",
     items: QUESTION_TYPES.map((type) => ({
-      to: `/questions/new/${type.key}`,
+      to: type.createTo || `/questions/new/${type.key}`,
       title: type.add,
       detail: type.hook,
       Icon: TYPE_ICONS[type.key] || CirclePlus,
@@ -55,6 +56,7 @@ const groups = [
   {
     label: "Access",
     items: [
+      { to: "/account", title: "Your account", detail: "Photo, name, and profile links", Icon: CircleUserRound },
       { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts", Icon: Users },
       { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium", Icon: CreditCard },
       { to: "/mail", title: "Mail log", detail: "Invite, verify, and reset emails from Mailpit", Icon: Inbox },
@@ -63,7 +65,7 @@ const groups = [
   },
 ];
 
-export default function AppMenu({ open, onClose, email, onLogout }) {
+export default function AppMenu({ open, onClose, name, email, avatar, onLogout }) {
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;
@@ -90,7 +92,7 @@ export default function AppMenu({ open, onClose, email, onLogout }) {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <Avatar email={email} />
+            <Avatar name={name} email={email} src={avatar} />
             <button type="button" onClick={onClose} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink" aria-label="Close">
               <CloseIcon />
             </button>

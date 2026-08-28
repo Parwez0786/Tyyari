@@ -211,6 +211,17 @@ export function useAdminUserProfile(id) {
 
   async function setPremium(premium) {
     if (locked()) return;
+    if (premium) {
+      if (!await dialog.confirm(
+        until
+          ? `Grant Premium until ${new Date(until).toLocaleString()}?`
+          : "Grant lifetime Premium? Set Grant until first if this should expire.",
+        { title: "Grant Premium", confirmLabel: "Grant", tone: "warning" },
+      )) return;
+    } else if (!await dialog.confirm("Revoke Premium for this account?", {
+      title: "Revoke Premium",
+      confirmLabel: "Revoke",
+    })) return;
     setBusy(premium ? "grant" : "revoke");
     try {
       await adminApi.setPremium(account.id, {
@@ -227,6 +238,43 @@ export function useAdminUserProfile(id) {
     } finally {
       setBusy("");
     }
+  }
+
+  async function uploadAvatar(file) {
+    if (!account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING) return;
+    setBusy("photo");
+    try {
+      await adminApi.uploadUserAvatar(account.id, file);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-user-profile", id] }),
+        client.invalidateQueries({ queryKey: ["admin-directory"] }),
+      ]);
+    } catch (err) {
+      await dialog.alert(err?.message || "Could not save that photo.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function removeAvatar() {
+    if (!account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING) return;
+    if (!await dialog.confirm("Remove this profile photo?", { title: "Remove photo", confirmLabel: "Remove" })) return;
+    setBusy("photo");
+    try {
+      await adminApi.deleteUserAvatar(account.id);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-user-profile", id] }),
+        client.invalidateQueries({ queryKey: ["admin-directory"] }),
+      ]);
+    } catch (err) {
+      await dialog.alert(err?.message || "Could not remove that photo.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function onPhotoError(err) {
+    await dialog.alert(err?.message || "Could not read that photo.");
   }
 
   return {
@@ -270,6 +318,9 @@ export function useAdminUserProfile(id) {
     forceVerify,
     deleteAccount,
     setPremium,
+    uploadAvatar,
+    removeAvatar,
+    onPhotoError,
   };
 }
 

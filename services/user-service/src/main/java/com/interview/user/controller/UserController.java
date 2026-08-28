@@ -12,10 +12,13 @@ import com.interview.user.exception.ErrorCode;
 import com.interview.user.model.Goals;
 import com.interview.user.model.Preferences;
 import com.interview.user.model.Profile;
+import com.interview.user.service.AvatarService;
 import com.interview.user.service.SubmissionService;
 import com.interview.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -34,10 +38,12 @@ public class UserController {
 
     private final UserService userService;
     private final SubmissionService submissionService;
+    private final AvatarService avatarService;
 
-    public UserController(UserService userService, SubmissionService submissionService) {
+    public UserController(UserService userService, SubmissionService submissionService, AvatarService avatarService) {
         this.userService = userService;
         this.submissionService = submissionService;
+        this.avatarService = avatarService;
     }
 
     @GetMapping("/me")
@@ -51,6 +57,19 @@ public class UserController {
             @Valid @RequestBody ProfileRequest request
     ) {
         return ApiResponse.ok(userService.updateProfile(requireUser(userId), request));
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Profile> uploadAvatar(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return ApiResponse.ok(avatarService.save(requireUser(userId), file), "Photo saved");
+    }
+
+    @DeleteMapping("/me/avatar")
+    public ApiResponse<Profile> deleteAvatar(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ApiResponse.ok(avatarService.clear(requireUser(userId)), "Photo removed");
     }
 
     @GetMapping("/me/preferences")

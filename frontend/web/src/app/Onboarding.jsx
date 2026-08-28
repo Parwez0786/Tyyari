@@ -9,6 +9,8 @@ import {
 import Layout from "../components/Layout";
 import Loader from "../components/Loader";
 import Avatar from "../components/Avatar";
+import AvatarPicker from "../components/AvatarPicker";
+import ProfileLinks from "../components/ProfileLinks";
 import { companyIconUrl } from "../utils/companyIcons";
 import { useOnboarding } from "../hooks/useOnboarding";
 
@@ -29,7 +31,7 @@ export default function Onboarding() {
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-start gap-5">
-          <Avatar name={o.name || o.profile?.name} email={o.email} size="lg" square />
+          <Avatar name={o.name || o.profile?.name} email={o.email} src={o.profile?.avatar} size="lg" square />
           <div className="min-w-0 flex-1">
             <p className="font-hand text-2xl text-brand">{o.onboarded ? "Edit profile" : "Set your path"}</p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{o.firstName}</h1>
@@ -52,6 +54,7 @@ export default function Onboarding() {
                   {item}
                 </span>
               ))}
+              <ProfileLinks githubUrl={o.githubUrl || o.profile?.githubUrl} linkedinUrl={o.linkedinUrl || o.profile?.linkedinUrl} />
             </div>
           </div>
         </div>
@@ -64,7 +67,20 @@ export default function Onboarding() {
             Identity
           </p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">How you show up</h2>
-          <p className="mt-1 text-sm text-mute">This name is what the dashboard greeting uses.</p>
+          <p className="mt-1 text-sm text-mute">This name, photo, and optional GitHub or LinkedIn links are what others see.</p>
+          <div className="mt-5">
+            <AvatarPicker
+              name={o.name || o.profile?.name}
+              email={o.email}
+              src={o.profile?.avatar}
+              size="lg"
+              square
+              busy={o.photoBusy}
+              onChange={o.uploadAvatar}
+              onRemove={o.removeAvatar}
+              onError={(err) => o.setError(err?.message || "Could not read that photo.")}
+            />
+          </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-wide text-mute">Display name</span>
@@ -83,6 +99,28 @@ export default function Onboarding() {
                 value={o.bio}
                 onChange={(e) => o.setBio(e.target.value)}
                 placeholder="One line about the loop you are chasing…"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-mute">GitHub</span>
+              <input
+                className="field"
+                value={o.githubUrl}
+                onChange={(e) => o.setGithubUrl(e.target.value)}
+                placeholder="https://github.com/you"
+                autoComplete="url"
+                inputMode="url"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-mute">LinkedIn</span>
+              <input
+                className="field"
+                value={o.linkedinUrl}
+                onChange={(e) => o.setLinkedinUrl(e.target.value)}
+                placeholder="https://www.linkedin.com/in/you"
+                autoComplete="url"
+                inputMode="url"
               />
             </label>
           </div>

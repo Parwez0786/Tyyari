@@ -114,8 +114,11 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/user_db
       SPRING_DATA_MONGODB_AUTO_INDEX_CREATION: "false"
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      APP_AVATARS_DIR: /data/avatars
     ports:
       - "8082:8082"
+    volumes:
+      - avatar_data:/data/avatars
     depends_on:
       mongo:
         condition: service_healthy
@@ -235,3 +238,4 @@ services:
 volumes:
   mongo_data:
   redis_data:
+  avatar_data:
