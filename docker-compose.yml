@@ -209,7 +209,7 @@ services:
     volumes:
       - ./frontend/web:/app
       - /app/node_modules
-    command: sh -c "rm -rf node_modules/.vite && npm install && npm run dev"
+    command: sh -c "npm install && npm run dev"
     depends_on:
       - api-gateway
       - code-runner
@@ -219,14 +219,18 @@ services:
     container_name: tyyari-admin
     environment:
       VITE_API_URL: http://localhost:8080
+      VITE_WEB_URL: http://localhost:3000
+      VITE_MAILPIT_URL: http://localhost:8026
+      MAILPIT_PROXY: http://mailpit:8025
     ports:
       - "3001:3001"
     volumes:
       - ./frontend/admin:/app
       - /app/node_modules
-    command: sh -c "rm -rf node_modules/.vite && npm install && npm run dev"
+    command: sh -c "npm install && npm run dev"
     depends_on:
       - api-gateway
+      - mailpit
 
 volumes:
   mongo_data:

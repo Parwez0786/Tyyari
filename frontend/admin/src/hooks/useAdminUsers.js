@@ -110,6 +110,25 @@ export function useAdminUsers() {
     }
   }
 
+  async function retryWipe(user) {
+    if (!await dialog.confirm(`Retry the wipe for ${user.email}? Login stays locked until it finishes.`, {
+      title: "Retry wipe",
+      confirmLabel: "Retry wipe",
+    })) return;
+    setBusy(`wipe-${user.id}`);
+    try {
+      await adminApi.deleteAccount(user.id);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-users"] }),
+        client.invalidateQueries({ queryKey: ["admin-audit"] }),
+      ]);
+    } catch (err) {
+      await dialog.alert(err?.message || "Could not retry the wipe.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   return {
     usersQuery,
     search,
@@ -122,6 +141,7 @@ export function useAdminUsers() {
     busy,
     rows,
     filtered,
+    wiping: rows.filter((user) => user.status === AccountStatus.DELETING),
     filteredOn: Object.values(filters).some(Boolean) || Boolean(search.trim()),
     clearFilters() {
       setSearch("");
@@ -130,6 +150,7 @@ export function useAdminUsers() {
     toggleStatus,
     setRole,
     submitInvite,
+    retryWipe,
   };
 }
 

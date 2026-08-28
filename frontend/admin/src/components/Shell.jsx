@@ -84,6 +84,7 @@ function ShellFrame() {
             <ul className="mt-3 grid gap-2 text-sm">
               <li><Link to="/users" className="text-ink hover:text-brand">Users</Link></li>
               <li><Link to="/billing" className="text-ink hover:text-brand">Billing</Link></li>
+              <li><Link to="/mail" className="text-ink hover:text-brand">Mail log</Link></li>
               <li><Link to="/audit" className="text-ink hover:text-brand">Audit log</Link></li>
               <li><button type="button" className="text-ink hover:text-brand" onClick={logout}>Sign out</button></li>
             </ul>

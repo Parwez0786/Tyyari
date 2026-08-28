@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
+import Pager from "../components/Pager";
 import Avatar from "../components/Avatar";
 import { AccountRole, AccountStatus } from "../data/enums";
 import { roleLabel, statusLabel } from "../data/labels";
-import { formatPremiumUntil, formatWhen } from "../data/profile";
+import { formatAgo, formatPremiumUntil, formatWhen } from "../data/profile";
 import { useAdminUsers } from "../hooks/useAdminUsers";
+import { usePager } from "../hooks/usePager";
 
 export default function Users() {
   const {
@@ -20,12 +22,15 @@ export default function Users() {
     busy,
     rows,
     filtered,
+    wiping,
     filteredOn,
     clearFilters,
     toggleStatus,
     setRole,
     submitInvite,
+    retryWipe,
   } = useAdminUsers();
+  const pager = usePager(filtered, `${search}|${filters.role}|${filters.status}|${filters.access}|${filters.verified}|${filters.provider}|${filters.onboarded}`);
 
   if (usersQuery.isLoading) return <Loader fill />;
 
@@ -186,11 +191,48 @@ export default function Users() {
 
       {usersQuery.isError && <p className="text-sm text-hard">{usersQuery.error?.message || "Could not load users."}</p>}
 
+      {wiping.length > 0 && (
+        <article className="rounded-[28px] border border-amber-400/30 bg-card p-5 sm:p-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-400">Wipe queue</p>
+          <h2 className="mt-2 text-xl font-extrabold tracking-tight">Stuck or in-flight deletes</h2>
+          <p className="mt-1 text-sm text-mute">
+            Login is locked. Auth and profile wipe over Kafka separately — retry if this sits more than a few minutes.
+          </p>
+          <div className="mt-4 space-y-2">
+            {wiping.map((u) => {
+              const ageMs = u.updatedAt ? Date.now() - new Date(u.updatedAt).getTime() : 0;
+              const stuck = ageMs > 5 * 60 * 1000;
+              return (
+                <div key={u.id} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{u.email}</p>
+                    <p className="mt-1 text-xs text-mute">
+                      {stuck ? "Stuck" : "Queued"} · last update {formatAgo(u.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to={`/users/${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Profile</Link>
+                    <button
+                      type="button"
+                      className="btn-brand !px-4 !py-1.5 text-sm"
+                      disabled={busy === `wipe-${u.id}`}
+                      onClick={() => retryWipe(u)}
+                    >
+                      {busy === `wipe-${u.id}` ? "Retrying…" : "Retry wipe"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </article>
+      )}
+
       <section className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-5 sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="relative space-y-3">
-        {filtered.map((u) => (
+        {pager.slice.map((u) => (
           <article
             key={u.id}
             className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/90 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
@@ -251,6 +293,7 @@ export default function Users() {
                 </select>
               )}
               <Link to={`/users/${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">View profile</Link>
+              <Link to={`/audit?user=${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Audit</Link>
               {u.role !== AccountRole.ADMIN && (
                 <Link to={`/billing?user=${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Billing</Link>
               )}
@@ -275,6 +318,7 @@ export default function Users() {
             </p>
           </div>
         )}
+        <Pager page={pager.page} pages={pager.pages} total={pager.total} pageSize={pager.pageSize} onPage={pager.setPage} />
         </div>
       </section>
     </div>

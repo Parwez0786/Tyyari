@@ -209,7 +209,12 @@ export default function QuestionForm() {
           : `${meta.hook} Optional extras sit below — hidden cases, starter files, or labels.`}
         action={readOnly
           ? <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>Back</button>
-          : <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>}
+          : (
+            <div className="flex flex-wrap gap-2">
+              {id && <Link to={`/questions/${id}/view`} className="btn-ghost">Preview</Link>}
+              <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
+            </div>
+          )}
       />
 
       <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">

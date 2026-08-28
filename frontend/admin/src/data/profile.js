@@ -37,4 +37,26 @@ export function formatPremiumUntil(premium, until) {
   return until ? formatWhen(until) : "Lifetime";
 }
 
+export function formatMoney(amount, currency = "inr") {
+  const value = Number(amount) || 0;
+  const code = String(currency || "inr").toLowerCase();
+  if (code === "inr") return `₹${Math.round(value / 100)}`;
+  if (code === "usd") return `$${(value / 100).toFixed(2)}`;
+  return `${value} ${code.toUpperCase()}`;
+}
+
+export function formatAgo(value) {
+  if (!value) return "unknown time";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "unknown time";
+  const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
 export { providerLabel } from "./labels";
