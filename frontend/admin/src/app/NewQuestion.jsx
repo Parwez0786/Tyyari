@@ -8,14 +8,14 @@ export default function NewQuestion() {
       <PageHero
         kicker="Catalog"
         title="Add a question"
-        detail="Pick the track first. Each type has its own fields — examples for DSA, requirements for HLD, a quiz for CS."
+        detail="Pick the track first. Timed camera OAs are sets of DSA questions, not a sixth prompt type."
         action={<Link to="/questions" className="btn-ghost">Back to catalog</Link>}
       />
       <div className="grid gap-4 sm:grid-cols-2">
         {QUESTION_TYPES.map((item) => (
           <Link
             key={item.key}
-            to={`/questions/new/${item.key}`}
+            to={item.createTo || `/questions/new/${item.key}`}
             className={`group flex flex-col rounded-[24px] border border-line bg-gradient-to-br p-6 text-left transition hover:-translate-y-0.5 hover:border-brand/40 ${item.accent}`}
           >
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{item.title}</p>

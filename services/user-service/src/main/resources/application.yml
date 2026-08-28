@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: user-service
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/user_db}
@@ -28,3 +32,4 @@ management:
 app:
   kafka:
     user-events-topic: user-events
+  avatars-dir: ${APP_AVATARS_DIR:./data/avatars}

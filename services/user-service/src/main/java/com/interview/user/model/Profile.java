@@ -24,6 +24,8 @@ public class Profile {
     private String name;
     private String avatar;
     private String bio;
+    private String githubUrl;
+    private String linkedinUrl;
     private String experience;
     private String currentRole;
     private String targetRole;

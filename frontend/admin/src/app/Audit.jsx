@@ -13,7 +13,7 @@ const ACTIONS = {
     title: "Created question",
     detail: "A new prompt was added to the catalog.",
     pill: "bg-brand/15 text-brand",
-    href: () => "/questions",
+    href: (id) => (looksLikeId(id) ? `/questions/${id}` : "/questions"),
   },
   QUESTION_UPDATE: {
     title: "Updated question",
@@ -43,7 +43,7 @@ const ACTIONS = {
     title: "Created sheet",
     detail: "A grind list was added to the catalog.",
     pill: "bg-orange-500/15 text-orange-400",
-    href: () => "/sheets",
+    href: (id) => (looksLikeId(id) ? `/sheets/${id}` : "/sheets"),
   },
   SHEET_UPDATE: {
     title: "Updated sheet",
@@ -67,7 +67,7 @@ const ACTIONS = {
     title: "Created OA set",
     detail: "A timed camera round was added.",
     pill: "bg-blue-500/15 text-premium",
-    href: () => "/oa",
+    href: (id) => (looksLikeId(id) ? `/oa/${id}` : "/oa"),
   },
   OA_UPDATE: {
     title: "Updated OA set",
@@ -103,13 +103,13 @@ const ACTIONS = {
     title: "Refunded payment",
     detail: "A checkout or grant was refunded.",
     pill: "bg-amber-400/15 text-amber-400",
-    href: () => "/billing",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/billing"),
   },
   USER_INVITE: {
     title: "Invited user",
     detail: "Created an account and sent a set-password link.",
     pill: "bg-brand/15 text-brand",
-    href: () => "/users",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },
   USER_ROLE: {
     title: "Changed role",
@@ -150,6 +150,18 @@ const ACTIONS = {
   USER_REVOKE_SESSIONS: {
     title: "Signed out everywhere",
     detail: "Refresh tokens were revoked. They must sign in again.",
+    pill: "bg-rose-500/15 text-hard",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
+  },
+  USER_AVATAR: {
+    title: "Updated photo",
+    detail: "Set a profile photo for an account.",
+    pill: "bg-brand/15 text-brand",
+    href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
+  },
+  USER_AVATAR_CLEAR: {
+    title: "Removed photo",
+    detail: "Cleared a profile photo.",
     pill: "bg-rose-500/15 text-hard",
     href: (id) => (looksLikeId(id) ? `/users/${id}` : "/users"),
   },

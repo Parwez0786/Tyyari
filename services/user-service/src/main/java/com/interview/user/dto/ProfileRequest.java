@@ -6,6 +6,8 @@ public record ProfileRequest(
         String name,
         String avatar,
         String bio,
+        String githubUrl,
+        String linkedinUrl,
         String experience,
         String currentRole,
         String targetRole,

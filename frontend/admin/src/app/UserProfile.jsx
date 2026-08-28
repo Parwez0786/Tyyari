@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import AvatarPicker from "../components/AvatarPicker";
 import Loader from "../components/Loader";
 import { HBarList } from "../components/Charts";
 import {
@@ -61,6 +62,9 @@ export default function UserProfile() {
     forceVerify,
     deleteAccount,
     setPremium,
+    uploadAvatar,
+    removeAvatar,
+    onPhotoError,
   } = useAdminUserProfile(id);
 
   if (loading) return <Loader fill />;
@@ -74,7 +78,21 @@ export default function UserProfile() {
         <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-5">
           <div className="flex min-w-0 flex-wrap items-start gap-5">
-            <Avatar name={name} email={account?.email} size="lg" square />
+            {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING ? (
+              <AvatarPicker
+                name={name}
+                email={account?.email}
+                src={profile.avatar}
+                size="lg"
+                square
+                busy={busy === "photo"}
+                onChange={uploadAvatar}
+                onRemove={removeAvatar}
+                onError={onPhotoError}
+              />
+            ) : (
+              <Avatar name={name} email={account?.email} src={profile.avatar} size="lg" square />
+            )}
             <div className="min-w-0">
               <p className="font-hand text-2xl text-brand">{profile.onboarded ? "Candidate profile" : "Not onboarded yet"}</p>
               <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{firstName}</h1>
@@ -115,14 +133,16 @@ export default function UserProfile() {
             )}
             {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING && (
               <>
-                <button
-                  type="button"
-                  className={account.premium ? "btn-ghost !text-hard" : "btn-brand"}
-                  disabled={Boolean(busy)}
-                  onClick={() => setPremium(!account.premium)}
-                >
-                  {busy ? "…" : account.premium ? "Revoke Premium" : "Grant Premium"}
-                </button>
+                {account.premium && (
+                  <button
+                    type="button"
+                    className="btn-ghost !text-hard"
+                    disabled={Boolean(busy)}
+                    onClick={() => setPremium(false)}
+                  >
+                    {busy === "revoke" ? "…" : "Revoke Premium"}
+                  </button>
+                )}
                 <button
                   type="button"
                   className={account.status === AccountStatus.ACTIVE ? "btn-ghost !text-hard" : "btn-brand"}
@@ -174,9 +194,11 @@ export default function UserProfile() {
             </>
           )}
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={() => support("reset")}>
-              {busy === "reset" ? "Sending…" : "Reset password"}
-            </button>
+            {(!account.provider || account.provider === "LOCAL") && (
+              <button type="button" className="btn-brand" disabled={Boolean(busy) || account.status === AccountStatus.DELETING} onClick={() => support("reset")}>
+                {busy === "reset" ? "Sending…" : "Reset password"}
+              </button>
+            )}
             <button
               type="button"
               className="btn-ghost"
@@ -304,7 +326,7 @@ export default function UserProfile() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Billing</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Premium access</h2>
           <p className="mt-1 text-sm text-mute">
-            Leave the date empty for lifetime. A dated grant expires automatically after that time.
+            Leave the date empty for lifetime. Grant only from this card so a date is intentional.
           </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <Field label="Status" value={account.premium ? "Premium" : "Free"} />
@@ -351,6 +373,8 @@ export default function UserProfile() {
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="Display name" value={profile.name || "—"} />
           <Field label="Current role" value={profile.currentRole || "—"} />
+          <LinkField label="GitHub" href={profile.githubUrl} empty="Not added" />
+          <LinkField label="LinkedIn" href={profile.linkedinUrl} empty="Not added" />
           <div className="sm:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-mute">Bio</p>
             <p className="mt-2 rounded-2xl bg-field px-4 py-3.5 text-sm leading-6">{profile.bio || "No bio yet."}</p>
@@ -510,6 +534,26 @@ function Field({ label, value }) {
     <div>
       <p className="text-xs font-semibold uppercase tracking-wide text-mute">{label}</p>
       <p className="mt-2 rounded-2xl bg-field px-4 py-3.5 text-sm">{value}</p>
+    </div>
+  );
+}
+
+function LinkField({ label, href, empty }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-mute">{label}</p>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 block truncate rounded-2xl bg-field px-4 py-3.5 text-sm font-semibold text-brand hover:underline"
+        >
+          {href}
+        </a>
+      ) : (
+        <p className="mt-2 rounded-2xl bg-field px-4 py-3.5 text-sm text-mute">{empty}</p>
+      )}
     </div>
   );
 }

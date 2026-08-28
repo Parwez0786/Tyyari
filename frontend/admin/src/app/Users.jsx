@@ -49,7 +49,7 @@ export default function Users() {
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Invite</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Create an account</h2>
         <p className="mt-1 text-sm text-mute">
-          Sends a set-password link. Editors get catalog access without an admin login. You cannot invite an admin.
+          Sends a set-password link. Editors unlock Premium on the candidate app; this console stays ADMIN-only. You cannot invite an admin.
         </p>
         <form className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_8rem_auto]" onSubmit={submitInvite}>
           <input
@@ -238,7 +238,7 @@ export default function Users() {
             className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/90 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar name={u.name} email={u.email} />
+              <Avatar name={u.name} email={u.email} src={u.avatar} />
               <div className="min-w-0">
                 <Link to={`/users/${u.id}`} className="truncate font-semibold hover:text-brand">{u.name}</Link>
                 <p className="truncate text-sm text-mute">{u.email}</p>

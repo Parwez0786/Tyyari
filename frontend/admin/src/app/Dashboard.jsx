@@ -31,11 +31,11 @@ export default function Dashboard() {
   const payments = paymentsQuery.data?.data ?? [];
   const days = useMemo(() => lastDays(14), []);
 
-  const candidates = users.filter((u) => u.role !== AccountRole.ADMIN);
+  const candidates = users.filter((u) => u.role === AccountRole.USER);
   const premium = candidates.filter((u) => u.premium).length;
   const active = candidates.filter((u) => u.status === AccountStatus.ACTIVE).length;
   const disabled = candidates.filter((u) => u.status === AccountStatus.DISABLED).length;
-  const wiping = candidates.filter((u) => u.status === AccountStatus.DELETING);
+  const wiping = users.filter((u) => u.status === AccountStatus.DELETING && u.role !== AccountRole.ADMIN);
   const paidRows = payments.filter((item) => String(item.status).toLowerCase() === "paid");
   const refundedRows = payments.filter((item) => String(item.status).toLowerCase() === "refunded");
   const currency = paidRows[0]?.currency || refundedRows[0]?.currency || "inr";

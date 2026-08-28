@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: admin-service
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/admin_db}

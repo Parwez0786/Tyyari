@@ -159,6 +159,7 @@ function enrich(account, extra) {
   return {
     ...account,
     name: extra?.name || account.email,
+    avatar: extra?.avatar || "",
     onboarded: Boolean(extra?.onboarded),
     lastSubmittedAt: extra?.lastSubmittedAt || null,
     providerKey: provider === "GOOGLE" || provider === "GITHUB" ? provider : "LOCAL",

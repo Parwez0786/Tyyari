@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -72,8 +74,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "QUESTION_CREATE", "create question");
-        return json(downstream.content("POST", "/internal/v1/questions", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/questions", body, userId), userId, "QUESTION_CREATE", null);
     }
 
     @PutMapping("/questions/{id}")
@@ -82,8 +83,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "QUESTION_UPDATE", id);
-        return json(downstream.content("PUT", "/internal/v1/questions/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/questions/" + id, body, userId), userId, "QUESTION_UPDATE", id);
     }
 
     @DeleteMapping("/questions/{id}")
@@ -91,8 +91,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "QUESTION_DELETE", id);
-        return json(downstream.content("DELETE", "/internal/v1/questions/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/questions/" + id, null, userId), userId, "QUESTION_DELETE", id);
     }
 
     @PatchMapping("/questions/{id}/publish")
@@ -101,14 +100,12 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "QUESTION_PUBLISH", id);
-        return json(downstream.content("PATCH", "/internal/v1/questions/" + id + "/publish", body, userId));
+        return audited(downstream.content("PATCH", "/internal/v1/questions/" + id + "/publish", body, userId), userId, "QUESTION_PUBLISH", id);
     }
 
     @PostMapping("/companies")
     public ResponseEntity<String> createCompany(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        auditService.record(userId, "COMPANY_CREATE", "company");
-        return json(downstream.content("POST", "/internal/v1/companies", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/companies", body, userId), userId, "COMPANY_CREATE", null);
     }
 
     @PutMapping("/companies/{id}")
@@ -181,10 +178,9 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_INVITE", "invite user");
         ResponseEntity<String> created = downstream.auth("POST", "/internal/v1/users", body, userId);
         seedInvitedProfile(created, body, userId);
-        return json(created);
+        return audited(created, userId, "USER_INVITE", dataText(created, "id"));
     }
 
     @GetMapping("/users/{id}")
@@ -203,14 +199,30 @@ public class AdminController {
         return json(downstream.users("GET", "/internal/v1/users/" + id, null, userId));
     }
 
+    @PostMapping(value = "/users/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadUserAvatar(
+            @PathVariable String id,
+            @RequestPart("file") MultipartFile file,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return audited(downstream.usersFile("POST", "/internal/v1/users/" + id + "/avatar", file, userId), userId, "USER_AVATAR", id);
+    }
+
+    @DeleteMapping("/users/{id}/avatar")
+    public ResponseEntity<String> deleteUserAvatar(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return audited(downstream.users("DELETE", "/internal/v1/users/" + id + "/avatar", null, userId), userId, "USER_AVATAR_CLEAR", id);
+    }
+
     @PatchMapping("/users/{id}/status")
     public ResponseEntity<String> userStatus(
             @PathVariable String id,
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_STATUS", id);
-        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/status", body, userId));
+        return audited(downstream.auth("PATCH", "/internal/v1/users/" + id + "/status", body, userId), userId, "USER_STATUS", id);
     }
 
     @PatchMapping("/users/{id}/role")
@@ -219,8 +231,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_ROLE", id);
-        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/role", body, userId));
+        return audited(downstream.auth("PATCH", "/internal/v1/users/" + id + "/role", body, userId), userId, "USER_ROLE", id);
     }
 
     @PatchMapping("/users/{id}/premium")
@@ -231,8 +242,12 @@ public class AdminController {
     ) {
         String compact = body == null ? "" : body.replaceAll("\\s+", "");
         boolean grant = compact.contains("\"premium\":true");
-        auditService.record(userId, grant ? "PREMIUM_GRANT" : "PREMIUM_REVOKE", id);
-        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/premium", body, userId));
+        return audited(
+                downstream.auth("PATCH", "/internal/v1/users/" + id + "/premium", body, userId),
+                userId,
+                grant ? "PREMIUM_GRANT" : "PREMIUM_REVOKE",
+                id
+        );
     }
 
     @PostMapping("/users/{id}/reset-password")
@@ -240,8 +255,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_RESET_PASSWORD", id);
-        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/reset-password", "{}", userId));
+        return audited(downstream.auth("POST", "/internal/v1/users/" + id + "/reset-password", "{}", userId), userId, "USER_RESET_PASSWORD", id);
     }
 
     @PostMapping("/users/{id}/resend-verification")
@@ -249,8 +263,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_RESEND_VERIFY", id);
-        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/resend-verification", "{}", userId));
+        return audited(downstream.auth("POST", "/internal/v1/users/" + id + "/resend-verification", "{}", userId), userId, "USER_RESEND_VERIFY", id);
     }
 
     @PatchMapping("/users/{id}/email")
@@ -259,8 +272,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_CHANGE_EMAIL", id);
-        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/email", body, userId));
+        return audited(downstream.auth("PATCH", "/internal/v1/users/" + id + "/email", body, userId), userId, "USER_CHANGE_EMAIL", id);
     }
 
     @PatchMapping("/users/{id}/verify")
@@ -268,8 +280,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_FORCE_VERIFY", id);
-        return json(downstream.auth("PATCH", "/internal/v1/users/" + id + "/verify", "{}", userId));
+        return audited(downstream.auth("PATCH", "/internal/v1/users/" + id + "/verify", "{}", userId), userId, "USER_FORCE_VERIFY", id);
     }
 
     @PostMapping("/users/{id}/revoke-sessions")
@@ -277,8 +288,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_REVOKE_SESSIONS", id);
-        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/revoke-sessions", "{}", userId));
+        return audited(downstream.auth("POST", "/internal/v1/users/" + id + "/revoke-sessions", "{}", userId), userId, "USER_REVOKE_SESSIONS", id);
     }
 
     @PostMapping("/users/{id}/delete")
@@ -286,8 +296,7 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "USER_DELETE", id);
-        return json(downstream.auth("POST", "/internal/v1/users/" + id + "/delete", "{}", userId));
+        return audited(downstream.auth("POST", "/internal/v1/users/" + id + "/delete", "{}", userId), userId, "USER_DELETE", id);
     }
 
     @GetMapping("/users/{id}/submissions")
@@ -337,8 +346,9 @@ public class AdminController {
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "PAYMENT_REFUND", id);
-        return json(downstream.auth("POST", "/internal/v1/payments/" + id + "/refund", "{}", userId));
+        ResponseEntity<String> raw = downstream.auth("POST", "/internal/v1/payments/" + id + "/refund", "{}", userId);
+        String target = dataText(raw, "userId");
+        return audited(raw, userId, "PAYMENT_REFUND", target.isBlank() ? id : target);
     }
 
     @GetMapping("/sheets")
@@ -353,8 +363,7 @@ public class AdminController {
 
     @PostMapping("/sheets")
     public ResponseEntity<String> createSheet(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        auditService.record(userId, "SHEET_CREATE", "create sheet");
-        return json(downstream.content("POST", "/internal/v1/sheets", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/sheets", body, userId), userId, "SHEET_CREATE", null);
     }
 
     @PutMapping("/sheets/{id}")
@@ -363,14 +372,12 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "SHEET_UPDATE", id);
-        return json(downstream.content("PUT", "/internal/v1/sheets/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/sheets/" + id, body, userId), userId, "SHEET_UPDATE", id);
     }
 
     @DeleteMapping("/sheets/{id}")
     public ResponseEntity<String> deleteSheet(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        auditService.record(userId, "SHEET_DELETE", id);
-        return json(downstream.content("DELETE", "/internal/v1/sheets/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/sheets/" + id, null, userId), userId, "SHEET_DELETE", id);
     }
 
     @PatchMapping("/sheets/{id}/publish")
@@ -379,8 +386,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "SHEET_PUBLISH", id);
-        return json(downstream.content("PATCH", "/internal/v1/sheets/" + id + "/publish", body, userId));
+        return audited(downstream.content("PATCH", "/internal/v1/sheets/" + id + "/publish", body, userId), userId, "SHEET_PUBLISH", id);
     }
 
     @GetMapping("/assessment-sets")
@@ -395,8 +401,7 @@ public class AdminController {
 
     @PostMapping("/assessment-sets")
     public ResponseEntity<String> createAssessment(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        auditService.record(userId, "OA_CREATE", "create assessment");
-        return json(downstream.content("POST", "/internal/v1/assessment-sets", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/assessment-sets", body, userId), userId, "OA_CREATE", null);
     }
 
     @PutMapping("/assessment-sets/{id}")
@@ -405,14 +410,12 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "OA_UPDATE", id);
-        return json(downstream.content("PUT", "/internal/v1/assessment-sets/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/assessment-sets/" + id, body, userId), userId, "OA_UPDATE", id);
     }
 
     @DeleteMapping("/assessment-sets/{id}")
     public ResponseEntity<String> deleteAssessment(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        auditService.record(userId, "OA_DELETE", id);
-        return json(downstream.content("DELETE", "/internal/v1/assessment-sets/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/assessment-sets/" + id, null, userId), userId, "OA_DELETE", id);
     }
 
     @PatchMapping("/assessment-sets/{id}/publish")
@@ -421,8 +424,7 @@ public class AdminController {
             @RequestBody String body,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
-        auditService.record(userId, "OA_PUBLISH", id);
-        return json(downstream.content("PATCH", "/internal/v1/assessment-sets/" + id + "/publish", body, userId));
+        return audited(downstream.content("PATCH", "/internal/v1/assessment-sets/" + id + "/publish", body, userId), userId, "OA_PUBLISH", id);
     }
 
     @GetMapping("/stats")
@@ -465,5 +467,29 @@ public class AdminController {
         return ResponseEntity.status(downstream.getStatusCode())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(downstream.getBody());
+    }
+
+    private ResponseEntity<String> audited(ResponseEntity<String> downstream, String actorId, String action, String detail) {
+        ResponseEntity<String> res = json(downstream);
+        if (res.getStatusCode().is2xxSuccessful()) {
+            String target = detail != null && !detail.isBlank() ? detail : dataText(downstream, "id");
+            if (target == null || target.isBlank()) {
+                target = action;
+            }
+            auditService.record(actorId, action, target);
+        }
+        return res;
+    }
+
+    private String dataText(ResponseEntity<String> downstream, String field) {
+        try {
+            String body = downstream == null ? null : downstream.getBody();
+            if (body == null || body.isBlank()) {
+                return "";
+            }
+            return mapper.readTree(body).path("data").path(field).asText("");
+        } catch (Exception ignored) {
+            return "";
+        }
     }
 }

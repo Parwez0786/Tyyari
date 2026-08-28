@@ -14,7 +14,8 @@ async function parse(res) {
 
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
-  if (options.body && !headers["Content-Type"]) {
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body && !headers["Content-Type"] && !isForm) {
     headers["Content-Type"] = "application/json";
   }
   const token = useAuthStore.getState().accessToken;
@@ -40,12 +41,23 @@ export async function api(path, options = {}) {
     }
     useAuthStore.getState().clear();
   }
+  if (res.status === 403) {
+    useAuthStore.getState().clear();
+  }
   return parse(res);
 }
 
 export const adminApi = {
   login: (body) => api("/api/v1/auth/login", { method: "POST", body: JSON.stringify(body) }),
   me: () => api("/api/v1/auth/me"),
+  profile: () => api("/api/v1/users/me"),
+  updateProfile: (body) => api("/api/v1/users/me", { method: "PUT", body: JSON.stringify(body) }),
+  uploadAvatar: (file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return api("/api/v1/users/me/avatar", { method: "POST", body });
+  },
+  deleteAvatar: () => api("/api/v1/users/me/avatar", { method: "DELETE" }),
   stats: () => api("/api/v1/admin/stats"),
   metrics: () => api("/api/v1/admin/metrics"),
   questions: (params = {}) => {
@@ -76,6 +88,12 @@ export const adminApi = {
   inviteUser: (body) => api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(body) }),
   user: (id) => api(`/api/v1/admin/users/${id}`),
   userProfile: (id) => api(`/api/v1/admin/users/${id}/profile`),
+  uploadUserAvatar: (id, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return api(`/api/v1/admin/users/${id}/avatar`, { method: "POST", body });
+  },
+  deleteUserAvatar: (id) => api(`/api/v1/admin/users/${id}/avatar`, { method: "DELETE" }),
   setUserStatus: (id, status) => api(`/api/v1/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   setUserRole: (id, role) => api(`/api/v1/admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
   setPremium: (id, body) => api(`/api/v1/admin/users/${id}/premium`, { method: "PATCH", body: JSON.stringify(body) }),

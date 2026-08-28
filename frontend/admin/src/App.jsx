@@ -14,6 +14,7 @@ const UserProfile = lazy(() => import("./app/UserProfile"));
 const Audit = lazy(() => import("./app/Audit"));
 const Billing = lazy(() => import("./app/Billing"));
 const Mail = lazy(() => import("./app/Mail"));
+const Account = lazy(() => import("./app/Account"));
 const Sheets = lazy(() => import("./app/Sheets"));
 const SheetForm = lazy(() => import("./app/SheetForm"));
 const OaSets = lazy(() => import("./app/OaSets"));
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="oa/:id" element={<OaForm />} />
         <Route path="users" element={<Users />} />
         <Route path="users/:id" element={<UserProfile />} />
+        <Route path="account" element={<Account />} />
         <Route path="billing" element={<Billing />} />
         <Route path="mail" element={<Mail />} />
         <Route path="audit" element={<Audit />} />

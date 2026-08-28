@@ -80,8 +80,9 @@ export const QUESTION_TYPES = [
   {
     key: QuestionType.OA,
     title: "Online Assessment",
-    hook: "Same as DSA: prompt, constraints, and a scored example.",
-    add: "Add OA",
+    hook: "Timed camera rounds. Build an OA set from DSA questions — the lobby does not use a separate OA question type.",
+    add: "New OA set",
+    createTo: "/oa/new",
     accent: "from-blue-500/20 to-indigo-500/5",
     fields: { constraints: true, examples: true, testcases: true },
     placeholders: {

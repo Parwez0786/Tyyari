@@ -4,6 +4,8 @@ import com.interview.user.dto.GoalsRequest;
 import com.interview.user.dto.PreferencesRequest;
 import com.interview.user.dto.ProfileRequest;
 import com.interview.user.dto.UserDirectoryEntry;
+import com.interview.user.exception.ApiException;
+import com.interview.user.exception.ErrorCode;
 import com.interview.user.model.Goals;
 import com.interview.user.model.Preferences;
 import com.interview.user.model.Profile;
@@ -12,13 +14,16 @@ import com.interview.user.repository.GoalsRepository;
 import com.interview.user.repository.PreferencesRepository;
 import com.interview.user.repository.ProfileRepository;
 import com.interview.user.repository.SubmissionRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,17 +33,20 @@ public class UserService {
     private final PreferencesRepository preferences;
     private final GoalsRepository goals;
     private final SubmissionRepository submissions;
+    private final AvatarService avatars;
 
     public UserService(
             ProfileRepository profiles,
             PreferencesRepository preferences,
             GoalsRepository goals,
-            SubmissionRepository submissions
+            SubmissionRepository submissions,
+            AvatarService avatars
     ) {
         this.profiles = profiles;
         this.preferences = preferences;
         this.goals = goals;
         this.submissions = submissions;
+        this.avatars = avatars;
     }
 
     public void createDefaults(String userId, String name, String email) {
@@ -76,8 +84,9 @@ public class UserService {
     public Profile updateProfile(String userId, ProfileRequest req) {
         Profile profile = getOrCreateProfile(userId);
         if (req.name() != null) profile.setName(req.name());
-        if (req.avatar() != null) profile.setAvatar(req.avatar());
         if (req.bio() != null) profile.setBio(req.bio());
+        if (req.githubUrl() != null) profile.setGithubUrl(normalizeProfileLink(req.githubUrl(), "GitHub", "github.com"));
+        if (req.linkedinUrl() != null) profile.setLinkedinUrl(normalizeProfileLink(req.linkedinUrl(), "LinkedIn", "linkedin.com"));
         if (req.experience() != null) profile.setExperience(req.experience());
         if (req.currentRole() != null) profile.setCurrentRole(req.currentRole());
         if (req.targetRole() != null) profile.setTargetRole(req.targetRole());
@@ -130,6 +139,7 @@ public class UserService {
             rows.add(new UserDirectoryEntry(
                     profile.getUserId(),
                     profile.getName(),
+                    profile.getAvatar(),
                     profile.isOnboarded(),
                     lastSubmit.get(profile.getUserId())
             ));
@@ -138,7 +148,7 @@ public class UserService {
             if (seen.contains(entry.getKey())) {
                 continue;
             }
-            rows.add(new UserDirectoryEntry(entry.getKey(), null, false, entry.getValue()));
+            rows.add(new UserDirectoryEntry(entry.getKey(), null, null, false, entry.getValue()));
         }
         return rows;
     }
@@ -147,6 +157,7 @@ public class UserService {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("userId is required");
         }
+        avatars.deleteFile(userId);
         submissions.deleteByUserId(userId);
         profiles.deleteByUserId(userId);
         preferences.deleteByUserId(userId);
@@ -174,5 +185,51 @@ public class UserService {
                     .updatedAt(now)
                     .build());
         });
+    }
+
+    private String normalizeProfileLink(String raw, String kind, String host) {
+        String value = raw.trim();
+        if (value.isEmpty()) {
+            return "";
+        }
+        if (value.length() > 300) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, kind + " link is too long", HttpStatus.BAD_REQUEST);
+        }
+        if (!value.contains("://")) {
+            if ("github.com".equals(host)) {
+                value = value.toLowerCase(Locale.ROOT).startsWith("github.com/")
+                        ? "https://" + value
+                        : "https://github.com/" + value.replaceFirst("^@", "");
+            } else if (value.toLowerCase(Locale.ROOT).startsWith("linkedin.com")
+                    || value.toLowerCase(Locale.ROOT).startsWith("www.linkedin.com")) {
+                value = "https://" + value;
+            } else if (value.toLowerCase(Locale.ROOT).startsWith("in/")) {
+                value = "https://www.linkedin.com/" + value;
+            } else {
+                value = "https://www.linkedin.com/in/" + value.replaceFirst("^@", "");
+            }
+        }
+        URI uri;
+        try {
+            uri = URI.create(value);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Enter a valid " + kind + " URL", HttpStatus.BAD_REQUEST);
+        }
+        String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+        if (!scheme.equals("https") && !scheme.equals("http")) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Enter a valid " + kind + " URL", HttpStatus.BAD_REQUEST);
+        }
+        String actual = uri.getHost();
+        if (actual == null) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Enter a valid " + kind + " URL", HttpStatus.BAD_REQUEST);
+        }
+        actual = actual.toLowerCase(Locale.ROOT);
+        if (actual.startsWith("www.")) {
+            actual = actual.substring(4);
+        }
+        if (!actual.equals(host)) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, kind + " must be a " + host + " link", HttpStatus.BAD_REQUEST);
+        }
+        return uri.toString();
     }
 }

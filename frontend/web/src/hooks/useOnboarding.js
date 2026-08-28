@@ -66,12 +66,15 @@ export function useOnboarding() {
   const [hydrated, setHydrated] = useState(false);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [targetRole, setTargetRole] = useState(TargetRole.SDE1);
   const [experience, setExperience] = useState("1-2");
   const [selected, setSelected] = useState(["Amazon", "Google", "Microsoft"]);
   const [dailyGoal, setDailyGoal] = useState(120);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     if (hydrated || !profileQuery.isSuccess || !goalsQuery.isSuccess) return;
@@ -79,6 +82,8 @@ export function useOnboarding() {
     const nextGoals = goalsQuery.data?.data;
     if (nextProfile?.name) setName(nextProfile.name);
     if (nextProfile?.bio != null) setBio(nextProfile.bio);
+    if (nextProfile?.githubUrl != null) setGithubUrl(nextProfile.githubUrl);
+    if (nextProfile?.linkedinUrl != null) setLinkedinUrl(nextProfile.linkedinUrl);
     if (nextProfile?.targetRole) setTargetRole(nextProfile.targetRole);
     if (nextProfile?.experience) setExperience(nextProfile.experience);
     if (nextGoals?.targetRole) setTargetRole(nextGoals.targetRole);
@@ -99,6 +104,8 @@ export function useOnboarding() {
       await userApi.updateProfile({
         name: name.trim() || undefined,
         bio,
+        githubUrl: githubUrl.trim(),
+        linkedinUrl: linkedinUrl.trim(),
         targetRole,
         experience,
         onboarded: true,
@@ -120,6 +127,32 @@ export function useOnboarding() {
     }
   }
 
+  async function uploadAvatar(file) {
+    setPhotoBusy(true);
+    setError("");
+    try {
+      await userApi.uploadAvatar(file);
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+    } catch (err) {
+      setError(err?.message || "Could not save that photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setPhotoBusy(true);
+    setError("");
+    try {
+      await userApi.deleteAvatar();
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+    } catch (err) {
+      setError(err?.message || "Could not remove that photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   return {
     roles: ONBOARD_ROLES,
     experiences: EXPERIENCES,
@@ -132,6 +165,10 @@ export function useOnboarding() {
     setName,
     bio,
     setBio,
+    githubUrl,
+    setGithubUrl,
+    linkedinUrl,
+    setLinkedinUrl,
     targetRole,
     setTargetRole,
     experience,
@@ -141,7 +178,11 @@ export function useOnboarding() {
     dailyGoal,
     setDailyGoal,
     error,
+    setError,
     saving,
+    photoBusy,
+    uploadAvatar,
+    removeAvatar,
     onSubmit,
     firstName: (name || profile?.name || "there").split(" ")[0],
     roleMeta: ONBOARD_ROLES.find((item) => item.key === targetRole),
