@@ -1,4 +1,5 @@
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -23,12 +24,14 @@ async function refreshAccess() {
   });
   if (!res.ok) {
     useAuthStore.getState().clear();
+    queryClient.clear();
     return null;
   }
   const json = await res.json().catch(() => ({}));
   const data = json?.data;
   if (!data?.accessToken) {
     useAuthStore.getState().clear();
+    queryClient.clear();
     return null;
   }
   useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);

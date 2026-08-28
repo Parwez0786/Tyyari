@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Difficulty } from "../data/enums";
 import { difficultyLabel, typeLabel } from "../data/labels";
-import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
+import { isPremiumLocked } from "../hooks/usePremium";
 
 const badge = {
   [Difficulty.EASY]: "bg-green-50 text-easy dark:bg-green-950/40",
@@ -10,9 +10,9 @@ const badge = {
   [Difficulty.HARD]: "bg-rose-50 text-hard dark:bg-rose-950/40",
 };
 
-function QuestionCard({ question, actionLabel = "Open", index }) {
+function QuestionCard({ question, actionLabel = "Open", index, entitled = false }) {
   const q = question;
-  const locked = isPremiumLocked(q, useEntitled());
+  const locked = isPremiumLocked(q, entitled);
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">

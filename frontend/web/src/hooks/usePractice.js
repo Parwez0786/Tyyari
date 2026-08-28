@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BookOpen, Camera, Code2, LayoutTemplate, Network, Puzzle } from "lucide-react";
 import { DIFFICULTY_LIST, QUESTION_TYPE_LIST, QuestionType, TOPIC_TYPES, ThemeTone } from "../data/enums";
@@ -69,11 +69,17 @@ export function usePracticeRoute() {
 export function usePracticeTrack(type) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [company, setCompany] = useState("");
   const [topic, setTopic] = useState("");
   const [picked, setPicked] = useState(null);
   const hasTopics = TOPIC_TYPES.includes(type);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const companiesQuery = useQuery({ queryKey: ["companies"], queryFn: contentApi.companies });
   const topicsQuery = useQuery({
@@ -82,8 +88,8 @@ export function usePracticeTrack(type) {
     enabled: hasTopics,
   });
   const questionsQuery = useQuery({
-    queryKey: ["questions", type, difficulty, company, topic, search],
-    queryFn: () => contentApi.questions({ type, difficulty, company, topic, search, page: 1, limit: 60 }),
+    queryKey: ["questions", type, difficulty, company, topic, debouncedSearch],
+    queryFn: () => contentApi.questions({ type, difficulty, company, topic, search: debouncedSearch, page: 1, limit: 60 }),
   });
 
   const track = PRACTICE_TRACKS.find((item) => item.key === type);

@@ -11,6 +11,7 @@ import { formatClock, isActive, loadSession, remainingMs } from "../components/o
 import { typeLabel } from "../data/labels";
 import { QuestionType, practicePath } from "../data/enums";
 import { DIFFS, useOaLobby, usePracticeRoute, usePracticeTrack } from "../hooks/usePractice";
+import { useEntitled } from "../hooks/usePremium";
 
 export default function Practice() {
   const { type, selected, isOa, comingSoon, tracks, page } = usePracticeRoute();
@@ -68,6 +69,7 @@ export default function Practice() {
 
 function TypeSheet({ type }) {
   const p = usePracticeTrack(type);
+  const entitled = useEntitled();
   const Icon = p.track?.Icon;
 
   if (p.isLoading) {
@@ -139,7 +141,7 @@ function TypeSheet({ type }) {
       )}
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         {p.items.map((q) => (
-          <ProblemCard key={q.id} question={q} onStart={() => p.startQuestion(q)} />
+          <ProblemCard key={q.id} question={q} entitled={entitled} onStart={() => p.startQuestion(q)} />
         ))}
       </div>
       {!p.isError && !p.items.length && (

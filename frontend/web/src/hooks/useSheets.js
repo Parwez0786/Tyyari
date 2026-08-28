@@ -26,14 +26,17 @@ export function useSheets() {
   }, [type, selected, setParams]);
 
   const query = useQuery({
-    queryKey: ["sheets", selected],
-    queryFn: () => contentApi.sheets(selected),
+    queryKey: ["sheets"],
+    queryFn: () => contentApi.sheets(),
   });
   const progressQuery = useQuery({
     queryKey: ["practice-progress"],
     queryFn: userApi.practiceProgress,
   });
-  const sheets = query.data?.data ?? [];
+  const sheets = useMemo(
+    () => (query.data?.data ?? []).filter((sheet) => sheet.type === selected),
+    [query.data, selected],
+  );
   const done = useMemo(() => completedSet(progressQuery.data?.data), [progressQuery.data]);
   const allIds = useMemo(
     () => [...new Set(sheets.flatMap((sheet) => sheet.questionIds || []))],

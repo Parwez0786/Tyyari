@@ -111,10 +111,6 @@ export function useDashboard() {
     queryKey: ["problem-of-the-day", potdKey],
     queryFn: () => contentApi.questions({ type: QuestionType.DSA, limit: 60, page: 1 }),
   });
-  const continueQuery = useQuery({
-    queryKey: ["continue"],
-    queryFn: () => contentApi.questions({ type: QuestionType.DSA, limit: 8, page: 1 }),
-  });
   const libraryQuery = useQuery({
     queryKey: ["library-totals"],
     queryFn: async () => {
@@ -143,7 +139,7 @@ export function useDashboard() {
   const sheets = sheetsQuery.data?.data ?? [];
   const assessments = oaQuery.data?.data ?? [];
   const dsaPool = potdQuery.data?.data?.items ?? [];
-  const items = continueQuery.data?.data?.items ?? [];
+  const items = dsaPool;
   const library = libraryQuery.data || {};
   const companies = useMemo(() => (goals?.targetCompanies || []).slice(0, 3), [goals?.targetCompanies]);
   const firstName = (profile?.name || "there").split(" ")[0];

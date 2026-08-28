@@ -1,4 +1,5 @@
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -40,9 +41,11 @@ export async function api(path, options = {}) {
       }
     }
     useAuthStore.getState().clear();
+    queryClient.clear();
   }
   if (res.status === 403) {
     useAuthStore.getState().clear();
+    queryClient.clear();
   }
   return parse(res);
 }

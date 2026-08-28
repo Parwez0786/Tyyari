@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { authApi } from "../services/api";
+import { useAuthPublicConfig } from "../hooks/useAuthPublicConfig";
 
 let gisPromise;
 
@@ -19,12 +19,9 @@ function loadGis() {
 
 export default function GoogleButton({ onCredential }) {
   const slot = useRef(null);
-  const [config, setConfig] = useState(null);
+  const configQuery = useAuthPublicConfig();
+  const config = configQuery.data?.data;
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    authApi.publicConfig().then((res) => setConfig(res?.data)).catch(() => setConfig({ googleEnabled: false }));
-  }, []);
 
   useEffect(() => {
     if (!config?.googleEnabled || !config.googleClientId || !slot.current) return;

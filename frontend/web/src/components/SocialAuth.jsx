@@ -1,13 +1,9 @@
-import { useEffect, useState } from "react";
-import { authApi } from "../services/api";
+import { useAuthPublicConfig } from "../hooks/useAuthPublicConfig";
 import GoogleButton from "./GoogleButton";
 
 export default function SocialAuth({ onGoogle }) {
-  const [config, setConfig] = useState(null);
-
-  useEffect(() => {
-    authApi.publicConfig().then((res) => setConfig(res?.data)).catch(() => setConfig({ githubEnabled: false }));
-  }, []);
+  const configQuery = useAuthPublicConfig();
+  const config = configQuery.data?.data;
 
   function startGitHub() {
     if (!config?.githubClientId) return;

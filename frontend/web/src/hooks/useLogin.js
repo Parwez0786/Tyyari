@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, userApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 import { isValidEmail } from "../utils/email";
 
 export function useLogin() {
@@ -17,6 +18,7 @@ export function useLogin() {
   async function finish(tokens) {
     setTokens(tokens?.accessToken, tokens?.refreshToken, remember);
     const profile = await userApi.profile();
+    queryClient.setQueryData(["profile"], profile);
     navigate(profile.data?.onboarded ? "/dashboard" : "/onboarding");
   }
 
