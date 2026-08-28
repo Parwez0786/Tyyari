@@ -21,6 +21,8 @@ export function isPremiumLocked(question, entitled) {
   return Boolean(question?.premium || question?.locked);
 }
 
+const confirmedSessions = new Set();
+
 export function usePremiumPage() {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
@@ -36,6 +38,8 @@ export function usePremiumPage() {
 
   useEffect(() => {
     if (!token || !sessionId || status !== "success") return undefined;
+    if (confirmedSessions.has(sessionId)) return undefined;
+    confirmedSessions.add(sessionId);
     let cancelled = false;
     setBusy(true);
     billingApi.confirm(sessionId)
@@ -46,6 +50,7 @@ export function usePremiumPage() {
         setNote("Premium is on. Locked problems will open.");
       })
       .catch((err) => {
+        confirmedSessions.delete(sessionId);
         if (!cancelled) setError(err?.message);
       })
       .finally(() => {

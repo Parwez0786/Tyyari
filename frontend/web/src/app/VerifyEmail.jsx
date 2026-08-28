@@ -4,6 +4,8 @@ import AuthShell from "../components/AuthShell";
 import Loader from "../components/Loader";
 import { authApi } from "../services/api";
 
+const inflight = new Map();
+
 export default function VerifyEmail() {
   const [params] = useSearchParams();
   const token = params.get("token") || "";
@@ -11,13 +13,17 @@ export default function VerifyEmail() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) return undefined;
     let cancelled = false;
-    authApi.verifyEmail({ token })
+    if (!inflight.has(token)) {
+      inflight.set(token, authApi.verifyEmail({ token }));
+    }
+    inflight.get(token)
       .then(() => {
         if (!cancelled) setStatus("ok");
       })
       .catch((err) => {
+        inflight.delete(token);
         if (!cancelled) {
           setStatus("error");
           setError(err?.message);

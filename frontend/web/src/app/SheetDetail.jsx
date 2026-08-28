@@ -8,9 +8,11 @@ import { Donut } from "../components/ProgressCharts";
 import { QuestionType, practicePath } from "../data/enums";
 import { typeLabel } from "../data/labels";
 import { useSheetDetail } from "../hooks/useSheetDetail";
+import { useEntitled } from "../hooks/usePremium";
 
 export default function SheetDetail() {
   const s = useSheetDetail();
+  const entitled = useEntitled();
 
   if (s.isLoading) {
     return (
@@ -53,6 +55,7 @@ export default function SheetDetail() {
               <ProblemCard
                 key={question.id}
                 question={question}
+                entitled={entitled}
                 completed={s.done.has(question.id)}
                 onStart={() => s.startQuestion(question)}
               />

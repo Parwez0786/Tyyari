@@ -4,6 +4,7 @@ import AuthShell from "../components/AuthShell";
 import Loader from "../components/Loader";
 import { authApi, userApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 
 let githubLogin;
 
@@ -33,6 +34,7 @@ export default function GitHubCallback() {
         if (!alive) return;
         setTokens(res?.data?.accessToken, res?.data?.refreshToken);
         const profile = await userApi.profile().catch(() => null);
+        if (profile) queryClient.setQueryData(["profile"], profile);
         if (!alive) return;
         navigate(profile?.data?.onboarded ? "/dashboard" : "/onboarding");
       })

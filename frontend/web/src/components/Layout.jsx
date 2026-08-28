@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi, userApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 import AppMenu from "./AppMenu";
 import Avatar from "./Avatar";
 import Footer from "./Footer";
@@ -44,6 +45,7 @@ function LayoutFrame({ children, publicPage = false, wide = false, fill = false,
       /* ignore */
     }
     clear();
+    queryClient.clear();
     navigate("/");
   }
 

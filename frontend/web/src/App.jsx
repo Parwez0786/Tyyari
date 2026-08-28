@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "./services/api";
 import { useAuthStore } from "./stores/authStore";
+import { queryClient } from "./queryClient";
 import Landing from "./app/Landing";
 import Loader from "./components/Loader";
 
@@ -44,6 +45,7 @@ function Private({ children }) {
   }
   if (session.isError) {
     clear();
+    queryClient.clear();
     return <Navigate to="/login" replace />;
   }
   return children;

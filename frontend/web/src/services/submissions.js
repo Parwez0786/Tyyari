@@ -2,6 +2,8 @@ import { languageById, languageFromName } from "../components/code/languages";
 import { queryClient } from "../queryClient";
 import { userApi } from "./api";
 
+const inflight = new Map();
+
 export async function saveSubmission(payload) {
   const body = {
     questionId: payload.questionId,
@@ -30,12 +32,19 @@ export async function saveSubmission(payload) {
 }
 
 export async function loadSubmission(questionId, assessmentSetId) {
-  try {
-    const res = await userApi.getSubmission(questionId, assessmentSetId);
-    return res?.data || null;
-  } catch {
-    return null;
-  }
+  const key = `${questionId}:${assessmentSetId || ""}`;
+  if (inflight.has(key)) return inflight.get(key);
+  const job = (async () => {
+    try {
+      const res = await userApi.getSubmission(questionId, assessmentSetId);
+      return res?.data || null;
+    } catch {
+      inflight.delete(key);
+      return null;
+    }
+  })();
+  inflight.set(key, job);
+  return job;
 }
 
 export function dsaFromSubmission(saved, title, cases) {

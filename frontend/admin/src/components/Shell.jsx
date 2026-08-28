@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { adminApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import { queryClient } from "../queryClient";
 import AppMenu from "./AppMenu";
 import Avatar from "./Avatar";
 import Loader, { FooterLockProvider, useFooterLocked } from "./Loader";
@@ -31,6 +32,7 @@ function ShellFrame() {
 
   function logout() {
     clear();
+    queryClient.clear();
     navigate("/login");
   }
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Logo, { Mark } from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
@@ -8,6 +9,7 @@ import { useAuthStore } from "../stores/authStore";
 
 export default function Login() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const setTokens = useAuthStore((s) => s.setTokens);
   const [email, setEmail] = useState("admin@tyyari.dev");
   const [password, setPassword] = useState("Admin@12345");
@@ -21,7 +23,9 @@ export default function Login() {
       const res = await adminApi.login({ email, password });
       setTokens(res?.data?.accessToken, res?.data?.refreshToken);
       const me = await adminApi.me();
+      queryClient.setQueryData(["me"], me);
       if (me?.data?.role !== AccountRole.ADMIN) {
+        queryClient.clear();
         useAuthStore.getState().clear();
         setError("This console is for admin accounts only.");
         return;

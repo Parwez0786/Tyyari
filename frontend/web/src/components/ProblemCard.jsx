@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import { QuestionType, ThemeTone } from "../data/enums";
-import { useEntitled, isPremiumLocked } from "../hooks/usePremium";
+import { isPremiumLocked } from "../hooks/usePremium";
 import { CompanyMark, DifficultyBadge } from "./QuestionMeta";
 import ThemeCard from "./ThemeCard";
 
@@ -23,9 +23,8 @@ const TONE_BY_TYPE = {
   [QuestionType.OA]: ThemeTone.BLUE,
 };
 
-function ProblemCard({ question, onStart, completed = false }) {
+function ProblemCard({ question, onStart, completed = false, entitled = false }) {
   const q = question;
-  const entitled = useEntitled();
   const locked = isPremiumLocked(q, entitled);
   const cta = completed ? "Solve again" : (ctaByType[q?.type] || "Start");
   const tone = completed ? "mint" : TONE_BY_TYPE[q?.type] || "brand";
