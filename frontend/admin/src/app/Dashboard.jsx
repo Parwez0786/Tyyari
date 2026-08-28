@@ -7,6 +7,7 @@ import PageHero from "../components/PageHero";
 import ThemeCard from "../components/ThemeCard";
 import { AccountRole, AccountStatus, QuestionType } from "../data/enums";
 import { providerLabel, targetRoleLabel, typeLabel } from "../data/labels";
+import { formatAgo, formatMoney } from "../data/profile";
 import { adminApi } from "../services/api";
 
 const TYPE_COLORS = {
@@ -22,16 +23,25 @@ export default function Dashboard() {
   const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
   const statsQuery = useQuery({ queryKey: ["admin-stats"], queryFn: adminApi.stats });
   const metricsQuery = useQuery({ queryKey: ["admin-metrics"], queryFn: adminApi.metrics });
+  const paymentsQuery = useQuery({ queryKey: ["admin-payments", ""], queryFn: () => adminApi.payments() });
 
   const users = usersQuery.data?.data ?? [];
   const stats = statsQuery.data?.data ?? {};
   const metrics = metricsQuery.data?.data ?? {};
+  const payments = paymentsQuery.data?.data ?? [];
   const days = useMemo(() => lastDays(14), []);
 
   const candidates = users.filter((u) => u.role !== AccountRole.ADMIN);
   const premium = candidates.filter((u) => u.premium).length;
   const active = candidates.filter((u) => u.status === AccountStatus.ACTIVE).length;
   const disabled = candidates.filter((u) => u.status === AccountStatus.DISABLED).length;
+  const wiping = candidates.filter((u) => u.status === AccountStatus.DELETING);
+  const paidRows = payments.filter((item) => String(item.status).toLowerCase() === "paid");
+  const refundedRows = payments.filter((item) => String(item.status).toLowerCase() === "refunded");
+  const currency = paidRows[0]?.currency || refundedRows[0]?.currency || "inr";
+  const gross = paidRows.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const refundedAmount = refundedRows.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const net = Math.max(0, gross - refundedAmount);
   const premiumActive = candidates.filter((u) => u.premium && u.status === AccountStatus.ACTIVE).length;
   const freeActive = candidates.filter((u) => !u.premium && u.status === AccountStatus.ACTIVE).length;
   const verified = candidates.filter((u) => u.emailVerified).length;
@@ -56,7 +66,7 @@ export default function Dashboard() {
   const profiles = metrics.profiles || 0;
 
   const loading = usersQuery.isLoading || statsQuery.isLoading || metricsQuery.isLoading;
-  const error = usersQuery.error || statsQuery.error || metricsQuery.error;
+  const error = usersQuery.error || statsQuery.error || metricsQuery.error || paymentsQuery.error;
 
   if (loading) return <Loader fill />;
 
@@ -76,6 +86,11 @@ export default function Dashboard() {
         <Stat label="Premium" value={premium} hint={candidates.length ? `${Math.round((100 * premium) / candidates.length)}% of accounts` : "From checkout"} tone="blue" />
         <Stat label="Practice submits" value={metrics.practiceSubmissions ?? 0} hint={`${metrics.oaSubmissions ?? 0} OA · ${metrics.uniqueSolvers ?? 0} solvers`} />
         <Stat label="Active in 7 days" value={metrics.activeLast7Days ?? 0} hint="Users who submitted once" tone="blue" />
+        <Stat
+          label="Net revenue"
+          value={formatMoney(net, currency)}
+          hint={`${formatMoney(gross, currency)} paid · ${formatMoney(refundedAmount, currency)} refunded`}
+        />
         <Stat label="Verified email" value={verified} hint={`${candidates.length - verified} still pending`} />
         <Stat label="Onboarded" value={onboarded} hint={`${profiles} profiles created`} tone="blue" />
         <Stat label="Published questions" value={published} hint="Live on the candidate library" />
@@ -86,6 +101,23 @@ export default function Dashboard() {
           tone="blue"
         />
       </div>
+
+      {wiping.length > 0 && (
+        <ThemeCard tone="danger">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Wipe queue</p>
+          <h2 className="mt-2 text-xl font-extrabold tracking-tight">{wiping.length} account{wiping.length === 1 ? "" : "s"} deleting</h2>
+          <p className="mt-1 text-sm text-mute">Kafka wipe is in flight or stuck. Retry from Users if it sits more than a few minutes.</p>
+          <ul className="mt-4 space-y-2 text-sm">
+            {wiping.slice(0, 5).map((u) => (
+              <li key={u.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface/90 px-4 py-2.5">
+                <span className="truncate font-semibold">{u.email}</span>
+                <span className="text-xs text-mute">{formatAgo(u.updatedAt)}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/users" className="btn-ghost mt-4 inline-flex">Open wipe queue</Link>
+        </ThemeCard>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard kicker="Accounts" title="New signups" detail="Candidates created in the last 14 days.">
@@ -144,6 +176,7 @@ export default function Dashboard() {
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to="/users" className="btn-brand">Manage users</Link>
             <Link to="/billing" className="btn-ghost">Billing</Link>
+            <Link to="/mail" className="btn-ghost">Mail log</Link>
             <Link to="/questions" className="btn-ghost">Edit catalog</Link>
             <Link to="/sheets" className="btn-ghost">Sheets</Link>
             <Link to="/oa" className="btn-ghost">OA sets</Link>

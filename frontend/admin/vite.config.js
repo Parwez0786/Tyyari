@@ -15,7 +15,17 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
+    include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query"],
   },
-  server: { host: "0.0.0.0", port: 3001 },
+  server: {
+    host: "0.0.0.0",
+    port: 3001,
+    proxy: {
+      "/__mailpit": {
+        target: process.env.MAILPIT_PROXY || "http://localhost:8026",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__mailpit/, "/api/v1"),
+      },
+    },
+  },
 });

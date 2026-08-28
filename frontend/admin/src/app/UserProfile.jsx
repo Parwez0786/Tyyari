@@ -110,6 +110,9 @@ export default function UserProfile() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/users" className="btn-ghost">Back to users</Link>
+            {account?.id && (
+              <Link to={`/audit?user=${account.id}`} className="btn-ghost">Audit</Link>
+            )}
             {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING && (
               <>
                 <button

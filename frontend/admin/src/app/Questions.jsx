@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
+import Pager from "../components/Pager";
 import { useAdminQuestions } from "../hooks/useAdminQuestions";
+import { usePager } from "../hooks/usePager";
 
 const DIFFICULTY = {
   EASY: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
@@ -23,8 +25,11 @@ export default function Questions() {
     selected,
     togglePublish,
     remove,
+    clone,
   } = useAdminQuestions();
   const { type, items: rows } = selected;
+  const pager = usePager(rows, `${tab}|${search}`, 8);
+  const WEB = import.meta.env.VITE_WEB_URL || "http://localhost:3000";
 
   if (isLoading) return <Loader fill />;
 
@@ -74,13 +79,13 @@ export default function Questions() {
           </Link>
         </div>
         <div className="mt-4 space-y-2">
-          {rows.map((q, index) => (
+          {pager.slice.map((q, index) => (
             <article
               key={q.id}
               className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/90 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-start gap-3">
-                <span className="mt-0.5 w-7 shrink-0 text-sm font-semibold text-mute">{index + 1}</span>
+                <span className="mt-0.5 w-7 shrink-0 text-sm font-semibold text-mute">{(pager.page - 1) * pager.pageSize + index + 1}</span>
                 <div className="min-w-0">
                   <p className="font-semibold">{q.title}</p>
                   <p className="mt-1 truncate text-sm text-mute">
@@ -107,6 +112,15 @@ export default function Questions() {
               </div>
               <div className="flex shrink-0 flex-wrap gap-2 sm:pl-4">
                 <Link to={`/questions/${q.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Edit</Link>
+                <Link to={`/questions/${q.id}/view`} className="btn-ghost !px-4 !py-1.5 text-sm">Preview</Link>
+                {q.published && (
+                  <a href={`${WEB}/questions/${q.id}`} target="_blank" rel="noreferrer" className="btn-ghost !px-4 !py-1.5 text-sm">
+                    Candidate
+                  </a>
+                )}
+                <button type="button" className="btn-ghost !px-4 !py-1.5 text-sm" onClick={() => clone(q)}>
+                  Clone
+                </button>
                 <button type="button" className="btn-brand !px-4 !py-1.5 text-sm" onClick={() => togglePublish(q)}>
                   {q.published ? "Unpublish" : "Publish"}
                 </button>
@@ -125,6 +139,9 @@ export default function Questions() {
               </p>
             </div>
           )}
+        </div>
+        <div className="mt-4">
+          <Pager page={pager.page} pages={pager.pages} total={pager.total} pageSize={pager.pageSize} onPage={pager.setPage} />
         </div>
       </section>
     </div>

@@ -18,7 +18,7 @@ export default defineConfig({
     "process.env.IS_PREACT": JSON.stringify("false"),
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query", "@excalidraw/excalidraw", "@xyflow/react"],
+    include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@excalidraw/excalidraw", "@xyflow/react"],
   },
   server: {
     host: "0.0.0.0",

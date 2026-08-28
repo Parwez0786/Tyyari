@@ -61,12 +61,15 @@ export const adminApi = {
   publish: (id, published) => api(`/api/v1/admin/questions/${id}/publish`, { method: "PATCH", body: JSON.stringify({ published }) }),
   companies: () => api("/api/v1/admin/companies"),
   createCompany: (body) => api("/api/v1/admin/companies", { method: "POST", body: JSON.stringify(body) }),
+  updateCompany: (id, body) => api(`/api/v1/admin/companies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteCompany: (id) => api(`/api/v1/admin/companies/${id}`, { method: "DELETE" }),
   topics: () => api("/api/v1/admin/topics"),
   createTopic: (body) => api("/api/v1/admin/topics", { method: "POST", body: JSON.stringify(body) }),
+  updateTopic: (id, body) => api(`/api/v1/admin/topics/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteTopic: (id) => api(`/api/v1/admin/topics/${id}`, { method: "DELETE" }),
   tags: () => api("/api/v1/admin/tags"),
   createTag: (body) => api("/api/v1/admin/tags", { method: "POST", body: JSON.stringify(body) }),
+  updateTag: (id, body) => api(`/api/v1/admin/tags/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteTag: (id) => api(`/api/v1/admin/tags/${id}`, { method: "DELETE" }),
   users: () => api("/api/v1/admin/users"),
   userDirectory: () => api("/api/v1/admin/users/directory"),
@@ -107,3 +110,11 @@ export const adminApi = {
   deleteAssessmentSet: (id) => api(`/api/v1/admin/assessment-sets/${id}`, { method: "DELETE" }),
   publishAssessmentSet: (id, published) => api(`/api/v1/admin/assessment-sets/${id}/publish`, { method: "PATCH", body: JSON.stringify({ published }) }),
 };
+
+export async function mailpit(path) {
+  const res = await fetch(`/__mailpit${path}`);
+  if (!res.ok) {
+    throw new Error("Could not reach the mail inbox.");
+  }
+  return res.json();
+}

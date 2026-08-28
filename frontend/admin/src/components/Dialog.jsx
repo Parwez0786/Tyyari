@@ -65,8 +65,22 @@ export function DialogProvider({ children }) {
     });
   }, [open]);
 
+  const prompt = useCallback((message, options = {}) => {
+    const payload = typeof message === "string" ? { message, ...options } : { ...(message || {}) };
+    return open({
+      kind: "prompt",
+      title: payload.title || "Rename",
+      message: payload.message || "",
+      tone: payload.tone || "warning",
+      confirmLabel: payload.confirmLabel || "Save",
+      cancelLabel: payload.cancelLabel || "Cancel",
+      defaultValue: payload.defaultValue || "",
+      placeholder: payload.placeholder || "",
+    });
+  }, [open]);
+
   return (
-    <DialogContext.Provider value={{ alert, confirm }}>
+    <DialogContext.Provider value={{ alert, confirm, prompt }}>
       {children}
       {dialog ? <DialogCard dialog={dialog} onClose={finish} /> : null}
     </DialogContext.Provider>
@@ -83,14 +97,16 @@ export function useDialog() {
 
 function DialogCard({ dialog, onClose }) {
   const primaryRef = useRef(null);
+  const inputRef = useRef(null);
+  const [value, setValue] = useState(dialog.defaultValue || "");
   const tone = TONES[dialog.tone] || TONES.warning;
 
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    primaryRef.current?.focus();
+    (dialog.kind === "prompt" ? inputRef.current : primaryRef.current)?.focus();
     const onKey = (e) => {
-      if (e.key === "Escape") onClose(dialog.kind === "confirm" ? false : undefined);
+      if (e.key === "Escape") onClose(dialog.kind === "alert" ? undefined : dialog.kind === "prompt" ? null : false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -99,7 +115,7 @@ function DialogCard({ dialog, onClose }) {
     };
   }, [dialog, onClose]);
 
-  const dismiss = () => onClose(dialog.kind === "confirm" ? false : undefined);
+  const dismiss = () => onClose(dialog.kind === "alert" ? undefined : dialog.kind === "prompt" ? null : false);
 
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -121,9 +137,21 @@ function DialogCard({ dialog, onClose }) {
           {dialog.title}
         </h2>
         <p className="relative mt-2 text-sm leading-6 text-mute">{dialog.message}</p>
+        {dialog.kind === "prompt" && (
+          <input
+            ref={inputRef}
+            className="field relative mt-4"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={dialog.placeholder || ""}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onClose(value);
+            }}
+          />
+        )}
         <div className="relative mt-6 flex flex-wrap justify-end gap-2">
-          {dialog.kind === "confirm" && (
-            <button type="button" className="btn-ghost" onClick={() => onClose(false)}>
+          {dialog.kind !== "alert" && (
+            <button type="button" className="btn-ghost" onClick={dismiss}>
               {dialog.cancelLabel}
             </button>
           )}
@@ -131,7 +159,8 @@ function DialogCard({ dialog, onClose }) {
             ref={primaryRef}
             type="button"
             className={dialog.tone === "danger" ? "btn-ghost !text-hard" : "btn-brand"}
-            onClick={() => onClose(dialog.kind === "confirm" ? true : undefined)}
+            disabled={dialog.kind === "prompt" && !value.trim()}
+            onClick={() => onClose(dialog.kind === "confirm" ? true : dialog.kind === "prompt" ? value : undefined)}
           >
             {dialog.confirmLabel}
           </button>

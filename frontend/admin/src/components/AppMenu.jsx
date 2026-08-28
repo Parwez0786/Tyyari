@@ -6,6 +6,7 @@ import {
   CirclePlus,
   Code2,
   CreditCard,
+  Inbox,
   LayoutDashboard,
   LayoutTemplate,
   Library,
@@ -56,6 +57,7 @@ const groups = [
     items: [
       { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts", Icon: Users },
       { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium", Icon: CreditCard },
+      { to: "/mail", title: "Mail log", detail: "Invite, verify, and reset emails from Mailpit", Icon: Inbox },
       { to: "/audit", title: "Audit log", detail: "Who published, deleted, or disabled what", Icon: ScrollText },
     ],
   },

@@ -11,7 +11,7 @@ export function useAdminQuestions() {
   const [params, setParams] = useSearchParams();
   const query = useQuery({
     queryKey: ["admin-questions"],
-    queryFn: () => adminApi.questions({ limit: 50 }),
+    queryFn: () => adminApi.questions({ limit: 200 }),
   });
   const items = query.data?.data?.items ?? [];
   const [search, setSearch] = useState("");
@@ -62,8 +62,50 @@ export function useAdminQuestions() {
       title: "Delete question",
       confirmLabel: "Delete",
     })) return;
-    await adminApi.deleteQuestion(question.id);
-    client.invalidateQueries({ queryKey: ["admin-questions"] });
+    try {
+      await adminApi.deleteQuestion(question.id);
+      client.invalidateQueries({ queryKey: ["admin-questions"] });
+    } catch (err) {
+      await dialog.alert(err?.message || "Could not delete this question.");
+    }
+  }
+
+  async function clone(question) {
+    try {
+      const json = await adminApi.question(question.id);
+      const q = json?.data || {};
+      const stamp = Date.now().toString(36);
+      await adminApi.createQuestion({
+        type: q.type || question.type,
+        subType: q.subType || null,
+        title: `${q.title || question.title} (copy)`,
+        slug: `${String(q.slug || q.title || "question").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-copy-${stamp}`,
+        description: q.description || "",
+        difficulty: q.difficulty || "MEDIUM",
+        topics: q.topics || [],
+        companies: q.companies || [],
+        tags: q.tags || [],
+        constraints: q.constraints || [],
+        functionalRequirements: q.functionalRequirements || [],
+        nonFunctionalRequirements: q.nonFunctionalRequirements || [],
+        examples: q.examples || [],
+        testcases: q.testcases || [],
+        starterFiles: q.starterFiles || [],
+        estimates: q.estimates || "",
+        canvasNotes: q.canvasNotes || "",
+        quiz: q.quiz || [],
+        hints: q.hints || [],
+        published: false,
+        premium: Boolean(q.premium || question.premium),
+      });
+      await client.invalidateQueries({ queryKey: ["admin-questions"] });
+      await dialog.alert("Draft copy created. It is unpublished until you publish it.", {
+        title: "Question cloned",
+        tone: "ok",
+      });
+    } catch (err) {
+      await dialog.alert(err?.message || "Could not clone this question.");
+    }
   }
 
   return {
@@ -79,5 +121,6 @@ export function useAdminQuestions() {
     selected,
     togglePublish,
     remove,
+    clone,
   };
 }
