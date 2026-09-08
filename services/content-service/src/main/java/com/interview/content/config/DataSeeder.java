@@ -1,6 +1,7 @@
 package com.interview.content.config;
 
 import com.interview.content.model.AssessmentSet;
+import com.interview.content.model.Category;
 import com.interview.content.model.Company;
 import com.interview.content.model.Example;
 import com.interview.content.model.QuizItem;
@@ -9,6 +10,7 @@ import com.interview.content.model.QuestionSheet;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
 import com.interview.content.repository.AssessmentSetRepository;
+import com.interview.content.repository.CategoryRepository;
 import com.interview.content.repository.CompanyRepository;
 import com.interview.content.repository.QuestionRepository;
 import com.interview.content.repository.QuestionSheetRepository;
@@ -28,6 +30,7 @@ public class DataSeeder implements ApplicationRunner {
     private final CompanyRepository companies;
     private final TopicRepository topics;
     private final TagRepository tags;
+    private final CategoryRepository categories;
     private final QuestionRepository questions;
     private final AssessmentSetRepository assessmentSets;
     private final QuestionSheetRepository sheets;
@@ -37,6 +40,7 @@ public class DataSeeder implements ApplicationRunner {
             CompanyRepository companies,
             TopicRepository topics,
             TagRepository tags,
+            CategoryRepository categories,
             QuestionRepository questions,
             AssessmentSetRepository assessmentSets,
             QuestionSheetRepository sheets,
@@ -45,6 +49,7 @@ public class DataSeeder implements ApplicationRunner {
         this.companies = companies;
         this.topics = topics;
         this.tags = tags;
+        this.categories = categories;
         this.questions = questions;
         this.assessmentSets = assessmentSets;
         this.sheets = sheets;
@@ -53,14 +58,23 @@ public class DataSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        seedCompany("Amazon", "amazon");
-        seedCompany("Google", "google");
-        seedCompany("Microsoft", "microsoft");
-        seedCompany("Meta", "meta");
-        seedCompany("Uber", "uber");
-        seedCompany("Netflix", "netflix");
-        seedCompany("Airbnb", "airbnb");
-        seedCompany("LinkedIn", "linkedin");
+        seedCategory("DSA", "dsa");
+        seedCategory("HLD", "hld");
+        seedCategory("LLD", "lld");
+        seedCategory("CS", "cs");
+        seedCategory("FRONTEND", "frontend");
+        seedCategory("OA", "oa");
+
+        seedCompany("Amazon", "amazon", "https://www.google.com/s2/favicons?domain=amazon.com&sz=64");
+        seedCompany("Google", "google", "https://www.google.com/s2/favicons?domain=google.com&sz=64");
+        seedCompany("Microsoft", "microsoft", "https://www.google.com/s2/favicons?domain=microsoft.com&sz=64");
+        seedCompany("Meta", "meta", "https://www.google.com/s2/favicons?domain=meta.com&sz=64");
+        seedCompany("Uber", "uber", "https://www.google.com/s2/favicons?domain=uber.com&sz=64");
+        seedCompany("Netflix", "netflix", "https://www.google.com/s2/favicons?domain=netflix.com&sz=64");
+        seedCompany("Airbnb", "airbnb", "https://www.google.com/s2/favicons?domain=airbnb.com&sz=64");
+        seedCompany("LinkedIn", "linkedin", "https://www.google.com/s2/favicons?domain=linkedin.com&sz=64");
+        cache.evictCompanies();
+        backfillReviewStatus();
 
         seedTopic("Arrays", "arrays", "DSA");
         seedTopic("Hashing", "hashing", "DSA");
@@ -706,9 +720,29 @@ public class DataSeeder implements ApplicationRunner {
         });
     }
 
-    private void seedCompany(String name, String slug) {
-        if (!companies.existsBySlug(slug)) {
-            companies.save(Company.builder().name(name).slug(slug).active(true).build());
+    private void seedCompany(String name, String slug, String logo) {
+        companies.findBySlug(slug).ifPresentOrElse(company -> {
+            if (company.getLogo() == null || company.getLogo().isBlank()) {
+                company.setLogo(logo);
+                companies.save(company);
+            }
+        }, () -> companies.save(Company.builder().name(name).slug(slug).logo(logo).active(true).build()));
+    }
+
+    private void seedCategory(String name, String slug) {
+        if (!categories.existsBySlug(slug)) {
+            categories.save(Category.builder().name(name).slug(slug).build());
+        }
+    }
+
+    private void backfillReviewStatus() {
+        for (Question question : questions.findAll()) {
+            if (question.getReviewStatus() != null && !question.getReviewStatus().isBlank()) {
+                continue;
+            }
+            question.setReviewStatus(question.isPublished() ? "APPROVED" : "DRAFT");
+            questions.save(question);
+            cache.evictQuestion(question.getId());
         }
     }
 
@@ -1068,6 +1102,7 @@ public class DataSeeder implements ApplicationRunner {
                 .examples(examples)
                 .hints(hints)
                 .published(true)
+                .reviewStatus("APPROVED")
                 .premium(premium)
                 .createdBy("seed")
                 .createdAt(now)

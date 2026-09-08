@@ -61,7 +61,7 @@ public class GitHubAuthService {
         return enabled() ? clientId : "";
     }
 
-    public LoginResponse login(String code, String redirectUri, String device) {
+    public LoginResponse login(String code, String redirectUri, String device, boolean staffConsole) {
         if (!enabled()) {
             throw new ApiException(ErrorCode.AUTH_GITHUB_UNAVAILABLE, "GitHub sign-in is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
@@ -75,6 +75,9 @@ public class GitHubAuthService {
         Instant now = Instant.now();
         boolean created = false;
         if (user == null) {
+            if (staffConsole) {
+                authService.requireStaffConsole(null);
+            }
             user = users.save(User.builder()
                     .email(email)
                     .role(User.Role.USER)
@@ -95,11 +98,14 @@ public class GitHubAuthService {
             user.setUpdatedAt(now);
             users.save(user);
         }
+        if (staffConsole) {
+            authService.requireStaffConsole(user);
+        }
         if (created) {
             events.publishRegistered(user.getId(), email, name == null ? email : name);
         }
         authService.rejectIfDisabled(user);
-        return authService.issueTokens(user, device);
+        return authService.finishLogin(user, device);
     }
 
     private String exchangeCode(String code, String redirectUri) {

@@ -5,6 +5,7 @@ import {
   Difficulty,
   PaymentStatus,
   QuestionType,
+  ReviewStatus,
   Scope,
   Subject,
   TargetRole,
@@ -98,6 +99,13 @@ const TARGET_ROLE = {
   [TargetRole.BACKEND]: "Backend",
 };
 
+const REVIEW = {
+  [ReviewStatus.DRAFT]: "Draft",
+  [ReviewStatus.IN_REVIEW]: "In review",
+  [ReviewStatus.NEEDS_CHANGES]: "Needs changes",
+  [ReviewStatus.APPROVED]: "Approved",
+};
+
 const SUBJECT = {
   [Subject.OS]: "Operating Systems",
   [Subject.DBMS]: "Databases",
@@ -161,6 +169,10 @@ export function viewLabel(value) {
 
 export function subjectLabel(value) {
   return pick(SUBJECT, value);
+}
+
+export function reviewLabel(value) {
+  return pick(REVIEW, value, "Draft");
 }
 
 export function targetRoleLabel(value) {

@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import Pager from "../components/Pager";
+import { REVIEW_STATUS_LIST } from "../data/enums";
+import { reviewLabel } from "../data/labels";
 import { useAdminQuestions } from "../hooks/useAdminQuestions";
-import { usePager } from "../hooks/usePager";
 
 const DIFFICULTY = {
   EASY: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400",
@@ -11,14 +13,29 @@ const DIFFICULTY = {
   HARD: "border-rose-500/30 bg-rose-500/15 text-rose-400",
 };
 
+const REVIEW = {
+  DRAFT: "bg-white/5 text-mute",
+  IN_REVIEW: "bg-amber-400/15 text-amber-400",
+  NEEDS_CHANGES: "bg-rose-500/15 text-hard",
+  APPROVED: "bg-brand/15 text-brand",
+};
+
 export default function Questions() {
+  const fileRef = useRef(null);
   const {
     isLoading,
     isError,
     error,
     items,
+    total,
+    page,
+    pages,
+    pageSize,
+    setPage,
     search,
     setSearch,
+    reviewStatus,
+    setReview,
     tab,
     setTab,
     tabs,
@@ -26,20 +43,40 @@ export default function Questions() {
     togglePublish,
     remove,
     clone,
+    exportJson,
+    exportCsv,
+    importFile,
   } = useAdminQuestions();
   const { type, items: rows } = selected;
-  const pager = usePager(rows, `${tab}|${search}`, 8);
   const WEB = import.meta.env.VITE_WEB_URL || "http://localhost:3000";
 
-  if (isLoading) return <Loader fill />;
+  if (isLoading && !items.length) return <Loader fill />;
 
   return (
     <div className="space-y-6">
       <PageHero
         kicker="Your workspace"
         title="Questions"
-        detail="Pick a track tab, then edit or publish only that list."
-        action={<Link to="/questions/new" className="btn-brand">New question</Link>}
+        detail="Search and page on the server. Filter by review, then edit, preview, or import a catalog dump."
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-ghost" onClick={exportJson}>Export JSON</button>
+            <button type="button" className="btn-ghost" onClick={exportCsv}>Export CSV</button>
+            <button type="button" className="btn-ghost" onClick={() => fileRef.current?.click()}>Import</button>
+            <Link to="/questions/new" className="btn-brand">New question</Link>
+          </div>
+        )}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".json,.csv,application/json,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) importFile(file);
+        }}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -55,13 +92,33 @@ export default function Questions() {
         ))}
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setReview("")}
+          className={`tab-chip ${!reviewStatus ? "tab-chip-on" : ""}`}
+        >
+          All reviews
+        </button>
+        {REVIEW_STATUS_LIST.map((status) => (
+          <button
+            key={status}
+            type="button"
+            onClick={() => setReview(status)}
+            className={`tab-chip ${reviewStatus === status ? "tab-chip-on" : ""}`}
+          >
+            {reviewLabel(status)}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-mute">{rows.length} in this list · {items.length} in the catalog</p>
+        <p className="text-sm text-mute">{total} matching · page {page}</p>
         <input
           className="field mt-0 w-full max-w-xs"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search title or company"
+          placeholder="Search title, slug, company, or topic"
         />
       </div>
 
@@ -72,20 +129,20 @@ export default function Questions() {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{type.title}</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-tight">{type.title}</h2>
-            <p className="mt-1 text-sm text-mute">{type.hook} · {rows.length} in this list</p>
+            <p className="mt-1 text-sm text-mute">{type.hook} · {total} in this list</p>
           </div>
           <Link to={type.createTo || `/questions/new/${type.key}`} className="btn-brand !px-4 !py-2 text-sm">
             {type.add}
           </Link>
         </div>
         <div className="mt-4 space-y-2">
-          {pager.slice.map((q, index) => (
+          {rows.map((q, index) => (
             <article
               key={q.id}
               className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/90 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-start gap-3">
-                <span className="mt-0.5 w-7 shrink-0 text-sm font-semibold text-mute">{(pager.page - 1) * pager.pageSize + index + 1}</span>
+                <span className="mt-0.5 w-7 shrink-0 text-sm font-semibold text-mute">{(page - 1) * pageSize + index + 1}</span>
                 <div className="min-w-0">
                   <p className="font-semibold">{q.title}</p>
                   <p className="mt-1 truncate text-sm text-mute">
@@ -107,6 +164,14 @@ export default function Questions() {
                     }`}>
                       {q.published ? "Published" : "Draft"}
                     </span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${REVIEW[q.reviewStatus] || REVIEW.DRAFT}`}>
+                      {reviewLabel(q.reviewStatus)}
+                    </span>
+                    {q.scheduledPublishAt && (
+                      <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mute">
+                        {new Date(q.scheduledPublishAt).toLocaleString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -143,7 +208,7 @@ export default function Questions() {
           )}
         </div>
         <div className="mt-4">
-          <Pager page={pager.page} pages={pager.pages} total={pager.total} pageSize={pager.pageSize} onPage={pager.setPage} />
+          <Pager page={page} pages={pages} total={total} pageSize={pageSize} onPage={setPage} />
         </div>
       </section>
     </div>

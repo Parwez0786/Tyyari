@@ -46,11 +46,16 @@ public class AccountDeleteService {
         this.events = events;
     }
 
-    public User requestDeletion(String userId) {
+    public User requestDeletion(String actorId, String userId) {
+        if (actorId != null && !actorId.isBlank() && actorId.equals(userId)) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "You cannot delete your own account from support", HttpStatus.BAD_REQUEST);
+        }
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot delete an admin account", HttpStatus.BAD_REQUEST);
+        if (user.getRole() == User.Role.ADMIN
+                && user.getStatus() == User.Status.ACTIVE
+                && users.countByRoleAndStatus(User.Role.ADMIN, User.Status.ACTIVE) <= 1) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot delete the last active admin", HttpStatus.BAD_REQUEST);
         }
         if (user.getStatus() != User.Status.DELETING) {
             user.setStatus(User.Status.DELETING);

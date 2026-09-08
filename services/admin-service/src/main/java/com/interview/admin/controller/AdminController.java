@@ -53,20 +53,74 @@ public class AdminController {
     public ResponseEntity<String> listQuestions(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String reviewStatus,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "20") int limit,
             @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
         String path = "/internal/v1/questions?page=" + page
                 + "&limit=" + limit
-                + (type != null ? "&type=" + type : "")
-                + (search != null ? "&search=" + search : "");
+                + (type != null ? "&type=" + encode(type) : "")
+                + (search != null ? "&search=" + encode(search) : "")
+                + (reviewStatus != null ? "&reviewStatus=" + encode(reviewStatus) : "");
         return json(downstream.content("GET", path, null, userId));
+    }
+
+    @GetMapping("/questions/counts")
+    public ResponseEntity<String> questionCounts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String reviewStatus,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        String path = "/internal/v1/questions/counts"
+                + (search != null ? "?search=" + encode(search) : "")
+                + (reviewStatus != null ? (search != null ? "&" : "?") + "reviewStatus=" + encode(reviewStatus) : "");
+        return json(downstream.content("GET", path, null, userId));
+    }
+
+    @GetMapping("/questions/export")
+    public ResponseEntity<String> exportQuestions(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return json(downstream.content("GET", "/internal/v1/questions/export", null, userId));
+    }
+
+    @GetMapping("/questions/export.csv")
+    public ResponseEntity<String> exportQuestionsCsv(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return downstream.content("GET", "/internal/v1/questions/export.csv", null, userId);
+    }
+
+    @PostMapping("/questions/import")
+    public ResponseEntity<String> importQuestions(
+            @RequestBody String body,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return audited(downstream.content("POST", "/internal/v1/questions/import", body, userId), userId, "QUESTION_IMPORT", null);
+    }
+
+    @PostMapping("/questions/import.csv")
+    public ResponseEntity<String> importQuestionsCsv(
+            @RequestBody String body,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return audited(downstream.content("POST", "/internal/v1/questions/import.csv", body, userId), userId, "QUESTION_IMPORT", null);
     }
 
     @GetMapping("/questions/{id}")
     public ResponseEntity<String> getQuestion(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
         return json(downstream.content("GET", "/internal/v1/questions/" + id, null, userId));
+    }
+
+    @GetMapping("/questions/{id}/usage")
+    public ResponseEntity<String> questionUsage(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return json(downstream.content("GET", "/internal/v1/questions/" + id + "/usage", null, userId));
+    }
+
+    @PatchMapping("/questions/{id}/review")
+    public ResponseEntity<String> reviewQuestion(
+            @PathVariable String id,
+            @RequestBody String body,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        return audited(downstream.content("PATCH", "/internal/v1/questions/" + id + "/review", body, userId), userId, "QUESTION_REVIEW", id);
     }
 
     @PostMapping("/questions")
@@ -110,12 +164,12 @@ public class AdminController {
 
     @PutMapping("/companies/{id}")
     public ResponseEntity<String> updateCompany(@PathVariable String id, @RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("PUT", "/internal/v1/companies/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/companies/" + id, body, userId), userId, "COMPANY_UPDATE", id);
     }
 
     @DeleteMapping("/companies/{id}")
     public ResponseEntity<String> deleteCompany(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("DELETE", "/internal/v1/companies/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/companies/" + id, null, userId), userId, "COMPANY_DELETE", id);
     }
 
     @GetMapping("/companies")
@@ -125,17 +179,17 @@ public class AdminController {
 
     @PostMapping("/topics")
     public ResponseEntity<String> createTopic(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("POST", "/internal/v1/topics", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/topics", body, userId), userId, "TOPIC_CREATE", null);
     }
 
     @PutMapping("/topics/{id}")
     public ResponseEntity<String> updateTopic(@PathVariable String id, @RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("PUT", "/internal/v1/topics/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/topics/" + id, body, userId), userId, "TOPIC_UPDATE", id);
     }
 
     @DeleteMapping("/topics/{id}")
     public ResponseEntity<String> deleteTopic(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("DELETE", "/internal/v1/topics/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/topics/" + id, null, userId), userId, "TOPIC_DELETE", id);
     }
 
     @GetMapping("/topics")
@@ -145,22 +199,42 @@ public class AdminController {
 
     @PostMapping("/tags")
     public ResponseEntity<String> createTag(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("POST", "/internal/v1/tags", body, userId));
+        return audited(downstream.content("POST", "/internal/v1/tags", body, userId), userId, "TAG_CREATE", null);
     }
 
     @PutMapping("/tags/{id}")
     public ResponseEntity<String> updateTag(@PathVariable String id, @RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("PUT", "/internal/v1/tags/" + id, body, userId));
+        return audited(downstream.content("PUT", "/internal/v1/tags/" + id, body, userId), userId, "TAG_UPDATE", id);
     }
 
     @DeleteMapping("/tags/{id}")
     public ResponseEntity<String> deleteTag(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return json(downstream.content("DELETE", "/internal/v1/tags/" + id, null, userId));
+        return audited(downstream.content("DELETE", "/internal/v1/tags/" + id, null, userId), userId, "TAG_DELETE", id);
     }
 
     @GetMapping("/tags")
     public ResponseEntity<String> tags(@RequestHeader(value = "X-User-Id", required = false) String userId) {
         return json(downstream.content("GET", "/internal/v1/tags", null, userId));
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<String> categories(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return json(downstream.content("GET", "/internal/v1/categories", null, userId));
+    }
+
+    @PostMapping("/categories")
+    public ResponseEntity<String> createCategory(@RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return audited(downstream.content("POST", "/internal/v1/categories", body, userId), userId, "CATEGORY_CREATE", null);
+    }
+
+    @PutMapping("/categories/{id}")
+    public ResponseEntity<String> updateCategory(@PathVariable String id, @RequestBody String body, @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return audited(downstream.content("PUT", "/internal/v1/categories/" + id, body, userId), userId, "CATEGORY_UPDATE", id);
+    }
+
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<String> deleteCategory(@PathVariable String id, @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return audited(downstream.content("DELETE", "/internal/v1/categories/" + id, null, userId), userId, "CATEGORY_DELETE", id);
     }
 
     @GetMapping("/users")
@@ -491,5 +565,9 @@ public class AdminController {
         } catch (Exception ignored) {
             return "";
         }
+    }
+
+    private static String encode(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
     }
 }

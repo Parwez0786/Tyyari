@@ -11,6 +11,7 @@ import { usePager } from "../hooks/usePager";
 
 export default function Users() {
   const {
+    meId,
     usersQuery,
     search,
     setSearch,
@@ -39,7 +40,7 @@ export default function Users() {
       <PageHero
         kicker="Access"
         title="Users"
-        detail="Search and filter accounts. Invite a candidate or editor, then open a profile for support."
+        detail="Search and filter accounts. Invite a candidate, editor, or admin, then open a profile for support."
       />
 
       <article className="relative overflow-hidden rounded-[28px] border border-brand/25 bg-gradient-to-br from-brand/15 via-card to-card p-6">
@@ -49,7 +50,7 @@ export default function Users() {
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Invite</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Create an account</h2>
         <p className="mt-1 text-sm text-mute">
-          Sends a set-password link. Editors unlock Premium on the candidate app; this console stays ADMIN-only. You cannot invite an admin.
+          Sends a set-password link. Editors can sign in to this console for catalog work. Admins can manage users, billing, and audit.
         </p>
         <form className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_8rem_auto]" onSubmit={submitInvite}>
           <input
@@ -73,6 +74,7 @@ export default function Users() {
           >
             <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
             <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
+            <option value={AccountRole.ADMIN}>{roleLabel(AccountRole.ADMIN)}</option>
           </select>
           <button className="btn-brand" type="submit" disabled={busy === "invite"}>
             {busy === "invite" ? "Creating…" : "Invite"}
@@ -281,7 +283,7 @@ export default function Users() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {u.role !== AccountRole.ADMIN && u.status !== AccountStatus.DELETING && (
+              {u.id !== meId && u.status !== AccountStatus.DELETING && (
                 <select
                   className="field mt-0 !w-auto !py-1.5 text-sm"
                   value={u.role}
@@ -290,6 +292,7 @@ export default function Users() {
                 >
                   <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
                   <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
+                  <option value={AccountRole.ADMIN}>{roleLabel(AccountRole.ADMIN)}</option>
                 </select>
               )}
               <Link to={`/users/${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">View profile</Link>
@@ -297,7 +300,7 @@ export default function Users() {
               {u.role !== AccountRole.ADMIN && (
                 <Link to={`/billing?user=${u.id}`} className="btn-ghost !px-4 !py-1.5 text-sm">Billing</Link>
               )}
-              {u.role !== AccountRole.ADMIN && u.status !== AccountStatus.DELETING && (
+              {u.id !== meId && u.status !== AccountStatus.DELETING && (
                 <button
                   type="button"
                   className={u.status === AccountStatus.ACTIVE ? "btn-ghost !px-4 !py-1.5 !text-hard text-sm" : "btn-brand !px-4 !py-1.5 text-sm"}

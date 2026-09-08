@@ -46,7 +46,7 @@ public class GoogleAuthService {
         return enabled() ? clientId : "";
     }
 
-    public LoginResponse login(String idToken, String device) {
+    public LoginResponse login(String idToken, String device, boolean staffConsole) {
         if (!enabled()) {
             throw new ApiException(ErrorCode.AUTH_GOOGLE_UNAVAILABLE, "Google sign-in is not configured", HttpStatus.SERVICE_UNAVAILABLE);
         }
@@ -59,6 +59,9 @@ public class GoogleAuthService {
         Instant now = Instant.now();
         boolean created = false;
         if (user == null) {
+            if (staffConsole) {
+                authService.requireStaffConsole(null);
+            }
             user = users.save(User.builder()
                     .email(email)
                     .role(User.Role.USER)
@@ -79,11 +82,14 @@ public class GoogleAuthService {
             user.setUpdatedAt(now);
             users.save(user);
         }
+        if (staffConsole) {
+            authService.requireStaffConsole(user);
+        }
         if (created) {
             events.publishRegistered(user.getId(), email, name == null ? email : name);
         }
         authService.rejectIfDisabled(user);
-        return authService.issueTokens(user, device);
+        return authService.finishLogin(user, device);
     }
 
     private GoogleIdToken.Payload verify(String idToken) {

@@ -8,6 +8,7 @@ import com.interview.content.dto.QuestionDetail;
 import com.interview.content.dto.QuestionListItem;
 import com.interview.content.dto.SheetDetail;
 import com.interview.content.dto.SheetListItem;
+import com.interview.content.model.Category;
 import com.interview.content.model.Company;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
@@ -58,7 +59,7 @@ public class ContentController {
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(required = false) String sort
     ) {
-        return ApiResponse.ok(questionService.search(type, difficulty, company, topic, tag, search, page, limit, sort, true));
+        return ApiResponse.ok(questionService.search(type, difficulty, company, topic, tag, search, null, page, limit, sort, true));
     }
 
     @GetMapping("/questions/{id}")
@@ -122,6 +123,11 @@ public class ContentController {
     @GetMapping("/tags")
     public ApiResponse<List<Tag>> tags() {
         return ApiResponse.ok(catalogService.listTags());
+    }
+
+    @GetMapping("/categories")
+    public ApiResponse<List<Category>> categories() {
+        return ApiResponse.ok(catalogService.listCategories());
     }
 
     private static boolean entitled(String role, String premium) {

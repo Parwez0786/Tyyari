@@ -13,5 +13,7 @@ public record QuestionListItem(
         List<String> companies,
         boolean isSolved,
         boolean premium,
-        boolean published
+        boolean published,
+        String reviewStatus,
+        java.time.Instant scheduledPublishAt
 ) {}

@@ -23,6 +23,15 @@ export const Difficulty = Object.freeze({
 
 export const DIFFICULTY_LIST = Object.values(Difficulty);
 
+export const ReviewStatus = Object.freeze({
+  DRAFT: "DRAFT",
+  IN_REVIEW: "IN_REVIEW",
+  NEEDS_CHANGES: "NEEDS_CHANGES",
+  APPROVED: "APPROVED",
+});
+
+export const REVIEW_STATUS_LIST = Object.values(ReviewStatus);
+
 export const ViewMode = Object.freeze({
   CODE: "code",
   BLUEPRINT: "blueprint",
@@ -37,6 +46,14 @@ export const AccountRole = Object.freeze({
   EDITOR: "EDITOR",
   ADMIN: "ADMIN",
 });
+
+export function isStaffRole(role) {
+  return role === AccountRole.ADMIN || role === AccountRole.EDITOR;
+}
+
+export function isAdminRole(role) {
+  return role === AccountRole.ADMIN;
+}
 
 export const ACCOUNT_ROLE_LIST = Object.values(AccountRole);
 

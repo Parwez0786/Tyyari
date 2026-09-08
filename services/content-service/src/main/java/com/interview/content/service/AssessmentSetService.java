@@ -4,6 +4,7 @@ import com.interview.content.dto.AssessmentSetDetail;
 import com.interview.content.dto.AssessmentSetListItem;
 import com.interview.content.dto.AssessmentWriteRequest;
 import com.interview.content.dto.QuestionListItem;
+import com.interview.content.event.ContentEventPublisher;
 import com.interview.content.exception.ApiException;
 import com.interview.content.exception.ErrorCode;
 import com.interview.content.model.AssessmentSet;
@@ -24,10 +25,12 @@ public class AssessmentSetService {
 
     private final AssessmentSetRepository sets;
     private final QuestionService questions;
+    private final ContentEventPublisher events;
 
-    public AssessmentSetService(AssessmentSetRepository sets, QuestionService questions) {
+    public AssessmentSetService(AssessmentSetRepository sets, QuestionService questions, ContentEventPublisher events) {
         this.sets = sets;
         this.questions = questions;
+        this.events = events;
     }
 
     public List<AssessmentSetListItem> listPublished() {
@@ -93,7 +96,7 @@ public class AssessmentSetService {
         return out;
     }
 
-    public AssessmentSet create(AssessmentWriteRequest req) {
+    public AssessmentSet create(AssessmentWriteRequest req, String actorId) {
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : Slugs.from(req.title());
         if (!StringUtils.hasText(slug)) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Title or slug is required", HttpStatus.BAD_REQUEST);
@@ -103,16 +106,18 @@ public class AssessmentSetService {
         }
         Instant now = Instant.now();
         int duration = req.durationMinutes() != null ? Math.max(1, req.durationMinutes()) : 90;
-        return sets.save(apply(AssessmentSet.builder()
+        AssessmentSet saved = sets.save(apply(AssessmentSet.builder()
                 .slug(slug)
                 .durationMinutes(duration)
                 .published(Boolean.TRUE.equals(req.published()))
                 .createdAt(now)
                 .updatedAt(now)
                 .build(), req, slug));
+        events.publish("OA_CREATED", saved.getId(), Map.of("actorId", nvl(actorId), "slug", saved.getSlug()));
+        return saved;
     }
 
-    public AssessmentSet update(String id, AssessmentWriteRequest req) {
+    public AssessmentSet update(String id, AssessmentWriteRequest req, String actorId) {
         AssessmentSet existing = getRaw(id);
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : existing.getSlug();
         if (StringUtils.hasText(slug) && !slug.equals(existing.getSlug()) && sets.existsBySlug(slug)) {
@@ -120,19 +125,24 @@ public class AssessmentSetService {
         }
         AssessmentSet saved = apply(existing, req, slug);
         saved.setUpdatedAt(Instant.now());
-        return sets.save(saved);
+        saved = sets.save(saved);
+        events.publish("OA_UPDATED", saved.getId(), Map.of("actorId", nvl(actorId)));
+        return saved;
     }
 
-    public void delete(String id) {
+    public void delete(String id, String actorId) {
         AssessmentSet existing = getRaw(id);
         sets.deleteById(existing.getId());
+        events.publish("OA_DELETED", existing.getId(), Map.of("actorId", nvl(actorId)));
     }
 
-    public AssessmentSet publish(String id, boolean published) {
+    public AssessmentSet publish(String id, boolean published, String actorId) {
         AssessmentSet existing = getRaw(id);
         existing.setPublished(published);
         existing.setUpdatedAt(Instant.now());
-        return sets.save(existing);
+        AssessmentSet saved = sets.save(existing);
+        events.publish(published ? "OA_PUBLISHED" : "OA_UNPUBLISHED", saved.getId(), Map.of("actorId", nvl(actorId)));
+        return saved;
     }
 
     private AssessmentSet apply(AssessmentSet set, AssessmentWriteRequest req, String slug) {
@@ -159,5 +169,9 @@ public class AssessmentSetService {
                 set.getCompanies(),
                 count
         );
+    }
+
+    private static String nvl(String value) {
+        return value == null ? "" : value;
     }
 }

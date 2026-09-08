@@ -1,14 +1,17 @@
 package com.interview.content.service;
 
+import com.interview.content.dto.CategoryRequest;
 import com.interview.content.dto.CompanyRequest;
 import com.interview.content.dto.TagRequest;
 import com.interview.content.dto.TopicRequest;
 import com.interview.content.event.ContentEventPublisher;
 import com.interview.content.exception.ApiException;
 import com.interview.content.exception.ErrorCode;
+import com.interview.content.model.Category;
 import com.interview.content.model.Company;
 import com.interview.content.model.Tag;
 import com.interview.content.model.Topic;
+import com.interview.content.repository.CategoryRepository;
 import com.interview.content.repository.CompanyRepository;
 import com.interview.content.repository.TagRepository;
 import com.interview.content.repository.TopicRepository;
@@ -24,6 +27,7 @@ public class CatalogService {
     private final CompanyRepository companies;
     private final TopicRepository topics;
     private final TagRepository tags;
+    private final CategoryRepository categories;
     private final ContentCache cache;
     private final ContentEventPublisher events;
 
@@ -31,12 +35,14 @@ public class CatalogService {
             CompanyRepository companies,
             TopicRepository topics,
             TagRepository tags,
+            CategoryRepository categories,
             ContentCache cache,
             ContentEventPublisher events
     ) {
         this.companies = companies;
         this.topics = topics;
         this.tags = tags;
+        this.categories = categories;
         this.cache = cache;
         this.events = events;
     }
@@ -78,6 +84,7 @@ public class CatalogService {
         if (req.active() != null) company.setActive(req.active());
         Company saved = companies.save(company);
         cache.evictCompanies();
+        events.publish("COMPANY_UPDATED", saved.getId(), Map.of("slug", saved.getSlug()));
         return saved;
     }
 
@@ -87,6 +94,40 @@ public class CatalogService {
         }
         companies.deleteById(id);
         cache.evictCompanies();
+        events.publish("COMPANY_DELETED", id, Map.of());
+    }
+
+    public List<Category> listCategories() {
+        return categories.findAll();
+    }
+
+    public Category createCategory(CategoryRequest req) {
+        String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : Slugs.from(req.name());
+        if (categories.existsBySlug(slug)) {
+            throw new ApiException(ErrorCode.QUESTION_ALREADY_EXISTS, "Category slug already exists", HttpStatus.CONFLICT);
+        }
+        Category saved = categories.save(Category.builder().name(req.name()).slug(slug).build());
+        events.publish("CATEGORY_CREATED", saved.getId(), Map.of("slug", saved.getSlug()));
+        return saved;
+    }
+
+    public Category updateCategory(String id, CategoryRequest req) {
+        Category category = categories.findById(id)
+                .or(() -> categories.findBySlug(id))
+                .orElseThrow(() -> new ApiException(ErrorCode.CATEGORY_NOT_FOUND, "Category not found", HttpStatus.NOT_FOUND));
+        if (req.name() != null) category.setName(req.name());
+        if (req.slug() != null) category.setSlug(Slugs.from(req.slug()));
+        Category saved = categories.save(category);
+        events.publish("CATEGORY_UPDATED", saved.getId(), Map.of("slug", saved.getSlug()));
+        return saved;
+    }
+
+    public void deleteCategory(String id) {
+        Category category = categories.findById(id)
+                .or(() -> categories.findBySlug(id))
+                .orElseThrow(() -> new ApiException(ErrorCode.CATEGORY_NOT_FOUND, "Category not found", HttpStatus.NOT_FOUND));
+        categories.deleteById(category.getId());
+        events.publish("CATEGORY_DELETED", category.getId(), Map.of());
     }
 
     public List<Topic> listTopics(String category) {
@@ -109,6 +150,7 @@ public class CatalogService {
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : Slugs.from(req.name());
         Topic saved = topics.save(Topic.builder().name(req.name()).slug(slug).category(req.category()).build());
         cache.evictTopics();
+        events.publish("TOPIC_CREATED", saved.getId(), Map.of("slug", saved.getSlug()));
         return saved;
     }
 
@@ -119,6 +161,7 @@ public class CatalogService {
         if (req.category() != null) topic.setCategory(req.category());
         Topic saved = topics.save(topic);
         cache.evictTopics();
+        events.publish("TOPIC_UPDATED", saved.getId(), Map.of("slug", saved.getSlug()));
         return saved;
     }
 
@@ -128,6 +171,7 @@ public class CatalogService {
         }
         topics.deleteById(id);
         cache.evictTopics();
+        events.publish("TOPIC_DELETED", id, Map.of());
     }
 
     public List<Tag> listTags() {
@@ -144,6 +188,7 @@ public class CatalogService {
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : Slugs.from(req.name());
         Tag saved = tags.save(Tag.builder().name(req.name()).slug(slug).build());
         cache.evictTags();
+        events.publish("TAG_CREATED", saved.getId(), Map.of("slug", saved.getSlug()));
         return saved;
     }
 
@@ -153,6 +198,7 @@ public class CatalogService {
         if (req.slug() != null) tag.setSlug(Slugs.from(req.slug()));
         Tag saved = tags.save(tag);
         cache.evictTags();
+        events.publish("TAG_UPDATED", saved.getId(), Map.of("slug", saved.getSlug()));
         return saved;
     }
 
@@ -162,5 +208,6 @@ public class CatalogService {
         }
         tags.deleteById(id);
         cache.evictTags();
+        events.publish("TAG_DELETED", id, Map.of());
     }
 }

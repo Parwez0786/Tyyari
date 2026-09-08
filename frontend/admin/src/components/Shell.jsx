@@ -25,6 +25,8 @@ function ShellFrame() {
   const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
   const profileQuery = useQuery({ queryKey: ["admin-self-profile"], queryFn: adminApi.profile });
   const email = meQuery.data?.data?.email || "";
+  const role = meQuery.data?.data?.role || "";
+  const isAdmin = role === "ADMIN";
   const name = profileQuery.data?.data?.name || "";
   const avatar = profileQuery.data?.data?.avatar || "";
 
@@ -57,7 +59,7 @@ function ShellFrame() {
           </div>
         </div>
       </header>
-      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} name={name} email={email} avatar={avatar} onLogout={logout} />
+      <AppMenu open={menuOpen} onClose={() => setMenuOpen(false)} name={name} email={email} avatar={avatar} role={role} onLogout={logout} />
       <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Suspense fallback={<Loader fill />}>
           <Outlet />
@@ -90,10 +92,14 @@ function ShellFrame() {
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mute">Access</p>
             <ul className="mt-3 grid gap-2 text-sm">
               <li><Link to="/account" className="text-ink hover:text-brand">Your account</Link></li>
-              <li><Link to="/users" className="text-ink hover:text-brand">Users</Link></li>
-              <li><Link to="/billing" className="text-ink hover:text-brand">Billing</Link></li>
-              <li><Link to="/mail" className="text-ink hover:text-brand">Mail log</Link></li>
-              <li><Link to="/audit" className="text-ink hover:text-brand">Audit log</Link></li>
+              {isAdmin && (
+                <>
+                  <li><Link to="/users" className="text-ink hover:text-brand">Users</Link></li>
+                  <li><Link to="/billing" className="text-ink hover:text-brand">Billing</Link></li>
+                  <li><Link to="/mail" className="text-ink hover:text-brand">Mail log</Link></li>
+                  <li><Link to="/audit" className="text-ink hover:text-brand">Audit log</Link></li>
+                </>
+              )}
               <li><button type="button" className="text-ink hover:text-brand" onClick={logout}>Sign out</button></li>
             </ul>
           </div>

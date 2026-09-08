@@ -71,6 +71,7 @@ export const authApi = {
   resendVerification: (body) => api("/api/v1/auth/resend-verification", { method: "POST", body: JSON.stringify(body) }),
   verifyEmail: (body) => api("/api/v1/auth/verify-email", { method: "POST", body: JSON.stringify(body) }),
   resetPassword: (body) => api("/api/v1/auth/reset-password", { method: "POST", body: JSON.stringify(body) }),
+  verifyTotp: (body) => api("/api/v1/auth/totp/verify", { method: "POST", body: JSON.stringify(body) }),
 };
 
 export const userApi = {

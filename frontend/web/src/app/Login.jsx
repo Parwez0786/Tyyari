@@ -12,6 +12,25 @@ export default function Login() {
       subtitle="Sign in to continue to Tyyari."
       aside={<LoginAside />}
     >
+      {l.challenge ? (
+        <form onSubmit={l.onSubmit} className="space-y-4">
+          <label className="block text-sm font-medium">
+            Authenticator code
+            <input
+              className="field tracking-[0.3em]"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={l.code}
+              onChange={(e) => l.setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              required
+            />
+          </label>
+          {l.error && <p className="text-sm text-hard">{l.error}</p>}
+          <button className="btn-black mt-2 w-full !py-3.5 text-[15px] font-semibold">Verify</button>
+        </form>
+      ) : (
+      <>
       <SocialAuth onGoogle={l.onGoogle} />
       <div className="my-6 flex items-center gap-3 text-xs text-mute">
         <span className="h-px flex-1 bg-line" /> or continue with email <span className="h-px flex-1 bg-line" />
@@ -67,6 +86,8 @@ export default function Login() {
         {" "}and{" "}
         <Link to="/privacy" className="font-medium text-ink hover:text-brand">Privacy</Link>.
       </p>
+      </>
+      )}
     </AuthShell>
   );
 }
