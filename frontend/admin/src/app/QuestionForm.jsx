@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link, Navigate, useMatch, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
-import { DIFFICULTY_LIST, Difficulty, QuestionType, Subject } from "../data/enums";
-import { difficultyLabel, subjectLabel } from "../data/labels";
+import { DIFFICULTY_LIST, Difficulty, QuestionType, REVIEW_STATUS_LIST, ReviewStatus, Subject } from "../data/enums";
+import { difficultyLabel, reviewLabel, subjectLabel } from "../data/labels";
 import { QUESTION_TYPES, typeMeta } from "../data/questionTypes";
 import { adminApi } from "../services/api";
 
@@ -32,6 +32,14 @@ function blank(type) {
     companies: [],
     topics: [],
     tags: [],
+    hints: [""],
+    editorial: "",
+    editorialVideoUrl: "",
+    acceptedCode: [],
+    reviewStatus: ReviewStatus.DRAFT,
+    reviewer: "",
+    reviewNote: "",
+    scheduledPublishAt: "",
     published: false,
     premium: false,
   };
@@ -40,7 +48,6 @@ function blank(type) {
 export default function QuestionForm() {
   const { id, type: typeParam } = useParams();
   const navigate = useNavigate();
-  const readOnly = Boolean(useMatch("/questions/:id/view"));
   const createType = typeParam ? String(typeParam).toUpperCase() : "";
   const knownCreate = Boolean(createType && QUESTION_TYPES.some((item) => item.key === createType));
   const [form, setForm] = useState(() => blank(createType || QuestionType.DSA));
@@ -89,6 +96,14 @@ export default function QuestionForm() {
       companies: q.companies || [],
       topics: q.topics || [],
       tags: q.tags || [],
+      hints: (q.hints || []).length ? q.hints : [""],
+      editorial: q.editorial || "",
+      editorialVideoUrl: q.editorialVideoUrl || "",
+      acceptedCode: (q.acceptedCode || []).map((item) => ({ name: item.name || "", content: item.content || "" })),
+      reviewStatus: q.reviewStatus || ReviewStatus.DRAFT,
+      reviewer: q.reviewer || "",
+      reviewNote: q.reviewNote || "",
+      scheduledPublishAt: toLocalDateTime(q.scheduledPublishAt),
       published: q.published,
       premium: Boolean(q.premium),
     });
@@ -144,7 +159,6 @@ export default function QuestionForm() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (readOnly) return;
     const message = validate();
     if (message) {
       setError(message);
@@ -190,7 +204,17 @@ export default function QuestionForm() {
           answerIndex: item.answerIndex,
         }))
         : (existingQuestion.quiz || []),
-      hints: existingQuestion.hints || [],
+      hints: form.hints.map((item) => item.trim()).filter(Boolean),
+      editorial: form.editorial.trim(),
+      editorialVideoUrl: form.editorialVideoUrl.trim(),
+      acceptedCode: form.acceptedCode.filter((item) => item.name.trim()).map((item) => ({
+        name: item.name.trim(),
+        content: item.content,
+      })),
+      reviewStatus: form.published ? ReviewStatus.APPROVED : (form.reviewStatus || ReviewStatus.DRAFT),
+      reviewer: form.reviewer.trim(),
+      reviewNote: form.reviewNote.trim(),
+      scheduledPublishAt: fromLocalDateTime(form.scheduledPublishAt),
       published: form.published,
       premium: form.premium,
     };
@@ -209,21 +233,17 @@ export default function QuestionForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <PageHero
         kicker={meta.key}
-        title={readOnly ? (form.title || meta.title) : id ? `Edit ${meta.title}` : meta.add}
-        detail={readOnly
-          ? "Read-only catalog copy of the prompt they submitted against."
-          : `${meta.hook} Optional extras sit below — hidden cases, starter files, or labels.`}
-        action={readOnly
-          ? <button type="button" className="btn-ghost" onClick={() => navigate(-1)}>Back</button>
-          : (
-            <div className="flex flex-wrap gap-2">
-              {id && <Link to={`/questions/${id}/view`} className="btn-ghost">Preview</Link>}
-              <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
-            </div>
-          )}
+        title={id ? `Edit ${meta.title}` : meta.add}
+        detail={`${meta.hook} Optional extras sit below — hints, editorial, hidden cases, starter files, or labels.`}
+        action={(
+          <div className="flex flex-wrap gap-2">
+            {id && <Link to={`/questions/${id}/view`} className="btn-ghost">Preview</Link>}
+            <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
+          </div>
+        )}
       />
 
-      <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">
+      <fieldset className="min-w-0 space-y-4 border-0 p-0">
 
       <article className={`rounded-[28px] border border-line bg-gradient-to-br p-6 ${meta.accent}`}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Required</p>
@@ -511,6 +531,122 @@ export default function QuestionForm() {
       )}
 
       <article className="rounded-[28px] border border-line bg-card p-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Hints & editorial</p>
+        <h2 className="mt-2 text-xl font-extrabold tracking-tight">What candidates unlock</h2>
+        <p className="mt-1 text-sm text-mute">Hints copy on clone. Editorial text, a video URL, and accepted code stay with the question.</p>
+
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SoftLabel>Hints</SoftLabel>
+            <button type="button" className="btn-ghost !px-4 !py-2 text-sm" onClick={() => set("hints", [...form.hints, ""])}>
+              Add hint
+            </button>
+          </div>
+          <div className="mt-3 space-y-3">
+            {form.hints.map((hint, index) => (
+              <div key={index} className="rounded-2xl border border-line bg-surface p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-mute">Hint {index + 1}</p>
+                  {form.hints.length > 1 && (
+                    <button type="button" className="text-xs font-semibold text-hard" onClick={() => set("hints", form.hints.filter((_, i) => i !== index))}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  className="field mt-3 min-h-[80px] resize-y"
+                  placeholder="A hash map gives O(n) time."
+                  value={hint}
+                  onChange={(e) => set("hints", form.hints.map((item, i) => (i === index ? e.target.value : item)))}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <label className="mt-5 block">
+          <SoftLabel>Editorial</SoftLabel>
+          <textarea
+            className="field mt-2 min-h-[140px] resize-y"
+            placeholder="Walk through the approach, complexity, and common mistakes."
+            value={form.editorial}
+            onChange={(e) => set("editorial", e.target.value)}
+          />
+        </label>
+        <label className="mt-4 block">
+          <SoftLabel>Editorial video URL</SoftLabel>
+          <input
+            className="field mt-2"
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=…"
+            value={form.editorialVideoUrl}
+            onChange={(e) => set("editorialVideoUrl", e.target.value)}
+          />
+        </label>
+
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SoftLabel>Accepted code</SoftLabel>
+            <button type="button" className="btn-ghost !px-4 !py-2 text-sm" onClick={() => set("acceptedCode", [...form.acceptedCode, emptyFile()])}>
+              Add file
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-mute">Reference solution files. Shown on the candidate solution tab when present.</p>
+          <div className="mt-3 space-y-3">
+            {form.acceptedCode.map((item, index) => (
+              <div key={index} className="rounded-2xl border border-line bg-surface p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-mute">File {index + 1}</p>
+                  <button type="button" className="text-xs font-semibold text-hard" onClick={() => set("acceptedCode", form.acceptedCode.filter((_, i) => i !== index))}>
+                    Remove
+                  </button>
+                </div>
+                <label className="mt-3 block">
+                  <SoftLabel>Path</SoftLabel>
+                  <input className="field font-mono text-sm" placeholder="Main.java" value={item.name} onChange={(e) => patchList("acceptedCode", index, { name: e.target.value })} />
+                </label>
+                <label className="mt-3 block">
+                  <SoftLabel>Contents</SoftLabel>
+                  <textarea className="field min-h-[140px] font-mono text-xs" value={item.content} onChange={(e) => patchList("acceptedCode", index, { content: e.target.value })} />
+                </label>
+              </div>
+            ))}
+            {!form.acceptedCode.length && (
+              <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-mute">No accepted code yet.</p>
+            )}
+          </div>
+        </div>
+      </article>
+
+      <article className="rounded-[28px] border border-line bg-card p-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Review</p>
+        <h2 className="mt-2 text-xl font-extrabold tracking-tight">Queue, reviewer, and schedule</h2>
+        <p className="mt-1 text-sm text-mute">Draft vs published stays the live flag. Review status is for editors. Schedule is stored and shown — it does not auto-publish.</p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <SoftLabel>Review status</SoftLabel>
+            <select className="field mt-2" value={form.reviewStatus} onChange={(e) => set("reviewStatus", e.target.value)}>
+              {REVIEW_STATUS_LIST.map((status) => (
+                <option key={status} value={status}>{reviewLabel(status)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <SoftLabel>Reviewer</SoftLabel>
+            <input className="field mt-2" placeholder="editor@tyyari.dev" value={form.reviewer} onChange={(e) => set("reviewer", e.target.value)} />
+          </label>
+          <label className="block sm:col-span-2">
+            <SoftLabel>Review note</SoftLabel>
+            <textarea className="field mt-2 min-h-[80px] resize-y" placeholder="Needs a clearer example 2, or ready to publish." value={form.reviewNote} onChange={(e) => set("reviewNote", e.target.value)} />
+          </label>
+          <label className="block">
+            <SoftLabel>Scheduled publish</SoftLabel>
+            <input className="field mt-2" type="datetime-local" value={form.scheduledPublishAt} onChange={(e) => set("scheduledPublishAt", e.target.value)} />
+          </label>
+        </div>
+      </article>
+
+      <article className="rounded-[28px] border border-line bg-card p-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Filters</p>
         <h2 className="mt-2 text-xl font-extrabold tracking-tight">Companies, topics, and tags</h2>
         <p className="mt-1 text-sm text-mute">Attach labels so practice filters and sheets can find this question. Add missing names under Catalog.</p>
@@ -542,12 +678,10 @@ export default function QuestionForm() {
       </article>
 
       {error && <p className="text-sm text-hard">{error}</p>}
-      {!readOnly && (
-        <div className="flex flex-wrap gap-3">
-          <button className="btn-brand" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
-          <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-3">
+        <button className="btn-brand" disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+        <Link to={id ? "/questions" : "/questions/new"} className="btn-ghost">Cancel</Link>
+      </div>
       </fieldset>
     </form>
   );
@@ -600,4 +734,18 @@ function padOptions(options) {
   const next = [...(options || [])];
   while (next.length < 4) next.push("");
   return next.slice(0, 4);
+}
+
+function toLocalDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalDateTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }

@@ -4,6 +4,7 @@ import com.interview.auth.dto.InviteUserResult;
 import com.interview.auth.dto.LoginResponse;
 import com.interview.auth.dto.MeResponse;
 import com.interview.auth.dto.SupportMailResult;
+import com.interview.auth.dto.TotpSetupResponse;
 import com.interview.auth.event.UserEventPublisher;
 import com.interview.auth.exception.ApiException;
 import com.interview.auth.exception.ErrorCode;
@@ -43,6 +44,8 @@ public class AuthService {
     private final UserEventPublisher events;
     private final MailService mailService;
     private final SessionBan sessionBan;
+    private final TotpService totpService;
+    private final TotpChallengeStore totpChallenges;
     private final long refreshTokenDays;
     private final String frontendUrl;
 
@@ -57,6 +60,8 @@ public class AuthService {
             UserEventPublisher events,
             MailService mailService,
             SessionBan sessionBan,
+            TotpService totpService,
+            TotpChallengeStore totpChallenges,
             @Value("${jwt.refresh-token-days}") long refreshTokenDays,
             @Value("${app.frontend-url}") String frontendUrl
     ) {
@@ -70,6 +75,8 @@ public class AuthService {
         this.events = events;
         this.mailService = mailService;
         this.sessionBan = sessionBan;
+        this.totpService = totpService;
+        this.totpChallenges = totpChallenges;
         this.refreshTokenDays = refreshTokenDays;
         this.frontendUrl = frontendUrl;
     }
@@ -111,7 +118,7 @@ public class AuthService {
         return user.getId();
     }
 
-    public LoginResponse login(String email, String password, String device) {
+    public LoginResponse login(String email, String password, String device, boolean staffConsole) {
         User user = users.findByEmail(EmailAddresses.normalize(email))
                 .orElseThrow(() -> new ApiException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid credentials", HttpStatus.UNAUTHORIZED));
         if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
@@ -128,7 +135,10 @@ public class AuthService {
                     HttpStatus.FORBIDDEN
             );
         }
-        return issueTokens(user, device);
+        if (staffConsole) {
+            requireStaffConsole(user);
+        }
+        return finishLogin(user, device);
     }
 
     public LoginResponse refresh(String refreshToken, String device) {
@@ -160,11 +170,11 @@ public class AuthService {
     public MeResponse me(String userId) {
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
-        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name(), isPremium(user));
+        return new MeResponse(user.getId(), user.getEmail(), user.getRole().name(), isPremium(user), user.isTotpEnabled());
     }
 
     public boolean isPremium(User user) {
-        if (user.getRole() == User.Role.ADMIN) {
+        if (user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.EDITOR) {
             return true;
         }
         if (!user.isPremium()) {
@@ -234,7 +244,7 @@ public class AuthService {
                     .used(false)
                     .build());
             log.info("Password reset token for {}: {}", user.getEmail(), raw);
-            mailService.sendPasswordReset(user.getEmail(), raw);
+            mailService.sendPasswordReset(user.getEmail(), raw, isStaff(user));
         });
     }
 
@@ -283,11 +293,9 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
     }
 
-    public SupportMailResult sendPasswordResetForUser(String userId) {
+    public SupportMailResult sendPasswordResetForUser(String actorId, String userId) {
+        rejectSelf(actorId, userId, "reset your own password from support");
         User user = getUser(userId);
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot reset an admin password from support", HttpStatus.BAD_REQUEST);
-        }
         rejectIfDeleting(user);
         String raw = tokenHasher.randomToken();
         Instant now = Instant.now();
@@ -298,11 +306,11 @@ public class AuthService {
                 .createdAt(now)
                 .used(false)
                 .build());
-        String actionUrl = frontendUrl + "/reset-password?token=" + raw;
+        String actionUrl = mailService.appUrl(isStaff(user)) + "/reset-password?token=" + raw;
         boolean sent = true;
         String message = "Reset email sent. Link expires in 1 hour.";
         try {
-            mailService.sendPasswordReset(user.getEmail(), raw);
+            mailService.sendPasswordReset(user.getEmail(), raw, isStaff(user));
         } catch (RuntimeException e) {
             sent = false;
             message = "Email was not delivered. Copy the reset link.";
@@ -311,11 +319,9 @@ public class AuthService {
         return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
     }
 
-    public User forceVerifyEmail(String userId) {
+    public User forceVerifyEmail(String actorId, String userId) {
+        rejectSelf(actorId, userId, "change verification on your own account");
         User user = getUser(userId);
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change verification on an admin account", HttpStatus.BAD_REQUEST);
-        }
         rejectIfDeleting(user);
         if (user.isEmailVerified()) {
             return user;
@@ -327,11 +333,9 @@ public class AuthService {
         return user;
     }
 
-    public SupportMailResult changeEmail(String userId, String email) {
+    public SupportMailResult changeEmail(String actorId, String userId, String email) {
+        rejectSelf(actorId, userId, "change your own email from support");
         User user = getUser(userId);
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change an admin email from support", HttpStatus.BAD_REQUEST);
-        }
         rejectIfDeleting(user);
         if (user.getProvider() != null && !"LOCAL".equalsIgnoreCase(user.getProvider())) {
             throw new ApiException(
@@ -395,10 +399,14 @@ public class AuthService {
         return new SupportMailResult(sent, user.getEmail(), actionUrl, message);
     }
 
-    public User updateStatus(String userId, User.Status status) {
+    public User updateStatus(String actorId, String userId, User.Status status) {
+        rejectSelf(actorId, userId, "change your own status");
         User user = users.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND, "User not found", HttpStatus.NOT_FOUND));
         rejectIfDeleting(user);
+        if (status == User.Status.DISABLED) {
+            rejectLastAdmin(user, "disable");
+        }
         if (status == User.Status.DELETING) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Use delete account to wipe this user", HttpStatus.BAD_REQUEST);
         }
@@ -412,11 +420,9 @@ public class AuthService {
         return saved;
     }
 
-    public void revokeSessions(String userId) {
+    public void revokeSessions(String actorId, String userId) {
+        rejectSelf(actorId, userId, "revoke your own sessions from support");
         User user = getUser(userId);
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot revoke admin sessions from support", HttpStatus.BAD_REQUEST);
-        }
         rejectIfDeleting(user);
         refreshTokens.deleteByUserId(user.getId());
         sessionBan.block(user.getId());
@@ -453,11 +459,11 @@ public class AuthService {
                 .createdAt(now)
                 .used(false)
                 .build());
-        String actionUrl = frontendUrl + "/reset-password?token=" + raw;
+        String actionUrl = mailService.appUrl(isStaff(user)) + "/reset-password?token=" + raw;
         boolean sent = true;
         String message = "Invite sent. They have 1 hour to set a password.";
         try {
-            mailService.sendInvite(user.getEmail(), displayName, raw);
+            mailService.sendInvite(user.getEmail(), displayName, raw, isStaff(user));
         } catch (RuntimeException e) {
             sent = false;
             message = "Account created. Email was not delivered. Copy the set-password link.";
@@ -466,13 +472,15 @@ public class AuthService {
         return new InviteUserResult(user.getId(), user.getEmail(), user.getRole().name(), sent, actionUrl, message);
     }
 
-    public User updateRole(String userId, String roleName) {
+    public User updateRole(String actorId, String userId, String roleName) {
+        rejectSelf(actorId, userId, "change your own role");
         User user = getUser(userId);
-        if (user.getRole() == User.Role.ADMIN) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot change an admin role", HttpStatus.BAD_REQUEST);
-        }
         rejectIfDeleting(user);
-        user.setRole(parseAssignableRole(roleName));
+        User.Role next = parseAssignableRole(roleName);
+        if (user.getRole() == User.Role.ADMIN && next != User.Role.ADMIN) {
+            rejectLastAdmin(user, "demote");
+        }
+        user.setRole(next);
         user.setUpdatedAt(Instant.now());
         return users.save(user);
     }
@@ -484,7 +492,10 @@ public class AuthService {
         if ("EDITOR".equalsIgnoreCase(roleName.trim())) {
             return User.Role.EDITOR;
         }
-        throw new ApiException(ErrorCode.VALIDATION_ERROR, "Assign USER or EDITOR only", HttpStatus.BAD_REQUEST);
+        if ("ADMIN".equalsIgnoreCase(roleName.trim())) {
+            return User.Role.ADMIN;
+        }
+        throw new ApiException(ErrorCode.VALIDATION_ERROR, "Assign USER, EDITOR, or ADMIN", HttpStatus.BAD_REQUEST);
     }
 
     private String issueVerificationToken(String userId, Instant now) {
@@ -522,6 +533,94 @@ public class AuthService {
         }
     }
 
+    public LoginResponse finishLogin(User user, String device) {
+        rejectIfDisabled(user);
+        if (user.isTotpEnabled()) {
+            return LoginResponse.totpChallenge(totpChallenges.create(user.getId(), device));
+        }
+        return issueTokens(user, device);
+    }
+
+    public LoginResponse verifyTotpLogin(String challenge, String code) {
+        TotpChallengeStore.Entry entry = totpChallenges.peek(challenge);
+        if (entry == null) {
+            throw new ApiException(ErrorCode.AUTH_TOTP_INVALID, "This code expired. Sign in again.", HttpStatus.UNAUTHORIZED);
+        }
+        User user = requireUser(entry.userId());
+        if (!user.isTotpEnabled() || !totpService.verify(user.getTotpSecret(), code)) {
+            throw new ApiException(ErrorCode.AUTH_TOTP_INVALID, "That authenticator code is not valid", HttpStatus.UNAUTHORIZED);
+        }
+        totpChallenges.consume(challenge);
+        return issueTokens(user, entry.device());
+    }
+
+    public TotpSetupResponse setupTotp(String userId) {
+        User user = requireUser(userId);
+        requireStaff(user);
+        rejectIfDisabled(user);
+        if (user.isTotpEnabled()) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Disable two-factor authentication first", HttpStatus.BAD_REQUEST);
+        }
+        String secret = totpService.newSecret();
+        user.setTotpSecret(secret);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+        return new TotpSetupResponse(secret, totpService.otpauthUrl(user.getEmail(), secret));
+    }
+
+    public void enableTotp(String userId, String code) {
+        User user = requireUser(userId);
+        requireStaff(user);
+        rejectIfDisabled(user);
+        if (user.getTotpSecret() == null || user.getTotpSecret().isBlank()) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Start two-factor setup first", HttpStatus.BAD_REQUEST);
+        }
+        if (!totpService.verify(user.getTotpSecret(), code)) {
+            throw new ApiException(ErrorCode.AUTH_TOTP_INVALID, "That authenticator code is not valid", HttpStatus.BAD_REQUEST);
+        }
+        user.setTotpEnabled(true);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+    }
+
+    public void disableTotp(String userId, String password, String code) {
+        User user = requireUser(userId);
+        rejectIfDisabled(user);
+        if (!user.isTotpEnabled()) {
+            return;
+        }
+        boolean ok = totpService.verify(user.getTotpSecret(), code);
+        if (!ok && user.getPasswordHash() != null && password != null && !password.isBlank()) {
+            ok = passwordEncoder.matches(password, user.getPasswordHash());
+        }
+        if (!ok) {
+            throw new ApiException(ErrorCode.AUTH_UNAUTHORIZED, "Confirm with your password or authenticator code", HttpStatus.UNAUTHORIZED);
+        }
+        user.setTotpEnabled(false);
+        user.setTotpSecret(null);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+    }
+
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        User user = requireUser(userId);
+        rejectIfDisabled(user);
+        boolean hasHash = user.getPasswordHash() != null && !user.getPasswordHash().isBlank();
+        if (hasHash) {
+            if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+                throw new ApiException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Current password is incorrect", HttpStatus.UNAUTHORIZED);
+            }
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Use at least 8 characters", HttpStatus.BAD_REQUEST);
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+        refreshTokens.deleteByUserId(user.getId());
+        sessionBan.block(user.getId());
+    }
+
     public LoginResponse issueTokens(User user, String device) {
         rejectIfDisabled(user);
         sessionBan.clear(user.getId());
@@ -537,5 +636,39 @@ public class AuthService {
                 .revoked(false)
                 .build());
         return new LoginResponse(access, refreshRaw, jwtService.getAccessTokenSeconds());
+    }
+
+    public boolean isStaff(User user) {
+        return user != null && (user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.EDITOR);
+    }
+
+    public void requireStaffConsole(User user) {
+        if (!isStaff(user)) {
+            throw new ApiException(
+                    ErrorCode.AUTH_STAFF_REQUIRED,
+                    "This console is for admin and editor accounts.",
+                    HttpStatus.FORBIDDEN
+            );
+        }
+    }
+
+    private void requireStaff(User user) {
+        if (!isStaff(user)) {
+            throw new ApiException(ErrorCode.AUTH_STAFF_REQUIRED, "Two-factor is available on staff accounts only", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    private void rejectSelf(String actorId, String userId, String action) {
+        if (actorId != null && !actorId.isBlank() && actorId.equals(userId)) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "You cannot " + action, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private void rejectLastAdmin(User user, String action) {
+        if (user.getRole() == User.Role.ADMIN
+                && user.getStatus() == User.Status.ACTIVE
+                && users.countByRoleAndStatus(User.Role.ADMIN, User.Status.ACTIVE) <= 1) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Cannot " + action + " the last active admin", HttpStatus.BAD_REQUEST);
+        }
     }
 }

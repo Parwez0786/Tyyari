@@ -27,6 +27,13 @@ public record QuestionWriteRequest(
         String canvasNotes,
         List<QuizItem> quiz,
         List<String> hints,
+        String editorial,
+        String editorialVideoUrl,
+        List<StarterFile> acceptedCode,
+        String reviewStatus,
+        String reviewer,
+        String reviewNote,
+        java.time.Instant scheduledPublishAt,
         Boolean published,
         Boolean premium
 ) {}

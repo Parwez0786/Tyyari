@@ -4,15 +4,21 @@ import com.interview.content.dto.ApiResponse;
 import com.interview.content.dto.AssessmentWriteRequest;
 import com.interview.content.dto.CatalogTitleRequest;
 import com.interview.content.dto.CatalogTitleResponse;
+import com.interview.content.dto.CategoryRequest;
 import com.interview.content.dto.CompanyRequest;
 import com.interview.content.dto.ContentStats;
 import com.interview.content.dto.PageResponse;
+import com.interview.content.dto.QuestionImportRequest;
+import com.interview.content.dto.QuestionImportResult;
 import com.interview.content.dto.QuestionListItem;
+import com.interview.content.dto.QuestionReviewRequest;
+import com.interview.content.dto.QuestionUsage;
 import com.interview.content.dto.QuestionWriteRequest;
 import com.interview.content.dto.SheetWriteRequest;
 import com.interview.content.dto.TagRequest;
 import com.interview.content.dto.TopicRequest;
 import com.interview.content.model.AssessmentSet;
+import com.interview.content.model.Category;
 import com.interview.content.model.Company;
 import com.interview.content.model.Question;
 import com.interview.content.model.QuestionSheet;
@@ -69,24 +75,38 @@ public class InternalContentController {
     }
 
     @PostMapping("/sheets")
-    public ApiResponse<QuestionSheet> createSheet(@RequestBody SheetWriteRequest request) {
-        return ApiResponse.ok(sheetService.create(request), "Sheet created");
+    public ApiResponse<QuestionSheet> createSheet(
+            @RequestBody SheetWriteRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(sheetService.create(request, actorId), "Sheet created");
     }
 
     @PutMapping("/sheets/{id}")
-    public ApiResponse<QuestionSheet> updateSheet(@PathVariable String id, @RequestBody SheetWriteRequest request) {
-        return ApiResponse.ok(sheetService.update(id, request));
+    public ApiResponse<QuestionSheet> updateSheet(
+            @PathVariable String id,
+            @RequestBody SheetWriteRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(sheetService.update(id, request, actorId));
     }
 
     @DeleteMapping("/sheets/{id}")
-    public ApiResponse<Void> deleteSheet(@PathVariable String id) {
-        sheetService.delete(id);
+    public ApiResponse<Void> deleteSheet(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        sheetService.delete(id, actorId);
         return ApiResponse.ok(null, "Deleted");
     }
 
     @PatchMapping("/sheets/{id}/publish")
-    public ApiResponse<QuestionSheet> publishSheet(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
-        return ApiResponse.ok(sheetService.publish(id, body.getOrDefault("published", true)));
+    public ApiResponse<QuestionSheet> publishSheet(
+            @PathVariable String id,
+            @RequestBody Map<String, Boolean> body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(sheetService.publish(id, body.getOrDefault("published", true), actorId));
     }
 
     @GetMapping("/assessment-sets")
@@ -100,24 +120,38 @@ public class InternalContentController {
     }
 
     @PostMapping("/assessment-sets")
-    public ApiResponse<AssessmentSet> createAssessment(@RequestBody AssessmentWriteRequest request) {
-        return ApiResponse.ok(assessmentSetService.create(request), "Assessment created");
+    public ApiResponse<AssessmentSet> createAssessment(
+            @RequestBody AssessmentWriteRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(assessmentSetService.create(request, actorId), "Assessment created");
     }
 
     @PutMapping("/assessment-sets/{id}")
-    public ApiResponse<AssessmentSet> updateAssessment(@PathVariable String id, @RequestBody AssessmentWriteRequest request) {
-        return ApiResponse.ok(assessmentSetService.update(id, request));
+    public ApiResponse<AssessmentSet> updateAssessment(
+            @PathVariable String id,
+            @RequestBody AssessmentWriteRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(assessmentSetService.update(id, request, actorId));
     }
 
     @DeleteMapping("/assessment-sets/{id}")
-    public ApiResponse<Void> deleteAssessment(@PathVariable String id) {
-        assessmentSetService.delete(id);
+    public ApiResponse<Void> deleteAssessment(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        assessmentSetService.delete(id, actorId);
         return ApiResponse.ok(null, "Deleted");
     }
 
     @PatchMapping("/assessment-sets/{id}/publish")
-    public ApiResponse<AssessmentSet> publishAssessment(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
-        return ApiResponse.ok(assessmentSetService.publish(id, body.getOrDefault("published", true)));
+    public ApiResponse<AssessmentSet> publishAssessment(
+            @PathVariable String id,
+            @RequestBody Map<String, Boolean> body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(assessmentSetService.publish(id, body.getOrDefault("published", true), actorId));
     }
 
     @PostMapping("/catalog/titles")
@@ -134,10 +168,45 @@ public class InternalContentController {
     public ApiResponse<PageResponse<QuestionListItem>> questions(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String reviewStatus,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "50") int limit
     ) {
-        return ApiResponse.ok(questionService.search(type, null, null, null, null, search, page, limit, null, false));
+        return ApiResponse.ok(questionService.search(type, null, null, null, null, search, reviewStatus, page, limit, null, false));
+    }
+
+    @GetMapping("/questions/counts")
+    public ApiResponse<Map<String, Long>> questionCounts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String reviewStatus
+    ) {
+        return ApiResponse.ok(questionService.countByType(search, reviewStatus));
+    }
+
+    @GetMapping("/questions/export")
+    public ApiResponse<List<Question>> exportQuestions() {
+        return ApiResponse.ok(questionService.exportAll());
+    }
+
+    @GetMapping(value = "/questions/export.csv", produces = "text/csv")
+    public String exportQuestionsCsv() {
+        return questionService.exportCsv();
+    }
+
+    @PostMapping("/questions/import")
+    public ApiResponse<QuestionImportResult> importQuestions(
+            @RequestBody QuestionImportRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(questionService.importQuestions(request, actorId), "Import finished");
+    }
+
+    @PostMapping(value = "/questions/import.csv", consumes = { "text/csv", "text/plain", "application/json" })
+    public ApiResponse<QuestionImportResult> importQuestionsCsv(
+            @RequestBody String body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(questionService.importCsv(body, actorId), "Import finished");
     }
 
     @GetMapping("/questions/{id}")
@@ -169,6 +238,20 @@ public class InternalContentController {
     ) {
         questionService.delete(id, actorId);
         return ApiResponse.ok(null, "Deleted");
+    }
+
+    @GetMapping("/questions/{id}/usage")
+    public ApiResponse<QuestionUsage> questionUsage(@PathVariable String id) {
+        return ApiResponse.ok(questionService.usage(id));
+    }
+
+    @PatchMapping("/questions/{id}/review")
+    public ApiResponse<Question> review(
+            @PathVariable String id,
+            @RequestBody QuestionReviewRequest body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(questionService.review(id, body, actorId));
     }
 
     @PatchMapping("/questions/{id}/publish")
@@ -247,5 +330,26 @@ public class InternalContentController {
     @GetMapping("/tags")
     public ApiResponse<List<Tag>> tags() {
         return ApiResponse.ok(catalogService.listTags());
+    }
+
+    @GetMapping("/categories")
+    public ApiResponse<List<Category>> categories() {
+        return ApiResponse.ok(catalogService.listCategories());
+    }
+
+    @PostMapping("/categories")
+    public ApiResponse<Category> createCategory(@RequestBody CategoryRequest request) {
+        return ApiResponse.ok(catalogService.createCategory(request), "Category created");
+    }
+
+    @PutMapping("/categories/{id}")
+    public ApiResponse<Category> updateCategory(@PathVariable String id, @RequestBody CategoryRequest request) {
+        return ApiResponse.ok(catalogService.updateCategory(id, request));
+    }
+
+    @DeleteMapping("/categories/{id}")
+    public ApiResponse<Void> deleteCategory(@PathVariable String id) {
+        catalogService.deleteCategory(id);
+        return ApiResponse.ok(null, "Deleted");
     }
 }

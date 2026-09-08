@@ -17,19 +17,31 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final String from;
     private final String frontendUrl;
+    private final String adminUrl;
 
     public MailService(
             JavaMailSender mailSender,
             @Value("${app.mail-from}") String from,
-            @Value("${app.frontend-url}") String frontendUrl
+            @Value("${app.frontend-url}") String frontendUrl,
+            @Value("${app.admin-url}") String adminUrl
     ) {
         this.mailSender = mailSender;
         this.from = from;
         this.frontendUrl = frontendUrl;
+        this.adminUrl = adminUrl;
+    }
+
+    public String appUrl(boolean staff) {
+        return staff ? adminUrl : frontendUrl;
     }
 
     public void sendInvite(String to, String name, String token) {
-        String link = frontendUrl + "/reset-password?token=" + token;
+        sendInvite(to, name, token, false);
+    }
+
+    public void sendInvite(String to, String name, String token, boolean staff) {
+        String base = appUrl(staff);
+        String link = base + "/reset-password?token=" + token;
         send(to, "Set your Tyyari password", EmailTemplates.page(
                 "You're invited",
                 "Join Tyyari",
@@ -37,12 +49,17 @@ public class MailService {
                 "Set your password",
                 link,
                 "This link expires in 1 hour. After that, ask an admin to send another invite.",
-                frontendUrl
+                base
         ));
     }
 
     public void sendPasswordReset(String to, String token) {
-        String link = frontendUrl + "/reset-password?token=" + token;
+        sendPasswordReset(to, token, false);
+    }
+
+    public void sendPasswordReset(String to, String token, boolean staff) {
+        String base = appUrl(staff);
+        String link = base + "/reset-password?token=" + token;
         try {
             send(to, "Reset your Tyyari password", EmailTemplates.page(
                     "Account",
@@ -51,7 +68,7 @@ public class MailService {
                     "Choose a new password",
                     link,
                     "This link expires in 1 hour. If you did not ask for it, ignore this email.",
-                    frontendUrl
+                    base
             ));
         } catch (RuntimeException e) {
             log.warn("Password reset email was not delivered to {}", to);

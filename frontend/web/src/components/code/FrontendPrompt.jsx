@@ -50,11 +50,7 @@ export default function FrontendPrompt({ data, submitted = false }) {
             </div>
           </>
         )}
-        {tab === "solution" && (
-          <p className="text-sm leading-6 text-mute">
-            Official write-ups are not unlocked yet. Build the features in the problem tab, then Submit so this attempt is saved to your account.
-          </p>
-        )}
+        {tab === "solution" && <OfficialSolution data={data} />}
         {tab === "history" && <HistoryTab questionId={data?.id} submitted={submitted} />}
       </div>
     </aside>
@@ -72,6 +68,35 @@ function Section({ title, items }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+function OfficialSolution({ data }) {
+  const editorial = data?.editorial?.trim();
+  const video = data?.editorialVideoUrl?.trim();
+  const files = data?.acceptedCode || [];
+  if (!editorial && !video && !files.length) {
+    return (
+      <p className="text-sm leading-6 text-mute">
+        Official write-ups are not unlocked yet. Build the features in the problem tab, then Submit so this attempt is saved to your account.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {editorial && <p className="whitespace-pre-wrap text-sm leading-6 text-ink">{editorial}</p>}
+      {video && (
+        <a href={video} target="_blank" rel="noreferrer" className="text-sm font-semibold text-brand">
+          Watch editorial
+        </a>
+      )}
+      {files.map((file) => (
+        <section key={file.name} className="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p className="font-mono text-xs font-semibold text-ink">{file.name}</p>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-5 text-mute">{file.content}</pre>
+        </section>
+      ))}
+    </div>
   );
 }
 

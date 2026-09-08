@@ -14,8 +14,16 @@ export function useLogin() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [challenge, setChallenge] = useState("");
+  const [code, setCode] = useState("");
 
   async function finish(tokens) {
+    if (tokens?.requiresTotp && tokens?.totpChallenge) {
+      setChallenge(tokens.totpChallenge);
+      setCode("");
+      setError("");
+      return;
+    }
     setTokens(tokens?.accessToken, tokens?.refreshToken, remember);
     const profile = await userApi.profile();
     queryClient.setQueryData(["profile"], profile);
@@ -31,6 +39,11 @@ export function useLogin() {
       return;
     }
     try {
+      if (challenge) {
+        const res = await authApi.verifyTotp({ challenge, code });
+        await finish(res?.data);
+        return;
+      }
       const res = await authApi.login({ email, password });
       await finish(res?.data);
     } catch (err) {
@@ -95,6 +108,9 @@ export function useLogin() {
     setRemember,
     error,
     notice,
+    challenge,
+    code,
+    setCode,
     onSubmit,
     onGoogle,
     emailLink,

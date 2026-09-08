@@ -32,6 +32,9 @@ public class User {
     private boolean premium;
     private Instant premiumUntil;
     private String stripeCustomerId;
+    @JsonIgnore
+    private String totpSecret;
+    private boolean totpEnabled;
     private Instant createdAt;
     private Instant updatedAt;
 

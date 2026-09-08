@@ -10,5 +10,10 @@ public record LoginRequest(
         @Size(max = 254)
         @Email(regexp = EmailAddresses.REGEXP, message = EmailAddresses.MESSAGE)
         String email,
-        @NotBlank String password
-) {}
+        @NotBlank String password,
+        Boolean staffConsole
+) {
+    public LoginRequest(String email, String password) {
+        this(email, password, null);
+    }
+}

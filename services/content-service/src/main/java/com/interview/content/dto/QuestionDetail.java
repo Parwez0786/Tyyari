@@ -28,6 +28,9 @@ public record QuestionDetail(
         String canvasNotes,
         List<QuizItem> quiz,
         List<String> hints,
+        String editorial,
+        String editorialVideoUrl,
+        List<StarterFile> acceptedCode,
         boolean premium,
         boolean locked
 ) {}

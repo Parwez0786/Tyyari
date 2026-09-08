@@ -10,4 +10,5 @@ public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByGoogleSub(String googleSub);
     Optional<User> findByGithubId(String githubId);
     boolean existsByEmail(String email);
+    long countByRoleAndStatus(User.Role role, User.Status status);
 }

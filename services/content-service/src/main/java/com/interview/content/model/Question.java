@@ -47,6 +47,13 @@ public class Question {
     private String canvasNotes;
     private List<QuizItem> quiz;
     private List<String> hints;
+    private String editorial;
+    private String editorialVideoUrl;
+    private List<StarterFile> acceptedCode;
+    private String reviewStatus;
+    private String reviewer;
+    private String reviewNote;
+    private Instant scheduledPublishAt;
     @Indexed
     @Field("isPublished")
     private boolean published;

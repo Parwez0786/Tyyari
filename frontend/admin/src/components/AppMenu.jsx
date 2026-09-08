@@ -18,6 +18,7 @@ import {
   CircleUserRound,
   Users,
 } from "lucide-react";
+import { isAdminRole } from "../data/enums";
 import { QUESTION_TYPES } from "../data/questionTypes";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
@@ -56,16 +57,16 @@ const groups = [
   {
     label: "Access",
     items: [
-      { to: "/account", title: "Your account", detail: "Photo, name, and profile links", Icon: CircleUserRound },
-      { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts", Icon: Users },
-      { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium", Icon: CreditCard },
-      { to: "/mail", title: "Mail log", detail: "Invite, verify, and reset emails from Mailpit", Icon: Inbox },
-      { to: "/audit", title: "Audit log", detail: "Who published, deleted, or disabled what", Icon: ScrollText },
+      { to: "/account", title: "Your account", detail: "Photo, name, password, and 2FA", Icon: CircleUserRound },
+      { to: "/users", title: "Users", detail: "Profiles, Premium, and disable accounts", Icon: Users, adminOnly: true },
+      { to: "/billing", title: "Billing", detail: "Payments, Stripe status, refunds, grant Premium", Icon: CreditCard, adminOnly: true },
+      { to: "/mail", title: "Mail log", detail: "Invite, verify, and reset emails from Mailpit", Icon: Inbox, adminOnly: true },
+      { to: "/audit", title: "Audit log", detail: "Who published, deleted, or disabled what", Icon: ScrollText, adminOnly: true },
     ],
   },
 ];
 
-export default function AppMenu({ open, onClose, name, email, avatar, onLogout }) {
+export default function AppMenu({ open, onClose, name, email, avatar, role, onLogout }) {
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;
@@ -102,7 +103,7 @@ export default function AppMenu({ open, onClose, name, email, avatar, onLogout }
           {groups.map((group) => (
             <section key={group.label} className="rounded-2xl border border-line bg-surface p-2">
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">{group.label}</p>
-              {group.items.map((item) => {
+              {group.items.filter((item) => isAdminRole(role) || !item.adminOnly).map((item) => {
                 const Icon = item.Icon;
                 return (
                   <Link

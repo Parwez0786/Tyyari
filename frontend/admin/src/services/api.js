@@ -7,6 +7,7 @@ async function parse(res) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.success === false) {
     const err = new Error(json.error?.message || "Request failed");
+    err.code = json.error?.code;
     err.status = res.status;
     throw err;
   }
@@ -43,15 +44,43 @@ export async function api(path, options = {}) {
     useAuthStore.getState().clear();
     queryClient.clear();
   }
-  if (res.status === 403) {
+  return parse(res);
+}
+
+async function apiText(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = useAuthStore.getState().accessToken;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API}${path}`, { ...options, headers });
+  if (res.status === 401) {
     useAuthStore.getState().clear();
     queryClient.clear();
   }
-  return parse(res);
+  const text = await res.text();
+  if (!res.ok) {
+    let message = "Request failed";
+    try {
+      message = JSON.parse(text)?.error?.message || message;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(message);
+  }
+  return text;
 }
 
 export const adminApi = {
   login: (body) => api("/api/v1/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  google: (body) => api("/api/v1/auth/google", { method: "POST", body: JSON.stringify(body) }),
+  github: (body) => api("/api/v1/auth/github", { method: "POST", body: JSON.stringify(body) }),
+  publicConfig: () => api("/api/v1/auth/public-config"),
+  forgotPassword: (body) => api("/api/v1/auth/forgot-password", { method: "POST", body: JSON.stringify(body) }),
+  resetPassword: (body) => api("/api/v1/auth/reset-password", { method: "POST", body: JSON.stringify(body) }),
+  changePassword: (body) => api("/api/v1/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
+  verifyTotp: (body) => api("/api/v1/auth/totp/verify", { method: "POST", body: JSON.stringify(body) }),
+  setupTotp: () => api("/api/v1/auth/totp/setup", { method: "POST", body: "{}" }),
+  enableTotp: (body) => api("/api/v1/auth/totp/enable", { method: "POST", body: JSON.stringify(body) }),
+  disableTotp: (body) => api("/api/v1/auth/totp/disable", { method: "POST", body: JSON.stringify(body) }),
   me: () => api("/api/v1/auth/me"),
   profile: () => api("/api/v1/users/me"),
   updateProfile: (body) => api("/api/v1/users/me", { method: "PUT", body: JSON.stringify(body) }),
@@ -70,10 +99,26 @@ export const adminApi = {
     return api(`/api/v1/admin/questions?${query}`);
   },
   question: (id) => api(`/api/v1/admin/questions/${id}`),
+  questionCounts: (params = {}) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value != null && value !== ""),
+    ).toString();
+    return api(`/api/v1/admin/questions/counts${query ? `?${query}` : ""}`);
+  },
+  questionUsage: (id) => api(`/api/v1/admin/questions/${id}/usage`),
+  reviewQuestion: (id, body) => api(`/api/v1/admin/questions/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
   createQuestion: (body) => api("/api/v1/admin/questions", { method: "POST", body: JSON.stringify(body) }),
   updateQuestion: (id, body) => api(`/api/v1/admin/questions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteQuestion: (id) => api(`/api/v1/admin/questions/${id}`, { method: "DELETE" }),
   publish: (id, published) => api(`/api/v1/admin/questions/${id}/publish`, { method: "PATCH", body: JSON.stringify({ published }) }),
+  exportQuestions: () => api("/api/v1/admin/questions/export"),
+  exportQuestionsCsv: () => apiText("/api/v1/admin/questions/export.csv"),
+  importQuestions: (items) => api("/api/v1/admin/questions/import", { method: "POST", body: JSON.stringify({ items }) }),
+  importQuestionsCsv: (csv) => api("/api/v1/admin/questions/import.csv", {
+    method: "POST",
+    headers: { "Content-Type": "text/csv" },
+    body: csv,
+  }),
   companies: () => api("/api/v1/admin/companies"),
   createCompany: (body) => api("/api/v1/admin/companies", { method: "POST", body: JSON.stringify(body) }),
   updateCompany: (id, body) => api(`/api/v1/admin/companies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
@@ -86,6 +131,10 @@ export const adminApi = {
   createTag: (body) => api("/api/v1/admin/tags", { method: "POST", body: JSON.stringify(body) }),
   updateTag: (id, body) => api(`/api/v1/admin/tags/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteTag: (id) => api(`/api/v1/admin/tags/${id}`, { method: "DELETE" }),
+  categories: () => api("/api/v1/admin/categories"),
+  createCategory: (body) => api("/api/v1/admin/categories", { method: "POST", body: JSON.stringify(body) }),
+  updateCategory: (id, body) => api(`/api/v1/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteCategory: (id) => api(`/api/v1/admin/categories/${id}`, { method: "DELETE" }),
   users: () => api("/api/v1/admin/users"),
   userDirectory: () => api("/api/v1/admin/users/directory"),
   inviteUser: (body) => api("/api/v1/admin/users", { method: "POST", body: JSON.stringify(body) }),

@@ -5,7 +5,7 @@ import { BarChart, Donut, HBarList, countByDay, lastDays } from "../components/C
 import Loader from "../components/Loader";
 import PageHero from "../components/PageHero";
 import ThemeCard from "../components/ThemeCard";
-import { AccountRole, AccountStatus, QuestionType } from "../data/enums";
+import { AccountRole, AccountStatus, QuestionType, isAdminRole } from "../data/enums";
 import { providerLabel, targetRoleLabel, typeLabel } from "../data/labels";
 import { formatAgo, formatMoney } from "../data/profile";
 import { adminApi } from "../services/api";
@@ -20,10 +20,12 @@ const TYPE_COLORS = {
 };
 
 export default function Dashboard() {
-  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
+  const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
+  const admin = isAdminRole(meQuery.data?.data?.role);
+  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users, enabled: admin });
   const statsQuery = useQuery({ queryKey: ["admin-stats"], queryFn: adminApi.stats });
   const metricsQuery = useQuery({ queryKey: ["admin-metrics"], queryFn: adminApi.metrics });
-  const paymentsQuery = useQuery({ queryKey: ["admin-payments", ""], queryFn: () => adminApi.payments() });
+  const paymentsQuery = useQuery({ queryKey: ["admin-payments", ""], queryFn: () => adminApi.payments(), enabled: admin });
 
   const users = usersQuery.data?.data ?? [];
   const stats = statsQuery.data?.data ?? {};
@@ -65,7 +67,7 @@ export default function Dashboard() {
   const onboarded = metrics.onboarded || 0;
   const profiles = metrics.profiles || 0;
 
-  const loading = usersQuery.isLoading || statsQuery.isLoading || metricsQuery.isLoading;
+  const loading = meQuery.isLoading || statsQuery.isLoading || metricsQuery.isLoading || (admin && usersQuery.isLoading);
   const error = usersQuery.error || statsQuery.error || metricsQuery.error || paymentsQuery.error;
 
   if (loading) return <Loader fill />;
@@ -76,22 +78,24 @@ export default function Dashboard() {
         kicker="Dashboard"
         title="How the product is used"
         detail="Accounts, Premium, and practice submits. Charts use the last 14 days in UTC."
-        action={<Link to="/users" className="btn-ghost">Open users</Link>}
+        action={admin ? <Link to="/users" className="btn-ghost">Open users</Link> : <Link to="/questions" className="btn-ghost">Edit catalog</Link>}
       />
 
       {error && <p className="text-sm text-hard">{error?.message || "Could not load metrics."}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Candidates" value={candidates.length} hint={`${active} active · ${disabled} disabled`} />
-        <Stat label="Premium" value={premium} hint={candidates.length ? `${Math.round((100 * premium) / candidates.length)}% of accounts` : "From checkout"} tone="blue" />
+        {admin && <Stat label="Candidates" value={candidates.length} hint={`${active} active · ${disabled} disabled`} />}
+        {admin && <Stat label="Premium" value={premium} hint={candidates.length ? `${Math.round((100 * premium) / candidates.length)}% of accounts` : "From checkout"} tone="blue" />}
         <Stat label="Practice submits" value={metrics.practiceSubmissions ?? 0} hint={`${metrics.oaSubmissions ?? 0} OA · ${metrics.uniqueSolvers ?? 0} solvers`} />
         <Stat label="Active in 7 days" value={metrics.activeLast7Days ?? 0} hint="Users who submitted once" tone="blue" />
-        <Stat
-          label="Net revenue"
-          value={formatMoney(net, currency)}
-          hint={`${formatMoney(gross, currency)} paid · ${formatMoney(refundedAmount, currency)} refunded`}
-        />
-        <Stat label="Verified email" value={verified} hint={`${candidates.length - verified} still pending`} />
+        {admin && (
+          <Stat
+            label="Net revenue"
+            value={formatMoney(net, currency)}
+            hint={`${formatMoney(gross, currency)} paid · ${formatMoney(refundedAmount, currency)} refunded`}
+          />
+        )}
+        {admin && <Stat label="Verified email" value={verified} hint={`${candidates.length - verified} still pending`} />}
         <Stat label="Onboarded" value={onboarded} hint={`${profiles} profiles created`} tone="blue" />
         <Stat label="Published questions" value={published} hint="Live on the candidate library" />
         <Stat
@@ -102,7 +106,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {wiping.length > 0 && (
+      {admin && wiping.length > 0 && (
         <ThemeCard tone="danger">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Wipe queue</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">{wiping.length} account{wiping.length === 1 ? "" : "s"} deleting</h2>
@@ -120,15 +124,18 @@ export default function Dashboard() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
+        {admin && (
         <ChartCard kicker="Accounts" title="New signups" detail="Candidates created in the last 14 days.">
           <BarChart series={signups} />
         </ChartCard>
+        )}
         <ChartCard kicker="Practice" title="Submits" detail="Last answer saved per problem, last 14 days." tone="blue">
           <BarChart series={submissionsByDay.length ? submissionsByDay : days.map((d) => ({ label: d.slice(5), value: 0 }))} color="#2563eb" />
         </ChartCard>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        {admin && (
         <ChartCard kicker="Mix" title="Account status" detail="Who can still sign in, and who paid.">
           <Donut
             center={candidates.length}
@@ -140,6 +147,7 @@ export default function Dashboard() {
             ]}
           />
         </ChartCard>
+        )}
         <ChartCard kicker="Practice" title="Submits by track" detail="Which editors candidates actually finish." tone="blue">
           {byType.some((row) => row.value) ? (
             <Donut
@@ -166,21 +174,23 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        {admin && (
         <ChartCard kicker="Auth" title="Sign-in provider" detail="Password vs Google vs GitHub.">
           <HBarList series={providers} color="#e879f9" />
         </ChartCard>
+        )}
         <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Jump in</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Act on the numbers</h2>
           <p className="mt-1 text-sm text-mute">Disable a stale account, or publish the track that is empty.</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link to="/users" className="btn-brand">Manage users</Link>
-            <Link to="/billing" className="btn-ghost">Billing</Link>
-            <Link to="/mail" className="btn-ghost">Mail log</Link>
-            <Link to="/questions" className="btn-ghost">Edit catalog</Link>
+            {admin && <Link to="/users" className="btn-brand">Manage users</Link>}
+            {admin && <Link to="/billing" className="btn-ghost">Billing</Link>}
+            {admin && <Link to="/mail" className="btn-ghost">Mail log</Link>}
+            <Link to="/questions" className={admin ? "btn-ghost" : "btn-brand"}>Edit catalog</Link>
             <Link to="/sheets" className="btn-ghost">Sheets</Link>
             <Link to="/oa" className="btn-ghost">OA sets</Link>
-            <Link to="/audit" className="btn-ghost">Audit log</Link>
+            {admin && <Link to="/audit" className="btn-ghost">Audit log</Link>}
           </div>
         </ThemeCard>
       </div>

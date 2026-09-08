@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,19 +52,30 @@ public class InternalUserController {
     }
 
     @PatchMapping("/{id}/status")
-    public ApiResponse<User> status(@PathVariable String id, @RequestBody Map<String, String> body) {
+    public ApiResponse<User> status(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
         User.Status status = User.Status.valueOf(body.getOrDefault("status", "ACTIVE"));
-        return ApiResponse.ok(authService.updateStatus(id, status));
+        return ApiResponse.ok(authService.updateStatus(actorId, id, status));
     }
 
     @PatchMapping("/{id}/role")
-    public ApiResponse<User> role(@PathVariable String id, @RequestBody Map<String, String> body) {
-        return ApiResponse.ok(authService.updateRole(id, body.get("role")));
+    public ApiResponse<User> role(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(authService.updateRole(actorId, id, body.get("role")));
     }
 
     @PostMapping("/{id}/reset-password")
-    public ApiResponse<SupportMailResult> resetPassword(@PathVariable String id) {
-        return ApiResponse.ok(authService.sendPasswordResetForUser(id));
+    public ApiResponse<SupportMailResult> resetPassword(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(authService.sendPasswordResetForUser(actorId, id));
     }
 
     @PostMapping("/{id}/resend-verification")
@@ -72,25 +84,38 @@ public class InternalUserController {
     }
 
     @PatchMapping("/{id}/email")
-    public ApiResponse<SupportMailResult> changeEmail(@PathVariable String id, @RequestBody ChangeEmailRequest body) {
-        return ApiResponse.ok(authService.changeEmail(id, body == null ? null : body.email()));
+    public ApiResponse<SupportMailResult> changeEmail(
+            @PathVariable String id,
+            @RequestBody ChangeEmailRequest body,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(authService.changeEmail(actorId, id, body == null ? null : body.email()));
     }
 
     @PatchMapping("/{id}/verify")
-    public ApiResponse<User> verify(@PathVariable String id) {
-        return ApiResponse.ok(authService.forceVerifyEmail(id));
+    public ApiResponse<User> verify(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        return ApiResponse.ok(authService.forceVerifyEmail(actorId, id));
     }
 
     @PostMapping("/{id}/revoke-sessions")
-    public ApiResponse<Void> revokeSessions(@PathVariable String id) {
-        authService.revokeSessions(id);
+    public ApiResponse<Void> revokeSessions(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
+        authService.revokeSessions(actorId, id);
         return ApiResponse.ok(null, "Sessions revoked");
     }
 
     @PostMapping("/{id}/delete")
-    public ApiResponse<User> delete(@PathVariable String id) {
+    public ApiResponse<User> delete(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String actorId
+    ) {
         return ApiResponse.ok(
-                accountDeleteService.requestDeletion(id),
+                accountDeleteService.requestDeletion(actorId, id),
                 "Deletion queued. They are signed out. Profile and submissions wipe in the background."
         );
     }

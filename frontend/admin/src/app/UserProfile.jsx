@@ -23,6 +23,9 @@ import { useAdminUserProfile } from "../hooks/useAdminUserProfile";
 export default function UserProfile() {
   const { id } = useParams();
   const {
+    self,
+    foreign,
+    manageable,
     account,
     profile,
     prefs,
@@ -78,7 +81,7 @@ export default function UserProfile() {
         <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-5">
           <div className="flex min-w-0 flex-wrap items-start gap-5">
-            {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING ? (
+            {manageable ? (
               <AvatarPicker
                 name={name}
                 email={account?.email}
@@ -131,9 +134,9 @@ export default function UserProfile() {
             {account?.id && (
               <Link to={`/audit?user=${account.id}`} className="btn-ghost">Audit</Link>
             )}
-            {account && account.role !== AccountRole.ADMIN && account.status !== AccountStatus.DELETING && (
+            {manageable && (
               <>
-                {account.premium && (
+                {account.role !== AccountRole.ADMIN && account.premium && (
                   <button
                     type="button"
                     className="btn-ghost !text-hard"
@@ -152,11 +155,14 @@ export default function UserProfile() {
                 </button>
               </>
             )}
+            {self && (
+              <p className="w-full text-sm text-mute">This is your account. Change password and 2FA on Account.</p>
+            )}
           </div>
         </div>
       </section>
 
-      {account && account.role !== AccountRole.ADMIN && (
+      {manageable && (
         <ThemeCard>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Support</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Help this inbox</h2>
@@ -239,7 +245,7 @@ export default function UserProfile() {
         </ThemeCard>
       )}
 
-      {account && account.role !== AccountRole.ADMIN && (
+      {foreign && (
         <ThemeCard tone="danger">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-hard">Danger</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Delete account</h2>
@@ -321,7 +327,7 @@ export default function UserProfile() {
         )}
       </ThemeCard>
 
-      {account && account.role !== AccountRole.ADMIN && (
+      {account && account.role !== AccountRole.ADMIN && !self && (
         <ThemeCard tone="blue">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Billing</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Premium access</h2>
@@ -497,17 +503,18 @@ export default function UserProfile() {
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Account</p>
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">Access and prefs</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {account && account.role !== AccountRole.ADMIN ? (
+            {manageable ? (
               <label>
                 <p className="text-xs font-semibold uppercase tracking-wide text-mute">Role</p>
                 <select
                   className="field mt-2"
                   value={account.role}
-                  disabled={busy === "role" || account.status === AccountStatus.DELETING}
+                  disabled={busy === "role"}
                   onChange={(e) => setRole(e.target.value)}
                 >
                   <option value={AccountRole.USER}>{roleLabel(AccountRole.USER)}</option>
                   <option value={AccountRole.EDITOR}>{roleLabel(AccountRole.EDITOR)}</option>
+                  <option value={AccountRole.ADMIN}>{roleLabel(AccountRole.ADMIN)}</option>
                 </select>
               </label>
             ) : (

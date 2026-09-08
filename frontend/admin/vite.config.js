@@ -15,7 +15,17 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query"],
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "zustand",
+      "lucide-react",
+    ],
   },
   server: {
     host: "0.0.0.0",
@@ -25,6 +35,11 @@ export default defineConfig({
         target: process.env.MAILPIT_PROXY || "http://localhost:8026",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__mailpit/, "/api/v1"),
+      },
+      "/api/piston": {
+        target: process.env.PISTON_URL || "http://localhost:2000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/piston/, "/api/v2"),
       },
     },
   },

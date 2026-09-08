@@ -3,13 +3,19 @@ package com.interview.content.service;
 import com.interview.content.dto.ContentStats;
 import com.interview.content.dto.PageResponse;
 import com.interview.content.dto.QuestionDetail;
+import com.interview.content.dto.QuestionImportRequest;
+import com.interview.content.dto.QuestionImportResult;
 import com.interview.content.dto.QuestionListItem;
+import com.interview.content.dto.QuestionReviewRequest;
+import com.interview.content.dto.QuestionUsage;
 import com.interview.content.dto.QuestionWriteRequest;
 import com.interview.content.event.ContentEventPublisher;
 import com.interview.content.exception.ApiException;
 import com.interview.content.exception.ErrorCode;
 import com.interview.content.model.Question;
+import com.interview.content.repository.AssessmentSetRepository;
 import com.interview.content.repository.QuestionRepository;
+import com.interview.content.repository.QuestionSheetRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -33,17 +39,23 @@ import java.util.regex.Pattern;
 @Service
 public class QuestionService {
     private final QuestionRepository questions;
+    private final QuestionSheetRepository sheets;
+    private final AssessmentSetRepository assessmentSets;
     private final MongoTemplate mongoTemplate;
     private final ContentCache cache;
     private final ContentEventPublisher events;
 
     public QuestionService(
             QuestionRepository questions,
+            QuestionSheetRepository sheets,
+            AssessmentSetRepository assessmentSets,
             MongoTemplate mongoTemplate,
             ContentCache cache,
             ContentEventPublisher events
     ) {
         this.questions = questions;
+        this.sheets = sheets;
+        this.assessmentSets = assessmentSets;
         this.mongoTemplate = mongoTemplate;
         this.cache = cache;
         this.events = events;
@@ -56,6 +68,7 @@ public class QuestionService {
             String topic,
             String tag,
             String search,
+            String reviewStatus,
             int page,
             int limit,
             String sort,
@@ -84,8 +97,26 @@ public class QuestionService {
         if (StringUtils.hasText(tag)) {
             criteria.add(Criteria.where("tags").regex("^" + Pattern.quote(tag) + "$", "i"));
         }
+        if (StringUtils.hasText(reviewStatus)) {
+            String status = reviewStatus.toUpperCase(Locale.ROOT);
+            if ("DRAFT".equals(status)) {
+                criteria.add(new Criteria().orOperator(
+                        Criteria.where("reviewStatus").is("DRAFT"),
+                        Criteria.where("reviewStatus").is(null),
+                        Criteria.where("reviewStatus").exists(false)
+                ));
+            } else {
+                criteria.add(Criteria.where("reviewStatus").is(status));
+            }
+        }
         if (StringUtils.hasText(search)) {
-            criteria.add(Criteria.where("title").regex(Pattern.quote(search), "i"));
+            String rx = Pattern.quote(search);
+            criteria.add(new Criteria().orOperator(
+                    Criteria.where("title").regex(rx, "i"),
+                    Criteria.where("slug").regex(rx, "i"),
+                    Criteria.where("companies").regex(rx, "i"),
+                    Criteria.where("topics").regex(rx, "i")
+            ));
         }
         if (!criteria.isEmpty()) {
             query.addCriteria(new Criteria().andOperator(criteria.toArray(Criteria[]::new)));
@@ -183,6 +214,7 @@ public class QuestionService {
                 .slug(slug)
                 .createdBy(actorId)
                 .published(Boolean.TRUE.equals(req.published()))
+                .reviewStatus(Boolean.TRUE.equals(req.published()) ? "APPROVED" : "DRAFT")
                 .createdAt(now)
                 .updatedAt(now)
                 .build(), req));
@@ -212,6 +244,9 @@ public class QuestionService {
     public Question publish(String id, boolean published, String actorId) {
         Question question = getRaw(id);
         question.setPublished(published);
+        if (published) {
+            question.setReviewStatus("APPROVED");
+        }
         question.setUpdatedAt(Instant.now());
         Question saved = questions.save(question);
         cache.evictQuestion(id);
@@ -246,6 +281,13 @@ public class QuestionService {
         if (req.canvasNotes() != null) question.setCanvasNotes(req.canvasNotes());
         if (req.quiz() != null) question.setQuiz(req.quiz());
         if (req.hints() != null) question.setHints(req.hints());
+        if (req.editorial() != null) question.setEditorial(req.editorial());
+        if (req.editorialVideoUrl() != null) question.setEditorialVideoUrl(req.editorialVideoUrl());
+        if (req.acceptedCode() != null) question.setAcceptedCode(req.acceptedCode());
+        if (req.reviewStatus() != null) question.setReviewStatus(normalizeReview(req.reviewStatus()));
+        if (req.reviewer() != null) question.setReviewer(req.reviewer());
+        if (req.reviewNote() != null) question.setReviewNote(req.reviewNote());
+        if (req.scheduledPublishAt() != null) question.setScheduledPublishAt(req.scheduledPublishAt());
         if (req.published() != null) question.setPublished(req.published());
         if (req.premium() != null) question.setPremium(req.premium());
         if (req.slug() != null) question.setSlug(Slugs.from(req.slug()));
@@ -264,7 +306,9 @@ public class QuestionService {
                 q.getCompanies(),
                 false,
                 q.isPremium(),
-                q.isPublished()
+                q.isPublished(),
+                reviewStatusOf(q),
+                q.getScheduledPublishAt()
         );
     }
 
@@ -290,6 +334,9 @@ public class QuestionService {
                 q.getCanvasNotes(),
                 q.getQuiz(),
                 q.getHints(),
+                q.getEditorial(),
+                q.getEditorialVideoUrl(),
+                q.getAcceptedCode(),
                 q.isPremium(),
                 false
         );
@@ -317,12 +364,243 @@ public class QuestionService {
                 "",
                 List.of(),
                 List.of(),
+                "",
+                "",
+                List.of(),
                 true,
                 true
         );
     }
 
+    public Question review(String id, QuestionReviewRequest req, String actorId) {
+        Question question = getRaw(id);
+        if (req.reviewStatus() != null) {
+            question.setReviewStatus(normalizeReview(req.reviewStatus()));
+        }
+        if (req.reviewer() != null) {
+            question.setReviewer(req.reviewer());
+        }
+        if (req.reviewNote() != null) {
+            question.setReviewNote(req.reviewNote());
+        }
+        if (req.scheduledPublishAt() != null) {
+            question.setScheduledPublishAt(req.scheduledPublishAt());
+        }
+        question.setUpdatedAt(Instant.now());
+        Question saved = questions.save(question);
+        cache.evictQuestion(id);
+        events.publish("QUESTION_REVIEWED", id, Map.of("actorId", nvl(actorId), "reviewStatus", nvl(saved.getReviewStatus())));
+        return saved;
+    }
+
+    public QuestionUsage usage(String id) {
+        Question question = getRaw(id);
+        String slug = question.getSlug();
+        List<QuestionUsage.Ref> sheetRefs = sheets.findByQuestionSlugsContaining(slug).stream()
+                .map(sheet -> new QuestionUsage.Ref(sheet.getId(), sheet.getTitle(), sheet.getSlug()))
+                .toList();
+        List<QuestionUsage.Ref> oaRefs = assessmentSets.findByQuestionSlugsContaining(slug).stream()
+                .map(set -> new QuestionUsage.Ref(set.getId(), set.getTitle(), set.getSlug()))
+                .toList();
+        return new QuestionUsage(sheetRefs, oaRefs);
+    }
+
+    public Map<String, Long> countByType(String search, String reviewStatus) {
+        Map<String, Long> out = new LinkedHashMap<>();
+        for (String type : List.of("DSA", "HLD", "LLD", "CS", "FRONTEND", "OA")) {
+            out.put(type, search(type, null, null, null, null, search, reviewStatus, 1, 1, null, false).total());
+        }
+        return out;
+    }
+
+    public QuestionImportResult importCsv(String csv, String actorId) {
+        return importQuestions(new QuestionImportRequest(parseCsvItems(csv)), actorId);
+    }
+
+    public QuestionImportResult importQuestions(QuestionImportRequest request, String actorId) {
+        List<QuestionWriteRequest> items = request == null || request.items() == null ? List.of() : request.items();
+        int created = 0;
+        int skipped = 0;
+        List<String> errors = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            QuestionWriteRequest item = items.get(i);
+            try {
+                if (item == null || !StringUtils.hasText(item.title())) {
+                    skipped++;
+                    errors.add("Row " + (i + 1) + ": title is required");
+                    continue;
+                }
+                create(item, actorId);
+                created++;
+            } catch (ApiException e) {
+                skipped++;
+                errors.add("Row " + (i + 1) + ": " + e.getMessage());
+            } catch (RuntimeException e) {
+                skipped++;
+                errors.add("Row " + (i + 1) + ": " + e.getMessage());
+            }
+        }
+        return new QuestionImportResult(created, skipped, errors);
+    }
+
+    public List<Question> exportAll() {
+        return questions.findAll();
+    }
+
+    public String exportCsv() {
+        StringBuilder out = new StringBuilder();
+        out.append("title,slug,type,difficulty,description,topics,companies,tags,hints,published,premium,reviewStatus,editorial\n");
+        for (Question q : questions.findAll()) {
+            out.append(csv(q.getTitle())).append(',')
+                    .append(csv(q.getSlug())).append(',')
+                    .append(csv(q.getType())).append(',')
+                    .append(csv(q.getDifficulty())).append(',')
+                    .append(csv(q.getDescription())).append(',')
+                    .append(csv(join(q.getTopics()))).append(',')
+                    .append(csv(join(q.getCompanies()))).append(',')
+                    .append(csv(join(q.getTags()))).append(',')
+                    .append(csv(join(q.getHints()))).append(',')
+                    .append(q.isPublished()).append(',')
+                    .append(q.isPremium()).append(',')
+                    .append(csv(reviewStatusOf(q))).append(',')
+                    .append(csv(q.getEditorial())).append('\n');
+        }
+        return out.toString();
+    }
+
+    private static String reviewStatusOf(Question q) {
+        return StringUtils.hasText(q.getReviewStatus()) ? q.getReviewStatus() : "DRAFT";
+    }
+
+    private static String normalizeReview(String value) {
+        String status = value.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        return switch (status) {
+            case "DRAFT", "IN_REVIEW", "NEEDS_CHANGES", "APPROVED" -> status;
+            default -> throw new ApiException(ErrorCode.VALIDATION_ERROR, "Use DRAFT, IN_REVIEW, NEEDS_CHANGES, or APPROVED", HttpStatus.BAD_REQUEST);
+        };
+    }
+
+    private static String join(List<String> values) {
+        return values == null ? "" : String.join("|", values);
+    }
+
+    private static String csv(String value) {
+        String raw = value == null ? "" : value.replace("\"", "\"\"");
+        return "\"" + raw + "\"";
+    }
+
     private static String nvl(String value) {
         return value == null ? "" : value;
+    }
+
+    private static List<QuestionWriteRequest> parseCsvItems(String csv) {
+        List<List<String>> rows = parseCsvRows(csv == null ? "" : csv);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        List<String> header = rows.get(0).stream().map(h -> h.trim().toLowerCase(Locale.ROOT)).toList();
+        List<QuestionWriteRequest> items = new ArrayList<>();
+        for (int i = 1; i < rows.size(); i++) {
+            List<String> row = rows.get(i);
+            if (row.stream().allMatch(String::isBlank)) {
+                continue;
+            }
+            items.add(new QuestionWriteRequest(
+                    cell(header, row, "type"),
+                    null,
+                    cell(header, row, "title"),
+                    cell(header, row, "slug"),
+                    cell(header, row, "description"),
+                    cell(header, row, "difficulty"),
+                    splitCell(cell(header, row, "topics")),
+                    splitCell(cell(header, row, "companies")),
+                    splitCell(cell(header, row, "tags")),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    splitCell(cell(header, row, "hints")),
+                    cell(header, row, "editorial"),
+                    cell(header, row, "editorialvideourl"),
+                    null,
+                    cell(header, row, "reviewstatus"),
+                    null,
+                    null,
+                    null,
+                    parseBool(cell(header, row, "published")),
+                    parseBool(cell(header, row, "premium"))
+            ));
+        }
+        return items;
+    }
+
+    private static List<List<String>> parseCsvRows(String csv) {
+        List<List<String>> rows = new ArrayList<>();
+        List<String> row = new ArrayList<>();
+        StringBuilder cell = new StringBuilder();
+        boolean quoted = false;
+        for (int i = 0; i < csv.length(); i++) {
+            char c = csv.charAt(i);
+            if (quoted) {
+                if (c == '"') {
+                    if (i + 1 < csv.length() && csv.charAt(i + 1) == '"') {
+                        cell.append('"');
+                        i++;
+                    } else {
+                        quoted = false;
+                    }
+                } else {
+                    cell.append(c);
+                }
+            } else if (c == '"') {
+                quoted = true;
+            } else if (c == ',') {
+                row.add(cell.toString());
+                cell.setLength(0);
+            } else if (c == '\n') {
+                row.add(cell.toString());
+                cell.setLength(0);
+                rows.add(row);
+                row = new ArrayList<>();
+            } else if (c != '\r') {
+                cell.append(c);
+            }
+        }
+        if (!cell.isEmpty() || !row.isEmpty()) {
+            row.add(cell.toString());
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    private static String cell(List<String> header, List<String> row, String name) {
+        int index = header.indexOf(name);
+        if (index < 0 || index >= row.size()) {
+            return null;
+        }
+        String value = row.get(index);
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private static List<String> splitCell(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split("\\|"))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toList();
+    }
+
+    private static Boolean parseBool(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return "true".equalsIgnoreCase(value) || "1".equals(value) || "yes".equalsIgnoreCase(value);
     }
 }

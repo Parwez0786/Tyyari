@@ -85,6 +85,15 @@ html.dark .btn-black:hover {
   background-color: #ea580c;
 }
 
+.btn-social {
+  @apply relative flex w-full items-center justify-center gap-3 rounded-2xl border px-5 py-3 text-sm font-medium;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+.btn-social:hover {
+  background-color: var(--field);
+}
+
 .btn-ghost {
   @apply inline-flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-medium;
   border-color: var(--line);

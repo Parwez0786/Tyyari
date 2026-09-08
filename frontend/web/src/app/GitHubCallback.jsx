@@ -13,8 +13,21 @@ export default function GitHubCallback() {
   const [params] = useSearchParams();
   const setTokens = useAuthStore((s) => s.setTokens);
   const [error, setError] = useState("");
+  const [challenge, setChallenge] = useState("");
+  const [totpCode, setTotpCode] = useState("");
   const code = params.get("code");
   const oauthError = params.get("error");
+
+  async function finishLogin(data) {
+    if (data?.requiresTotp && data?.totpChallenge) {
+      setChallenge(data.totpChallenge);
+      return;
+    }
+    setTokens(data?.accessToken, data?.refreshToken);
+    const profile = await userApi.profile().catch(() => null);
+    if (profile) queryClient.setQueryData(["profile"], profile);
+    navigate(profile?.data?.onboarded ? "/dashboard" : "/onboarding");
+  }
 
   useEffect(() => {
     if (oauthError) {
@@ -32,11 +45,7 @@ export default function GitHubCallback() {
     githubLogin
       .then(async (res) => {
         if (!alive) return;
-        setTokens(res?.data?.accessToken, res?.data?.refreshToken);
-        const profile = await userApi.profile().catch(() => null);
-        if (profile) queryClient.setQueryData(["profile"], profile);
-        if (!alive) return;
-        navigate(profile?.data?.onboarded ? "/dashboard" : "/onboarding");
+        await finishLogin(res?.data);
       })
       .catch((err) => {
         githubLogin = null;
@@ -46,6 +55,37 @@ export default function GitHubCallback() {
       alive = false;
     };
   }, [code, oauthError, navigate, setTokens]);
+
+  async function verifyTotp(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      const res = await authApi.verifyTotp({ challenge, code: totpCode });
+      await finishLogin(res?.data);
+    } catch (err) {
+      setError(err?.message);
+    }
+  }
+
+  if (challenge) {
+    return (
+      <AuthShell title="Authenticator code" subtitle="Enter the 6-digit code from your authenticator app.">
+        <form onSubmit={verifyTotp} className="space-y-3">
+          <input
+            className="field tracking-[0.3em]"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="000000"
+            required
+          />
+          {error && <p className="text-sm text-hard">{error}</p>}
+          <button className="btn-black w-full">Verify</button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   if (!error) return <Loader screen />;
 

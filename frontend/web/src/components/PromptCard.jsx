@@ -16,6 +16,7 @@ export default function PromptCard({ data, hideHints = false }) {
         <h2 className="mt-4 text-lg font-bold leading-snug text-ink">{data?.title}</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{data?.description}</p>
         {dsa ? <DsaDetails data={data} hideHints={hideHints} /> : <RequirementsLists data={data} />}
+        <OfficialSolution data={data} />
       </div>
     </aside>
   );
@@ -135,6 +136,42 @@ function RequirementsLists({ data }) {
       )}
       <RequirementCard title="Hints" items={data?.hints} tone="hint" />
     </div>
+  );
+}
+
+function OfficialSolution({ data }) {
+  const editorial = data?.editorial?.trim();
+  const video = data?.editorialVideoUrl?.trim();
+  const files = data?.acceptedCode || [];
+  const [open, setOpen] = useState(false);
+  if (!editorial && !video && !files.length) return null;
+  return (
+    <section className="mt-5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 text-left text-xs font-semibold text-ink"
+      >
+        <ChevronRight size={14} className={`text-mute transition ${open ? "rotate-90" : ""}`} />
+        Official solution
+      </button>
+      {open && (
+        <div className="mt-2 space-y-3 rounded-xl border border-white/10 bg-white/5 p-3">
+          {editorial && <p className="whitespace-pre-wrap text-sm leading-6 text-mute">{editorial}</p>}
+          {video && (
+            <a href={video} target="_blank" rel="noreferrer" className="text-sm font-semibold text-brand">
+              Watch editorial
+            </a>
+          )}
+          {files.map((file) => (
+            <div key={file.name}>
+              <p className="font-mono text-xs font-semibold text-ink">{file.name}</p>
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-5 text-mute">{file.content}</pre>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

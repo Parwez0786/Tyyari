@@ -20,6 +20,7 @@ export function useAdminUserProfile(id) {
   const navigate = useNavigate();
   const client = useQueryClient();
   const dialog = useDialog();
+  const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
   const accountQuery = useQuery({ queryKey: ["admin-user", id], queryFn: () => adminApi.user(id) });
   const profileQuery = useQuery({ queryKey: ["admin-user-profile", id], queryFn: () => adminApi.userProfile(id) });
   const paymentsQuery = useQuery({ queryKey: ["admin-payments", id], queryFn: () => adminApi.payments({ userId: id }) });
@@ -63,8 +64,10 @@ export function useAdminUserProfile(id) {
     setFileIndex(0);
   }, [activeId]);
 
+  const self = Boolean(meQuery.data?.data?.id && account?.id === meQuery.data.data.id);
+
   function locked() {
-    return !account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING;
+    return !account || self || account.status === AccountStatus.DELETING;
   }
 
   async function refreshAccount() {
@@ -180,7 +183,7 @@ export function useAdminUserProfile(id) {
   }
 
   async function deleteAccount() {
-    if (!account || account.role === AccountRole.ADMIN) return;
+    if (!account || self) return;
     if (deleteEmail.trim().toLowerCase() !== String(account.email || "").toLowerCase()) {
       await dialog.alert("Type the account email to confirm delete.", { title: "Confirm the email" });
       return;
@@ -210,7 +213,7 @@ export function useAdminUserProfile(id) {
   }
 
   async function setPremium(premium) {
-    if (locked()) return;
+    if (locked() || account.role === AccountRole.ADMIN) return;
     if (premium) {
       if (!await dialog.confirm(
         until
@@ -241,7 +244,7 @@ export function useAdminUserProfile(id) {
   }
 
   async function uploadAvatar(file) {
-    if (!account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING) return;
+    if (locked()) return;
     setBusy("photo");
     try {
       await adminApi.uploadUserAvatar(account.id, file);
@@ -257,7 +260,7 @@ export function useAdminUserProfile(id) {
   }
 
   async function removeAvatar() {
-    if (!account || account.role === AccountRole.ADMIN || account.status === AccountStatus.DELETING) return;
+    if (locked()) return;
     if (!await dialog.confirm("Remove this profile photo?", { title: "Remove photo", confirmLabel: "Remove" })) return;
     setBusy("photo");
     try {
@@ -278,6 +281,9 @@ export function useAdminUserProfile(id) {
   }
 
   return {
+    self,
+    foreign: Boolean(account) && !self,
+    manageable: Boolean(account) && !self && account.status !== AccountStatus.DELETING,
     account,
     profile,
     goals,

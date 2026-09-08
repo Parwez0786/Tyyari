@@ -19,8 +19,10 @@ const EMPTY_INVITE = { email: "", name: "", role: AccountRole.USER };
 export function useAdminUsers() {
   const client = useQueryClient();
   const dialog = useDialog();
+  const meQuery = useQuery({ queryKey: ["me"], queryFn: adminApi.me });
   const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
   const directoryQuery = useQuery({ queryKey: ["admin-directory"], queryFn: adminApi.userDirectory });
+  const meId = meQuery.data?.data?.id;
   const accounts = usersQuery.data?.data ?? [];
   const directory = useMemo(() => {
     const map = {};
@@ -130,6 +132,7 @@ export function useAdminUsers() {
   }
 
   return {
+    meId,
     usersQuery,
     search,
     setSearch,

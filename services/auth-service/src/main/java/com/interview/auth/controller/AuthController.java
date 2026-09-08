@@ -1,6 +1,7 @@
 package com.interview.auth.controller;
 
 import com.interview.auth.dto.ApiResponse;
+import com.interview.auth.dto.ChangePasswordRequest;
 import com.interview.auth.dto.ForgotPasswordRequest;
 import com.interview.auth.dto.GitHubLoginRequest;
 import com.interview.auth.dto.GoogleLoginRequest;
@@ -14,6 +15,10 @@ import com.interview.auth.dto.RegisterRequest;
 import com.interview.auth.dto.RegisterResponse;
 import com.interview.auth.dto.ResetPasswordRequest;
 import com.interview.auth.dto.TokenRequest;
+import com.interview.auth.dto.TotpCodeRequest;
+import com.interview.auth.dto.TotpDisableRequest;
+import com.interview.auth.dto.TotpSetupResponse;
+import com.interview.auth.dto.TotpVerifyRequest;
 import com.interview.auth.exception.ApiException;
 import com.interview.auth.exception.ErrorCode;
 import com.interview.auth.service.AuthService;
@@ -51,17 +56,31 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        return ApiResponse.ok(authService.login(request.email(), request.password(), device(http)));
+        return ApiResponse.ok(authService.login(
+                request.email(),
+                request.password(),
+                device(http),
+                Boolean.TRUE.equals(request.staffConsole())
+        ));
     }
 
     @PostMapping("/google")
     public ApiResponse<LoginResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletRequest http) {
-        return ApiResponse.ok(googleAuthService.login(request.idToken(), device(http)));
+        return ApiResponse.ok(googleAuthService.login(
+                request.idToken(),
+                device(http),
+                Boolean.TRUE.equals(request.staffConsole())
+        ));
     }
 
     @PostMapping("/github")
     public ApiResponse<LoginResponse> github(@Valid @RequestBody GitHubLoginRequest request, HttpServletRequest http) {
-        return ApiResponse.ok(gitHubAuthService.login(request.code(), request.redirectUri(), device(http)));
+        return ApiResponse.ok(gitHubAuthService.login(
+                request.code(),
+                request.redirectUri(),
+                device(http),
+                Boolean.TRUE.equals(request.staffConsole())
+        ));
     }
 
     @GetMapping("/public-config")
@@ -115,6 +134,54 @@ public class AuthController {
     public ApiResponse<Void> reset(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.token(), request.password());
         return ApiResponse.ok(null, "Password updated");
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        requireUser(userId);
+        authService.changePassword(userId, request.currentPassword(), request.newPassword());
+        return ApiResponse.ok(null, "Password updated. Sign in again.");
+    }
+
+    @PostMapping("/totp/verify")
+    public ApiResponse<LoginResponse> verifyTotp(@Valid @RequestBody TotpVerifyRequest request, HttpServletRequest http) {
+        return ApiResponse.ok(authService.verifyTotpLogin(request.challenge(), request.code()));
+    }
+
+    @PostMapping("/totp/setup")
+    public ApiResponse<TotpSetupResponse> setupTotp(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
+        return ApiResponse.ok(authService.setupTotp(userId));
+    }
+
+    @PostMapping("/totp/enable")
+    public ApiResponse<Void> enableTotp(
+            @Valid @RequestBody TotpCodeRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        requireUser(userId);
+        authService.enableTotp(userId, request.code());
+        return ApiResponse.ok(null, "Two-factor authentication is on");
+    }
+
+    @PostMapping("/totp/disable")
+    public ApiResponse<Void> disableTotp(
+            @RequestBody(required = false) TotpDisableRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        requireUser(userId);
+        TotpDisableRequest body = request == null ? new TotpDisableRequest(null, null) : request;
+        authService.disableTotp(userId, body.password(), body.code());
+        return ApiResponse.ok(null, "Two-factor authentication is off");
+    }
+
+    private static void requireUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ApiException(ErrorCode.AUTH_UNAUTHORIZED, "Missing user", HttpStatus.UNAUTHORIZED);
+        }
     }
 
     private static String device(HttpServletRequest request) {

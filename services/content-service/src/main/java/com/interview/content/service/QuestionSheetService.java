@@ -4,6 +4,7 @@ import com.interview.content.dto.QuestionListItem;
 import com.interview.content.dto.SheetDetail;
 import com.interview.content.dto.SheetListItem;
 import com.interview.content.dto.SheetWriteRequest;
+import com.interview.content.event.ContentEventPublisher;
 import com.interview.content.exception.ApiException;
 import com.interview.content.exception.ErrorCode;
 import com.interview.content.model.QuestionSheet;
@@ -15,16 +16,19 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class QuestionSheetService {
 
     private final QuestionSheetRepository sheets;
     private final QuestionService questions;
+    private final ContentEventPublisher events;
 
-    public QuestionSheetService(QuestionSheetRepository sheets, QuestionService questions) {
+    public QuestionSheetService(QuestionSheetRepository sheets, QuestionService questions, ContentEventPublisher events) {
         this.sheets = sheets;
         this.questions = questions;
+        this.events = events;
     }
 
     public List<SheetListItem> listPublished(String type) {
@@ -81,7 +85,7 @@ public class QuestionSheetService {
                 .orElseThrow(() -> new ApiException(ErrorCode.SHEET_NOT_FOUND, "Sheet not found", HttpStatus.NOT_FOUND));
     }
 
-    public QuestionSheet create(SheetWriteRequest req) {
+    public QuestionSheet create(SheetWriteRequest req, String actorId) {
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : Slugs.from(req.title());
         if (!StringUtils.hasText(slug)) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Title or slug is required", HttpStatus.BAD_REQUEST);
@@ -93,16 +97,18 @@ public class QuestionSheetService {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Sheet type is required", HttpStatus.BAD_REQUEST);
         }
         Instant now = Instant.now();
-        return sheets.save(apply(QuestionSheet.builder()
+        QuestionSheet saved = sheets.save(apply(QuestionSheet.builder()
                 .slug(slug)
                 .type(req.type().toUpperCase(Locale.ROOT))
                 .published(Boolean.TRUE.equals(req.published()))
                 .createdAt(now)
                 .updatedAt(now)
                 .build(), req, slug));
+        events.publish("SHEET_CREATED", saved.getId(), Map.of("actorId", nvl(actorId), "slug", saved.getSlug()));
+        return saved;
     }
 
-    public QuestionSheet update(String id, SheetWriteRequest req) {
+    public QuestionSheet update(String id, SheetWriteRequest req, String actorId) {
         QuestionSheet existing = getRaw(id);
         String slug = StringUtils.hasText(req.slug()) ? Slugs.from(req.slug()) : existing.getSlug();
         if (StringUtils.hasText(slug) && !slug.equals(existing.getSlug()) && sheets.existsBySlug(slug)) {
@@ -110,19 +116,24 @@ public class QuestionSheetService {
         }
         QuestionSheet saved = apply(existing, req, slug);
         saved.setUpdatedAt(Instant.now());
-        return sheets.save(saved);
+        saved = sheets.save(saved);
+        events.publish("SHEET_UPDATED", saved.getId(), Map.of("actorId", nvl(actorId)));
+        return saved;
     }
 
-    public void delete(String id) {
+    public void delete(String id, String actorId) {
         QuestionSheet existing = getRaw(id);
         sheets.deleteById(existing.getId());
+        events.publish("SHEET_DELETED", existing.getId(), Map.of("actorId", nvl(actorId)));
     }
 
-    public QuestionSheet publish(String id, boolean published) {
+    public QuestionSheet publish(String id, boolean published, String actorId) {
         QuestionSheet existing = getRaw(id);
         existing.setPublished(published);
         existing.setUpdatedAt(Instant.now());
-        return sheets.save(existing);
+        QuestionSheet saved = sheets.save(existing);
+        events.publish(published ? "SHEET_PUBLISHED" : "SHEET_UNPUBLISHED", saved.getId(), Map.of("actorId", nvl(actorId)));
+        return saved;
     }
 
     private QuestionSheet apply(QuestionSheet sheet, SheetWriteRequest req, String slug) {
@@ -142,5 +153,9 @@ public class QuestionSheetService {
         return questions.publishedBySlugs(sheet.getQuestionSlugs()).stream()
                 .filter(item -> !StringUtils.hasText(type) || type.equalsIgnoreCase(item.type()))
                 .toList();
+    }
+
+    private static String nvl(String value) {
+        return value == null ? "" : value;
     }
 }
